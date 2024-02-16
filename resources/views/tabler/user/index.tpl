@@ -287,6 +287,28 @@
                 </div>
 
                 <div class="col-lg-6 col-sm-12">
+                    <div class="card">
+                        <div class="ribbon ribbon-top bg-yellow">
+                            <i class="ti ti-bell-ringing icon"></i>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title">
+                                置顶公告
+                                {if $ann !== null}
+                                <span class="card-subtitle">{$ann->date}</span>
+                                {/if}
+                            </h3>
+                            <p class="text-secondary">
+                                {if $ann !== null}
+                                {$ann->content}
+                                {else}
+                                暂无公告
+                                {/if}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-sm-12">
                     <div class="vstack">
                         <div class="card">
                             <div class="card-body">
@@ -389,28 +411,6 @@
                     </div>
                 </div>
                 {/if}
-                <div class="col-lg-6 col-sm-12">
-                    <div class="card">
-                        <div class="ribbon ribbon-top bg-yellow">
-                            <i class="ti ti-bell-ringing icon"></i>
-                        </div>
-                        <div class="card-body">
-                            <h3 class="card-title">
-                                置顶公告
-                                {if $ann !== null}
-                                <span class="card-subtitle">{$ann->date}</span>
-                                {/if}
-                            </h3>
-                            <p class="text-secondary">
-                                {if $ann !== null}
-                                {$ann->content}
-                                {else}
-                                暂无公告
-                                {/if}
-                            </p>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
