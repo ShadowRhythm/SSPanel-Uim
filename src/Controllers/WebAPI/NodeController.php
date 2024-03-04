@@ -36,7 +36,10 @@ final class NodeController extends BaseController
             'data' => 'ok',
         ]);
     }
-    public function getInfo(ServerRequest $request, Response $response, array $args): ResponseInterface
+    /**
+     * GET /mod_mu/nodes/{id}/info
+     */
+  public function getInfo(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
         $node_id = $args['id'];
         $node = (new Node())->find($node_id);
