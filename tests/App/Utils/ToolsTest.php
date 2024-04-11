@@ -7,6 +7,7 @@ namespace App\Utils;
 use MaxMind\Db\Reader\InvalidDatabaseException;
 use PHPUnit\Framework\TestCase;
 use function date_default_timezone_set;
+use function strlen;
 
 class ToolsTest extends TestCase
 {
@@ -103,14 +104,41 @@ class ToolsTest extends TestCase
     }
 
     /**
+     * @covers App\Utils\Tools::genSubToken
+     */
+    public function testGenSubToken()
+    {
+        $_ENV['sub_token_len'] = 10;
+        $token = Tools::genSubToken();
+        $this->assertEquals(10, strlen($token));
+        $_ENV['sub_token_len'] = 0;
+        $token = Tools::genSubToken();
+        $this->assertEquals(8, strlen($token));
+        $_ENV['sub_token_len'] = -5;
+        $token = Tools::genSubToken();
+        $this->assertEquals(8, strlen($token));
+    }
+
+    /**
      * @covers App\Utils\Tools::genRandomChar
      */
     public function testGenRandomChar()
     {
+        $randomString = Tools::genRandomChar();
+        $this->assertIsString($randomString);
+        $this->assertEquals(8, strlen($randomString));
         $length = 10;
         $randomString = Tools::genRandomChar($length);
         $this->assertIsString($randomString);
         $this->assertEquals($length, strlen($randomString));
+        $length = 9;
+        $randomString = Tools::genRandomChar($length);
+        $this->assertIsString($randomString);
+        $this->assertEquals($length, strlen($randomString));
+        $length = 1;
+        $randomString = Tools::genRandomChar($length);
+        $this->assertIsString($randomString);
+        $this->assertEquals(2, strlen($randomString));
     }
 
     /**
@@ -119,10 +147,17 @@ class ToolsTest extends TestCase
     public function testGenSs2022UserPk()
     {
         $passwd = 'password';
-        $length = 16;
-        $pk = Tools::genSs2022UserPk($passwd, $length);
+        $method = '2022-blake3-aes-128-gcm';
+        $pk = Tools::genSs2022UserPk($passwd, $method);
         $this->assertIsString($pk);
-        $this->assertEquals('NWU4ODQ4OThkYTI4MDQ3MQ==', $pk);
+        $this->assertEquals('YzAwNjdkNGFmNGU4N2YwMA==', $pk);
+        $method = '2022-blake3-aes-256-gcm';
+        $pk = Tools::genSs2022UserPk($passwd, $method);
+        $this->assertIsString($pk);
+        $this->assertEquals('YzAwNjdkNGFmNGU4N2YwMGRiYWM2M2I2MTU2ODI4MjM=', $pk);
+        $method = 'bomb_three_gorges_dam';
+        $pk = Tools::genSs2022UserPk($passwd, $method);
+        $this->assertFalse($pk);
     }
 
     /**
@@ -214,24 +249,6 @@ class ToolsTest extends TestCase
     }
 
     /**
-     * @covers App\Utils\Tools::isEmailLegal
-     */
-    public function testIsEmailLegal()
-    {
-        $_ENV['mail_filter'] = 1;
-        $_ENV['mail_filter_list'] = ['example.com'];
-
-        $email1 = 'test@example.com';
-        $email2 = 'test@example.org';
-
-        $expected1 = ['ret' => 1];
-        $expected2 = ['ret' => 0, 'msg' => '邮箱域名 example.org 无效，请更换邮件地址'];
-
-        $this->assertEquals($expected1, Tools::isEmailLegal($email1));
-        $this->assertEquals($expected2, Tools::isEmailLegal($email2));
-    }
-
-    /**
      * @covers App\Utils\Tools::isEmail
      */
     public function testIsEmail()
@@ -247,6 +264,7 @@ class ToolsTest extends TestCase
     {
         $this->assertTrue(Tools::isIPv4('192.168.0.1'));
         $this->assertFalse(Tools::isIPv4('2001:0db8:85a3:0000:0000:8a2e:0370:7334'));
+        $this->assertFalse(Tools::isIPv4('UwU'));
     }
 
     /**
@@ -256,6 +274,7 @@ class ToolsTest extends TestCase
     {
         $this->assertTrue(Tools::isIPv6('2001:0db8:85a3:0000:0000:8a2e:0370:7334'));
         $this->assertFalse(Tools::isIPv6('192.168.0.1'));
+        $this->assertFalse(Tools::isIPv6('hmm'));
     }
 
     /**

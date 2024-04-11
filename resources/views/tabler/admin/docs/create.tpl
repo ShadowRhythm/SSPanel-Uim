@@ -1,6 +1,6 @@
 {include file='admin/header.tpl'}
 
-<script src="//cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/tinymce/7.0.0/tinymce.min.js"></script>
 
 <div class="page-wrapper">
     <div class="container-xl">
@@ -78,16 +78,11 @@
             menubar: false,
             statusbar: false,
             plugins:
-                'advlist autolink lists link image charmap preview anchor ' +
-                'searchreplace visualblocks code fullscreen ' +
-                'insertdatetime media table wordcount',
-            toolbar: 'undo redo | formatselect | ' +
-                'bold italic backcolor link | blocks | alignleft aligncenter ' +
-                'alignright alignjustify | bullist numlist outdent indent | ' +
-                'image removeformat',
-            image_title: false,
-            image_description: false,
-            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;font-size:   14px; -webkit-font-smoothing: antialiased; }',
+                'advlist autolink lists link image charmap preview anchor searchreplace visualblocks ' +
+                'code insertdatetime media table',
+            toolbar: 'undo redo | bold italic backcolor link | styles | fontsize | lineheight | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | removeformat',
+            content_style: 'body { font-size: 14px; }',
             {if $user->is_dark_mode}
             skin: 'oxide-dark',
             content_css: 'dark',

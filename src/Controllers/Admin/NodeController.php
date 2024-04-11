@@ -12,7 +12,7 @@ use App\Utils\Tools;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
-use SmartyException;
+use Smarty\Exception as SmartyException;
 use Telegram\Bot\Exceptions\TelegramSDKException;
 use function json_decode;
 use function json_encode;
@@ -248,7 +248,7 @@ final class NodeController extends BaseController
         ]);
     }
 
-    public function resetPassword(ServerRequest $request, Response $response, array $args): Response|ResponseInterface
+    public function resetPassword(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
         $node = (new Node())->find($args['id']);
         $node->password = Tools::genRandomChar(32);
@@ -260,7 +260,7 @@ final class NodeController extends BaseController
         ]);
     }
 
-    public function resetBandwidth(ServerRequest $request, Response $response, array $args): Response|ResponseInterface
+    public function resetBandwidth(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
         $node = (new Node())->find($args['id']);
         $node->node_bandwidth = 0;
