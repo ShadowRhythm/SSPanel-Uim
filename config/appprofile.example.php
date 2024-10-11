@@ -166,6 +166,18 @@ $_ENV['SingBox_Config'] = [
                 'clash_mode' => 'Direct',
                 'server' => 'local',
             ],
+            [
+                'clash_mode' => 'Global',
+                'server' => 'cloudflare',
+            ],
+            [
+                'rule_set' => 'geosite-cn',
+                'server' => 'local',
+            ],
+            [
+                'clash_mode' => 'Direct',
+                'server' => 'local',
+            ],
         ],
         'final' => 'cloudflare',
         'disable_cache' => true,
@@ -217,8 +229,8 @@ $_ENV['SingBox_Config'] = [
             'interrupt_exist_connections' => true,
         ],
         [
-            'type' => 'direct',
             'tag' => 'direct',
+            'type' => 'direct',
         ],
     ],
     'route' => [
@@ -419,7 +431,7 @@ $_ENV['Clash_Config'] = [
 ];
 
 // Clash group indexes to be inserted node names
-$_ENV['Clash_Group_Indexes'] = [0, 1, 2, 4, 6, 7, 8, 11];
+$_ENV['Clash_Group_Indexes'] = [0, 1, 2, 4, 6, 7, 8, 9, 10, 11];
 
 $_ENV['Clash_Group_Config'] = [
     'proxy-groups' => [
@@ -510,6 +522,26 @@ $_ENV['Clash_Group_Config'] = [
             ],
         ],
         [
+            'name' => '♾️ OpenAI',
+            'type' => 'select',
+            // 插入节点名称
+            'proxies' => [
+                '🔰 手动选择',
+                '♻️ 自动选择',
+                '🎯 Direct',
+            ],
+        ],
+        [
+            'name' => '🎮 游戏平台',
+            'type' => 'select',
+            // 插入节点名称
+            'proxies' => [
+                '🔰 手动选择',
+                '♻️ 自动选择',
+                '🎯 Direct',
+            ],
+        ],
+        [
             'name' => '🎯 Direct',
             'type' => 'select',
             'proxies' => [
@@ -587,6 +619,88 @@ $_ENV['Clash_Group_Config'] = [
         'GEOSITE,category-media,🌍 主流媒体',
         // 中国媒体
         'GEOSITE,category-media-cn,🇨🇳 中国媒体',
+		//♾️  OpenAI
+		'DOMAIN-SUFFIX,client.crisp.chat,♾️ OpenAI',
+		'DOMAIN,browser-intake-datadoghq.com,♾️ OpenAI',
+		'DOMAIN,static.cloudflareinsights.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,ai.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,algolia.net,♾️ OpenAI',
+		'DOMAIN-SUFFIX,api.statsig.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,auth0.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,cdn.cloudflare.net,♾️ OpenAI',
+		'DOMAIN-SUFFIX,challenges.cloudflare.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,chatgpt.livekit.cloud,♾️ OpenAI',
+		'DOMAIN-SUFFIX,client-api.arkoselabs.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,events.statsigapi.net,♾️ OpenAI',
+		'DOMAIN-SUFFIX,featuregates.org,♾️ OpenAI',
+		'DOMAIN-SUFFIX,host.livekit.cloud,♾️ OpenAI',
+		'DOMAIN-SUFFIX,identrust.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,intercom.io,♾️ OpenAI',
+		'DOMAIN-SUFFIX,intercomcdn.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,launchdarkly.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,oaistatic.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,oaiusercontent.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,observeit.net,♾️ OpenAI',
+		'DOMAIN-SUFFIX,poe.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,segment.io,♾️ OpenAI',
+		'DOMAIN-SUFFIX,sentry.io,♾️ OpenAI',
+		'DOMAIN-SUFFIX,stripe.com,♾️ OpenAI',
+		'DOMAIN-SUFFIX,turn.livekit.cloud,♾️ OpenAI',
+		'DOMAIN-SUFFIX,chatgpt.com,♾️ OpenAI',
+		'DOMAIN-KEYWORD,openai,♾️ OpenAI',
+		//game,🎮 游戏平台',
+		# Ubisoft
+		'DOMAIN-SUFFIX,ubisoft.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,ubi.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,ubisoft.org,🎮 游戏平台',
+		'DOMAIN-SUFFIX,ubisoftconnect.com,🎮 游戏平台',
+		'DOMAIN,uplaypc-s-ubisoft.cdn.ubi.com,🎮 游戏平台',
+		# Epic-Games
+		'DOMAIN-KEYWORD,epicgames,🎮 游戏平台',
+		'DOMAIN-SUFFIX,battlebreakers.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,eac-cdn.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,easy.ac,🎮 游戏平台',
+		'DOMAIN-SUFFIX,easyanticheat.net,🎮 游戏平台',
+		'DOMAIN-SUFFIX,epicgames.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,epicgames.dev,🎮 游戏平台',
+		'DOMAIN-SUFFIX,epicgames.net,🎮 游戏平台',
+		'DOMAIN-SUFFIX,fortnite.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,helpshift.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,paragon.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,playparagon.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,roborecall.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,shadowcomplex.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,spyjinx.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,unrealengine.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,unrealtournament.com,🎮 游戏平台',
+        # PlayStation
+		'DOMAIN-SUFFIX,playstation.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,playstation.net,🎮 游戏平台',
+		'DOMAIN-SUFFIX,playstationnetwork.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,sony.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,sonyentertainmentnetwork.com,🎮 游戏平台',
+		#Steam
+		'DOMAIN-KEYWORD,steamcontent,🎮 游戏平台',  
+		'DOMAIN-KEYWORD,steamuserimages,🎮 游戏平台',
+		'DOMAIN-SUFFIX,fanatical.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,humblebundle.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,playartifact.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,steam-chat.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,steamcommunity.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,steamgames.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,steampowered.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,steamstat.us,🎮 游戏平台',
+		'DOMAIN-SUFFIX,steamstatic.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,steamusercontent.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,underlords.com,🎮 游戏平台',
+		'DOMAIN-SUFFIX,valvesoftware.com,🎮 游戏平台',
+		'DOMAIN,steambroadcast.akamaized.net,🎮 游戏平台',
+		'DOMAIN,steamcdn-a.akamaihd.net,🎮 游戏平台',
+		'DOMAIN,steamcommunity-a.akamaihd.net,🎮 游戏平台',
+		'DOMAIN,steampipe.akamaized.net,🎮 游戏平台',
+		'DOMAIN,steamstore-a.akamaihd.net,🎮 游戏平台',
+		'DOMAIN,steamusercontent-a.akamaihd.net,🎮 游戏平台',
+		'DOMAIN,steamuserimages-a.akamaihd.net,🎮 游戏平台',
         // 广告拦截
         'GEOIP,ad,⛔️ 广告拦截',
         'GEOSITE,category-ads-all,⛔️ 广告拦截',

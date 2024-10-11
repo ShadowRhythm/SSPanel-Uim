@@ -279,8 +279,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                
+                                </div>                                
                             </div>
                         </div>
                     </div>
@@ -487,7 +486,7 @@
                         padding: 14
                     }
                 },
-                colors: ["#FF4500"],
+                colors: [tabler.tabler.getColor("azure")],
                 legend: {
                     show: false
                 }
