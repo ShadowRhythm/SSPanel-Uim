@@ -23,12 +23,11 @@
                 geetest_result = geetest.getValidate();
             });
         });
-
         function refreshCaptcha() {
             if (window.geetest) {
                 geetest.reset();
             }
-        }
+        }	
     </script>
 {/if}
 {if $public_setting['captcha_provider'] === 'hcaptcha'}
@@ -49,7 +48,6 @@
                 'sitekey': '{$captcha['recaptcha_enterprise_key_id']}',
             });
         };
-
         function refreshCaptcha() {
             if (window.grecaptcha && window.grecaptcha.enterprise) {
                 grecaptcha.enterprise.reset();
