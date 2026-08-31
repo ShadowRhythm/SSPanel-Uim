@@ -6,6 +6,7 @@ namespace App\Controllers\WebAPI;
 
 use App\Controllers\BaseController;
 use App\Models\Node;
+use App\Models\StreamMedia;
 use App\Utils\ResponseHelper;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
@@ -16,6 +17,37 @@ use const VERSION;
 
 final class NodeController extends BaseController
 {
+    /**
+     * POST /mod_mu/media/save_report
+     */
+    public function saveReport(ServerRequest $request, Response $response, array $args): ResponseInterface
+    {
+        $nodeId = filter_var($request->getParam('node_id'), FILTER_VALIDATE_INT);
+        $content = $request->getParam('content');
+
+        if ($nodeId === false || $nodeId < 1 || ! is_string($content) || (new Node())->find($nodeId) === null) {
+            return ResponseHelper::error($response, 'Invalid media report.');
+        }
+
+        $decoded = base64_decode($content, true);
+        $result = $decoded === false ? null : json_decode($decoded, true);
+
+        if (! is_array($result)) {
+            return ResponseHelper::error($response, 'Invalid media report content.');
+        }
+
+        $report = new StreamMedia();
+        $report->node_id = $nodeId;
+        $report->result = json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $report->created_at = time();
+        $report->save();
+
+        return $response->withJson([
+            'ret' => 1,
+            'data' => 'ok',
+        ]);
+    }
+
     /**
      * GET /mod_mu/nodes/{id}/info
      */

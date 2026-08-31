@@ -124,6 +124,10 @@
                                     <i class="ti ti-server"></i>&nbsp;
                                     节点
                                 </a>
+                                <a class="dropdown-item" href="/user/media">
+                                    <i class="ti ti-device-tv"></i>&nbsp;
+                                    流媒体解锁
+                                </a>
                                 <a class="dropdown-item" href="/user/rate">
                                     <i class="ti ti-chart-bar"></i>&nbsp;
                                     流量倍率

@@ -6,6 +6,8 @@ namespace App\Controllers;
 
 use App\Models\Ann;
 use App\Models\Config;
+use App\Models\Node;
+use App\Models\StreamMedia;
 use App\Services\Analytics;
 use App\Services\Auth;
 use App\Services\Captcha;
@@ -91,6 +93,48 @@ final class UserController extends BaseController
             $this->view()
                 ->assign('anns', $anns)
                 ->fetch('user/announcement.tpl')
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function media(ServerRequest $request, Response $response, array $args): ResponseInterface
+    {
+        $results = [];
+        $headers = [];
+        $reports = (new StreamMedia())
+            ->where('created_at', '>', time() - 86460)
+            ->orderBy('id', 'desc')
+            ->get()
+            ->unique('node_id');
+
+        foreach ($reports as $report) {
+            $node = (new Node())->find($report->node_id);
+            $details = json_decode($report->result, true);
+
+            if ($node === null || ! is_array($details)) {
+                continue;
+            }
+
+            $details = str_replace('Yes (Native)', 'Yes', $details);
+            $headers = array_values(array_unique(array_merge($headers, array_keys($details))));
+            $results[] = [
+                'node_name' => $node->name,
+                'created_at' => $report->created_at,
+                'unlock_item' => $details,
+            ];
+        }
+
+        usort($results, static fn (array $left, array $right): int =>
+            strcasecmp($left['node_name'], $right['node_name'])
+        );
+
+        return $response->write(
+            $this->view()
+                ->assign('headers', $headers)
+                ->assign('results', $results)
+                ->fetch('user/media.tpl')
         );
     }
 
