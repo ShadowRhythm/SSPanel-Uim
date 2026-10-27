@@ -210,7 +210,10 @@ final class TicketController extends BaseController
         $ticket->status = 'closed';
         $ticket->save();
 
-        return ResponseHelper::success($response, '工单关闭成功');
+        return $response->withHeader('HX-Refresh', 'true')->withJson([
+            'ret' => 1,
+            'msg' => '工单关闭成功',
+        ]);
     }
 
     /**

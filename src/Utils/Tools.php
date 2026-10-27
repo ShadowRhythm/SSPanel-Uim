@@ -56,9 +56,7 @@ final class Tools
         $city = null;
         $country = null;
         $state = null;
-        $iplocation = new QQWry();
-        $location = $iplocation->getlocation($ip);
-	
+
         if ($_ENV['maxmind_license_key'] !== '') {
             try {
                 $geoip = new GeoIP2();
@@ -104,11 +102,16 @@ final class Tools
 			} 
 		}
 		
-        if ($country == 'China') {
-			if (filter_var($ip, \FILTER_VALIDATE_IP,\FILTER_FLAG_IPV4)) {
-				$data = iconv('gbk', 'utf-8//IGNORE', $location['country'] . $location['area']);
-			}
-		}
+        if ($country === 'China' && filter_var($ip, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4)) {
+            $iplocation = new QQWry();
+            $location = $iplocation->getlocation($ip);
+            if ($location !== null && isset($location['country'], $location['area'])) {
+                $converted = @iconv('gbk', 'utf-8//IGNORE', $location['country'] . $location['area']);
+                if ($converted !== false && $converted !== '') {
+                    $data = $converted;
+                }
+            }
+        }
         
         return $data;
     }

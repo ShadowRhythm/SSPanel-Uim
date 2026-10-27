@@ -10,12 +10,12 @@
         </div>
         <div class="card card-md">
             <div class="card-body">
-                <h2 class="card-title text-center mb-4">忘记密码</h2>
+                <h2 class="card-title text-center mb-4">{trans key='auth.forgot_password_title'}</h2>
                 <p class="text-secondary mb-4">
-                    我们将向你的注册邮箱发送一封邮件，邮件内容中包含一个可以重设密码的链接。
+                    {trans key='auth.reset_password_desc'}
                 </p>
                 <div class="mb-3">
-                    <label class="form-label">注册邮箱</label>
+                    <label class="form-label">{trans key='auth.registered_email'}</label>
                     <input id="email" type="email" class="form-control">
                 </div>
                 <div class="mb-3">
@@ -34,18 +34,18 @@
                             email: document.getElementById("email").value,
                          }'>
                         <i class="ti ti-brand-telegram icon"></i>
-                        发送邮件
+                        {trans key='auth.btn_send_reset_email'}
                     </button>
                 </div>
             </div>
             <div class="mb-3">
                 <p class="text-secondary mb-4">
-                若没收到邮件，请检查邮件‘垃圾箱”并将我们的邮件设置为白名单（移回收件箱）！
+                {trans key='auth.reset_email_tip'}
                 </p>
             </div>
         </div>
         <div class="text-center text-secondary mt-3">
-            已有账户？ <a href="/auth/login" tabindex="-1">点击登录</a>
+            {trans key='auth.already_have_account'} <a href="/auth/login" tabindex="-1">{trans key='auth.click_to_login'}</a>
         </div>
     </div>
 </div>

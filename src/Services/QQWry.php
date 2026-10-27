@@ -23,7 +23,7 @@ class QQWry
 
         $this->fp = 0;
 
-        if (($this->fp = fopen($filename, 'rb')) !== false) {
+        if (is_file($filename) && ($this->fp = @fopen($filename, 'rb')) !== false) {
             $this->firstip = $this->getlong();
 
             $this->lastip = $this->getlong();

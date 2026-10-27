@@ -7,10 +7,10 @@
             <div class="row align-items-center">
                 <div class="col">
                     <h2 class="page-title">
-                        <span class="home-title">流媒体解锁</span>
+                        <span class="home-title">{trans key='user.media_title'}</span>
                     </h2>
                     <div class="page-pretitle my-3">
-                        <span class="home-subtitle">你可以在这里查看节点的流媒体解锁情况</span>
+                        <span class="home-subtitle">{trans key='user.media_subtitle'}</span>
                     </div>
                 </div>
             </div>
@@ -25,11 +25,11 @@
                             <table class="table card-table table-vcenter text-nowrap datatable">
                                 <thead>
                                     <tr>
-                                        <th>节点</th>
+                                        <th>{trans key='user.node'}</th>
                                         {foreach $results['0']['unlock_item'] as $key => $value}
                                             <th>{$key}</th>
                                         {/foreach}
-                                        <th>更新时间</th>
+                                        <th>{trans key='user.update_time'}</th>
                                     </tr>
                                 </thead>
                                 <tbody>

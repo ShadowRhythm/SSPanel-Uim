@@ -151,6 +151,28 @@ final class TicketController extends BaseController
         return $response->withHeader('HX-Refresh', 'true');
     }
 
+    public function close(ServerRequest $request, Response $response, array $args): ResponseInterface
+    {
+        $id = $args['id'];
+        $ticket = (new Ticket())->where('id', '=', $id)->where('userid', $this->user->id)->first();
+
+        if ($ticket === null) {
+            return ResponseHelper::error($response, '工单不存在');
+        }
+
+        if ($ticket->status === 'closed') {
+            return ResponseHelper::error($response, '工单已关闭，无需重复操作');
+        }
+
+        $ticket->status = 'closed';
+        $ticket->save();
+
+        return $response->withHeader('HX-Refresh', 'true')->withJson([
+            'ret' => 1,
+            'msg' => '工单关闭成功',
+        ]);
+    }
+
     /**
      * @throws Exception
      */

@@ -8,6 +8,7 @@ use App\Models\Config;
 use App\Models\User;
 use App\Services\Cache;
 use App\Services\Captcha;
+use App\Services\I18n;
 use App\Services\Password;
 use App\Services\RateLimit;
 use App\Utils\Hash;
@@ -43,34 +44,36 @@ final class PasswordController extends BaseController
 
     public function handleReset(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale();
+
         if (Config::obtain('enable_reset_password_captcha')) {
             $ret = Captcha::verify($request->getParams());
 
             if (! $ret) {
-                return ResponseHelper::error($response, '系统无法接受你的验证结果，请刷新页面后重试');
+                return ResponseHelper::error($response, I18n::trans('user.captcha_failed', $locale));
             }
         }
 
         $email = strtolower($this->antiXss->xss_clean($request->getParam('email')));
 
         if ($email === '') {
-            return ResponseHelper::error($response, '未填写邮箱');
+            return ResponseHelper::error($response, I18n::trans('user.email_empty', $locale));
         }
 
         if (! (new RateLimit())->checkRateLimit('email_request_ip', $request->getServerParam('REMOTE_ADDR')) ||
             ! (new RateLimit())->checkRateLimit('email_request_address', $email)
         ) {
-            return ResponseHelper::error($response, '你的请求过于频繁，请稍后再试');
+            return ResponseHelper::error($response, I18n::trans('user.request_too_frequent', $locale));
         }
 
         $user = (new User())->where('email', $email)->first();
-        $msg = '如果你的账户存在于我们的数据库中，那么重置密码的链接将会发送到你账户所对应的邮箱';
+        $msg = I18n::trans('user.reset_password_email_sent', $locale);
 
         if ($user !== null) {
             try {
                 Password::sendResetEmail($email);
             } catch (ClientExceptionInterface|RedisException) {
-                $msg = '邮件发送失败';
+                $msg = I18n::trans('user.email_send_failed', $locale);
             }
         }
 
@@ -96,54 +99,69 @@ final class PasswordController extends BaseController
         }
 
         return $response->write(
-            $this->view()->fetch('password/token.tpl')
+            $this->view()
+                ->assign('token', $token)
+                ->fetch('password/token.tpl')
         );
     }
 
     public function handleToken(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $token = $this->antiXss->xss_clean($request->getParam('token'));
+        $locale = I18n::getCurrentLocale();
+        $token = $args['token'] ?? '';
+        if ($token === '' || str_contains($token, 'location.pathname') || str_contains($token, '{')) {
+            $token = $request->getParam('token') ?? '';
+        }
+        $token = $this->antiXss->xss_clean($token);
         $password = $request->getParam('password');
         $confirm_password = $request->getParam('confirm_password');
 
         if ($password !== $confirm_password) {
-            return ResponseHelper::error($response, '两次输入不符合');
+            return ResponseHelper::error($response, I18n::trans('user.password_not_match', $locale));
         }
 
         if (strlen($password) < 8) {
-            return ResponseHelper::error($response, '密码过短');
+            return ResponseHelper::error($response, I18n::trans('user.password_too_short', $locale));
         }
 
         $redis = (new Cache())->initRedis();
 
         try {
             $email = $redis->get('password_reset:' . $token);
-            $redis->del('password_reset:' . $token);
         } catch (RedisException) {
-            return ResponseHelper::error($response, '链接无效');
+            return ResponseHelper::error($response, I18n::trans('user.invalid_token', $locale));
         }
 
         if (! $email) {
-            return ResponseHelper::error($response, '链接无效');
+            return ResponseHelper::error($response, I18n::trans('user.invalid_token', $locale));
         }
 
         $user = (new User())->where('email', $email)->first();
 
         if ($user === null) {
-            return ResponseHelper::error($response, '链接无效');
+            return ResponseHelper::error($response, I18n::trans('user.invalid_token', $locale));
         }
         // reset password
         $hashPassword = Hash::passwordHash($password);
         $user->pass = $hashPassword;
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '重置失败，请重试');
+            return ResponseHelper::error($response, I18n::trans('user.reset_failed_retry', $locale));
+        }
+
+        try {
+            $redis->del('password_reset:' . $token);
+        } catch (RedisException) {
+            // ignore
         }
 
         if (Config::obtain('enable_forced_replacement')) {
             $user->removeLink();
         }
 
-        return ResponseHelper::success($response, '重置成功');
+        return $response->withHeader('HX-Redirect', '/auth/login')->withJson([
+            'ret' => 1,
+            'msg' => I18n::trans('user.reset_success', $locale),
+        ]);
     }
 }
