@@ -18,6 +18,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use Telegram\Bot\Api;
 use Telegram\Bot\Exceptions\TelegramSDKException;
 use Telegram\Bot\Objects\CallbackQuery;
+use Throwable;
 use function array_chunk;
 use function array_merge;
 use function end;
@@ -119,10 +120,29 @@ final class Callback
             $send_message
         );
 
-        if ($this->allow_edit_message) {
-            $this->bot->editMessageText($send_message);
-        } else {
-            $this->bot->sendMessage($send_message);
+        try {
+            $this->answerCallbackQuery([]);
+        } catch (Throwable) {
+            // ignore
+        }
+
+        try {
+            if ($this->allow_edit_message) {
+                $this->bot->editMessageText($send_message);
+            } else {
+                $this->bot->sendMessage($send_message);
+            }
+        } catch (TelegramSDKException $e) {
+            if (str_contains($e->getMessage(), 'message is not modified')) {
+                return;
+            }
+            try {
+                $this->bot->sendMessage($send_message);
+            } catch (Throwable) {
+                // ignore
+            }
+        } catch (Throwable) {
+            // ignore
         }
     }
 
@@ -201,12 +221,12 @@ final class Callback
      */
     public function userCallback(): void
     {
-        if ($this->user === null && $this->chat_id < 0) {
-            // 群组内提示
+        if ($this->user === null) {
             $this->answerCallbackQuery([
                 'text' => '你好，你尚未绑定账户，无法进行操作。',
                 'show_alert' => true,
             ]);
+            return;
         }
 
         $CallbackDataExplode = explode('|', $this->callback_data);
@@ -711,74 +731,75 @@ final class Callback
     {
         $text = '选择你想要使用的订阅链接类型：';
 
-        $keyboard = [
+        $buttons = [
             [
-                [
-                    'text' => 'Clash',
-                    'callback_data' => 'user.subscribe|clash',
-                ],
-                [
-                    'text' => 'Json',
-                    'callback_data' => 'user.subscribe|json',
-                ],
-                [
-                    'text' => 'SIP008',
-                    'callback_data' => 'user.subscribe|sip008',
-                ],
+                'text' => 'Clash',
+                'callback_data' => 'user.subscribe|clash',
+                'enable' => true,
             ],
             [
-                [
-                    'text' => 'SingBox',
-                    'callback_data' => 'user.subscribe|singbox',
-                ],
-                [
-                    'text' => 'V2RayJson',
-                    'callback_data' => 'user.subscribe|v2rayjson',
-                ],
-                [
-                    'text' => 'Shadowsocks',
-                    'callback_data' => 'user.subscribe|ss',
-                ],
+                'text' => 'SingBox',
+                'callback_data' => 'user.subscribe|singbox',
+                'enable' => true,
             ],
             [
-                [
-                    'text' => 'SIP002',
-                    'callback_data' => 'user.subscribe|sip002',
-                ],
-                [
-                    'text' => 'V2Ray',
-                    'callback_data' => 'user.subscribe|v2',
-                ],
-                [
-                    'text' => 'Trojan',
-                    'callback_data' => 'user.subscribe|trojan',
-                ],
+                'text' => 'Json',
+                'callback_data' => 'user.subscribe|json',
+                'enable' => true,
             ],
             [
-                [
-                    'text' => '回主菜单',
-                    'callback_data' => 'user.index',
-                ],
+                'text' => 'Shadowsocks',
+                'callback_data' => 'user.subscribe|ss',
+                'enable' => (bool) Config::obtain('enable_ss_sub'),
+            ],
+            [
+                'text' => 'SIP002',
+                'callback_data' => 'user.subscribe|sip002',
+                'enable' => (bool) Config::obtain('enable_ss_sub'),
+            ],
+            [
+                'text' => 'SIP008',
+                'callback_data' => 'user.subscribe|sip008',
+                'enable' => (bool) Config::obtain('enable_ss_sub'),
+            ],
+            [
+                'text' => 'V2Ray',
+                'callback_data' => 'user.subscribe|v2',
+                'enable' => (bool) Config::obtain('enable_v2_sub'),
+            ],
+            [
+                'text' => 'V2RayJson',
+                'callback_data' => 'user.subscribe|v2rayjson',
+                'enable' => (bool) Config::obtain('enable_v2_sub'),
+            ],
+            [
+                'text' => 'Trojan',
+                'callback_data' => 'user.subscribe|trojan',
+                'enable' => (bool) Config::obtain('enable_trojan_sub'),
             ],
         ];
 
-        if (! Config::obtain('enable_ss_sub')) {
-            unset($keyboard[0][2]);
-            unset($keyboard[1][1]);
-            unset($keyboard[1][2]);
+        $validButtons = [];
+        foreach ($buttons as $btn) {
+            if ($btn['enable']) {
+                $validButtons[] = [
+                    'text' => $btn['text'],
+                    'callback_data' => $btn['callback_data'],
+                ];
+            }
         }
 
-        if (! Config::obtain('enable_v2_sub')) {
-            unset($keyboard[2][0]);
-        }
-
-        if (! Config::obtain('enable_trojan_sub')) {
-            unset($keyboard[2][1]);
-        }
+        $keyboard = array_chunk($validButtons, 3);
+        $keyboard[] = [
+            [
+                'text' => '回主菜单',
+                'callback_data' => 'user.index',
+            ],
+        ];
 
         return [
             'text' => $text,
-            'keyboard' => array_values($keyboard),
+            'keyboard' => $keyboard,
         ];
     }
 

@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Services\Bot\Telegram\Commands;
 
 use App\Models\Config;
+use App\Services\Bot\Telegram\Telegram;
 use Telegram\Bot\Actions;
 use Telegram\Bot\Commands\Command;
+use function explode;
 use function in_array;
+use function trim;
 
 /**
- * Class StratCommand.
+ * Class StartCommand.
  */
 final class StartCommand extends Command
 {
@@ -32,6 +35,21 @@ final class StartCommand extends Command
         if ($message->chat->type === 'private') {
             // 发送 '输入中' 会话状态
             $this->replyWithChatAction(['action' => Actions::TYPING]);
+
+            $parts = explode(' ', trim((string) $message->text), 2);
+            $token = isset($parts[1]) ? trim($parts[1]) : '';
+
+            if ($token !== '') {
+                $reply = Telegram::bindUserWithToken((int) $message->from->id, $token);
+                $this->replyWithMessage(
+                    [
+                        'text' => $reply,
+                        'parse_mode' => 'Markdown',
+                    ]
+                );
+                return;
+            }
+
             // 回送信息
             $this->replyWithMessage(
                 [

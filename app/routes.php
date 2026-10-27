@@ -24,6 +24,8 @@ return static function (Slim\App $app): void {
     $app->get('/oauth/{type}', App\Controllers\OAuthController::class . ':index');
     // 通用订阅
     $app->get('/sub/{token}/{subtype}', App\Controllers\SubController::class . ':index');
+    // 语言切换
+    $app->get('/locale/{lang}', App\Controllers\LocaleController::class . ':switch');
     // User
     $app->group('/user', static function (RouteCollectorProxy $group): void {
         $group->get('', App\Controllers\UserController::class . ':index');
@@ -58,6 +60,7 @@ return static function (Slim\App $app): void {
         $group->post('/ticket', App\Controllers\User\TicketController::class . ':add');
         $group->get('/ticket/{id:[0-9]+}/view', App\Controllers\User\TicketController::class . ':detail');
         $group->post('/ticket/{id:[0-9]+}', App\Controllers\User\TicketController::class . ':reply');
+        $group->map(['POST', 'PUT'], '/ticket/{id:[0-9]+}/close', App\Controllers\User\TicketController::class . ':close');
         // 资料编辑
         $group->get('/edit', App\Controllers\User\InfoController::class . ':index');
         $group->post('/edit/email', App\Controllers\User\InfoController::class . ':updateEmail');
@@ -139,6 +142,7 @@ return static function (Slim\App $app): void {
         $group->get('/reset', App\Controllers\PasswordController::class . ':reset');
         $group->post('/reset', App\Controllers\PasswordController::class . ':handleReset');
         $group->get('/token/{token}', App\Controllers\PasswordController::class . ':token');
+        $group->post('/token/{token}', App\Controllers\PasswordController::class . ':handleToken');
         $group->post('/token', App\Controllers\PasswordController::class . ':handleToken');
     })->add(new Guest());
     // Admin
@@ -166,7 +170,7 @@ return static function (Slim\App $app): void {
         $group->get('/ticket', App\Controllers\Admin\TicketController::class . ':index');
         $group->post('/ticket', App\Controllers\Admin\TicketController::class . ':add');
         $group->get('/ticket/{id:[0-9]+}/view', App\Controllers\Admin\TicketController::class . ':detail');
-        $group->post('/ticket/{id:[0-9]+}/close', App\Controllers\Admin\TicketController::class . ':close');
+        $group->map(['POST', 'PUT'], '/ticket/{id:[0-9]+}/close', App\Controllers\Admin\TicketController::class . ':close');
         $group->post('/ticket/{id:[0-9]+}', App\Controllers\Admin\TicketController::class . ':reply');
         $group->post('/ticket/{id:[0-9]+}/llm_reply', App\Controllers\Admin\TicketController::class . ':llmReply');
         $group->delete('/ticket/{id:[0-9]+}', App\Controllers\Admin\TicketController::class . ':delete');

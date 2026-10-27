@@ -30,8 +30,8 @@
 }
 
 .recommended-section {
-    background: rgba(var(--tblr-primary-rgb), 0.1);
-    border: 1px solid rgba(var(--tblr-primary-rgb), 0.2);
+    background: color-mix(in oklab, var(--tblr-primary) 10%, transparent);
+    border: 1px solid color-mix(in oklab, var(--tblr-primary) 20%, transparent);
 }
 
 .client-item {
@@ -40,18 +40,26 @@
 
 .client-item:hover {
     background: var(--tblr-bg-surface-secondary);
-    transform: translateX(5px);
+}
+
+.client-action-btn {
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8125rem;
+    min-width: 0;
+    transition: all 0.2s ease;
+}
+
+.client-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 @media (max-width: 576px) {
-    .client-item:hover {
-        transform: none;
-    }
-    
-    .client-item .btn-group-vertical {
-        margin-top: 0.5rem;
-    }
-    
     .recommended-section h4 {
         font-size: 1rem;
     }
@@ -60,62 +68,45 @@
         font-size: 1.5rem;
     }
     
-    .copy button {
-        word-break: keep-all;
-        white-space: nowrap;
-    }
-    
-    /* Enhanced mobile button styles */
-    .btn-group-vertical .btn {
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
-        min-height: 44px; /* iOS recommended touch target */
-    }
-    
-    .btn-group-vertical {
-        gap: 0.5rem;
+    .client-action-btn {
+        min-height: 38px;
     }
     
     .client-item {
-        padding: 1rem !important;
+        padding: 0.75rem !important;
     }
     
-    /* Recommended client cards on mobile */
     .recommended-section .card-body {
-        padding: 1rem;
-    }
-    
-    .recommended-section .btn-group {
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        justify-content: center;
-    }
-    
-    .recommended-section .btn-group-vertical {
-        align-items: stretch;
-        width: 100%;
-    }
-    
-    .recommended-section .btn {
-        flex: 1 1 auto;
-        min-width: 100px;
+        padding: 0.75rem;
     }
 }
 
-/* 手风琴样式 */
+/* Accordion styles */
 .accordion-button:not(.collapsed) {
     background: var(--tblr-primary-lt);
     color: var(--tblr-primary);
 }
 
-/* 敏感信息模糊效果 */
+/* Sensitive information blur effect */
 .spoiler {
     filter: blur(5px);
     transition: filter 0.3s;
 }
 
-.spoiler:hover {
+.spoiler:hover,
+.universal-sub-container:hover .spoiler {
     filter: none;
+}
+
+.universal-sub-container {
+    background-color: var(--tblr-bg-forms);
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+}
+
+.universal-sub-container::-webkit-scrollbar {
+    display: none;
 }
 </style>
 
@@ -125,10 +116,10 @@
             <div class="row align-items-center">
                 <div class="col">
                     <h2 class="page-title">
-                        <span class="home-title">用户中心</span>
+                        <span class="home-title">{trans key='user.dashboard_title'}</span>
                     </h2>
                     <div class="page-pretitle my-3">
-                        <span class="home-subtitle">在这里查看账户信息和最新公告</span>
+                        <span class="home-subtitle">{trans key='user.dashboard_subtitle'}</span>
                     </div>
                 </div>
             </div>
@@ -175,28 +166,34 @@
                 <div class="col-lg-6 col-sm-12">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">快速配置</h3>
+                            <h3 class="card-title">{trans key='user.quick_setup'}</h3>
                         </div>
                         <div class="card-body">
                             <div class="mb-4">
                                 <h4 class="mb-3">
-                                    <i class="ti ti-link"></i> 您的专属订阅地址
+                                    <i class="ti ti-link"></i> {trans key='user.exclusive_sub_url'}
                                 </h4>
                                 <div class="input-group mb-2">
-                                    <input type="text" class="form-control" value="{$UniversalSub}" readonly id="universal-sub-link">
+                                    <div class="form-control d-flex align-items-center text-nowrap universal-sub-container" id="universal-sub-link" style="user-select: all; cursor: text;">
+                                        {if isset($subUrlPrefix) && $subUrlToken !== ''}
+                                            <span>{$subUrlPrefix}</span><span class="spoiler">{$subUrlToken}</span>
+                                        {else}
+                                            <span>{$UniversalSub}</span>
+                                        {/if}
+                                    </div>
                                     <button class="btn btn-primary copy" data-clipboard-text="{$UniversalSub}">
-                                        <i class="ti ti-copy"></i> 复制
+                                        <i class="ti ti-copy"></i> {trans key='common.copy'}
                                     </button>
                                 </div>
                                 <p class="text-muted mb-0">
-                                    <small>此订阅地址适用于所有客户端，请妥善保管</small>
+                                    <small>{trans key='user.sub_url_tip'}</small>
                                 </p>
                             </div>
 
                             <div class="recommended-section p-3 bg-primary-lt rounded mb-3">
                                 <h4 class="mb-3">
                                     <i class="ti ti-rocket"></i> 
-                                    为您推荐的 <span id="detected-os" class="text-primary">Windows</span> 客户端
+                                    {trans key='user.recommended_client_for_os' os='<span id="detected-os" class="text-primary">Windows</span>'}
                                 </h4>
                                 <div class="row g-3" id="recommended-clients">
                                 </div>
@@ -206,7 +203,7 @@
                                 <button class="btn btn-ghost-primary" type="button" data-bs-toggle="collapse" 
                                         data-bs-target="#all-platforms" aria-expanded="false">
                                     <i class="ti ti-package"></i> 
-                                    查看其他平台客户端
+                                    {trans key='user.view_other_platforms'}
                                     <i class="ti ti-chevron-down ms-1"></i>
                                 </button>
                             </div>
@@ -216,11 +213,11 @@
                                 </div>
                                 
                                 <div class="mt-3 p-3 bg-secondary-lt rounded">
-                                    <h5 class="mb-2">高级订阅格式</h5>
-                                    <div class="small text-muted mb-2">如果您需要特定格式的订阅链接：</div>
+                                    <h5 class="mb-2">{trans key='user.advanced_sub_formats'}</h5>
+                                    <div class="small text-muted mb-2">{trans key='user.advanced_sub_desc'}</div>
                                     <div class="btn-group btn-group-sm flex-wrap">
                                         <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/json">
-                                            JSON 格式
+                                            {trans key='user.json_format'}
                                         </button>
                                         <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/v2rayjson">
                                             V2Ray JSON
@@ -250,7 +247,7 @@
                                     <button class="btn btn-ghost-secondary w-100" type="button" data-bs-toggle="collapse" 
                                             data-bs-target="#connection-info" aria-expanded="false">
                                         <i class="ti ti-info-circle"></i> 
-                                        查看连接信息
+                                        {trans key='user.view_connection_info'}
                                         <i class="ti ti-chevron-down ms-1"></i>
                                     </button>
                                     <div class="collapse mt-2" id="connection-info">
@@ -259,19 +256,19 @@
                                                 <table class="table table-sm mb-0">
                                                     <tbody>
                                                     <tr>
-                                                        <td class="text-muted" style="width: 100px;">端口</td>
+                                                        <td class="text-muted" style="width: 100px;">{trans key='user.port'}</td>
                                                         <td><code>{$user->port}</code></td>
                                                     </tr>
                                                     <tr>
-                                                        <td class="text-muted">连接密码</td>
+                                                        <td class="text-muted">{trans key='user.connection_password'}</td>
                                                         <td><code class="spoiler">{$user->passwd}</code></td>
                                                     </tr>
                                                     <tr>
-                                                        <td class="text-muted">UUID</td>
+                                                        <td class="text-muted">{trans key='user.uuid'}</td>
                                                         <td><code class="spoiler" style="font-size: 0.8em;">{$user->uuid}</code></td>
                                                     </tr>
                                                     <tr>
-                                                        <td class="text-muted">加密方式</td>
+                                                        <td class="text-muted">{trans key='user.encryption_method'}</td>
                                                         <td><code>{$user->method}</code></td>
                                                     </tr>
                                                     </tbody>
@@ -287,127 +284,126 @@
                 </div>
 
                 <div class="col-lg-6 col-sm-12">
-                    <div class="vstack">
-                        <div class="card">
-                            <div class="card-body">
-                                <h3 class="card-title">流量用量</h3>
-                                <div class="progress progress-separated mb-3">
-                                    {if $user->LastusedTrafficPercent() < '1'}
-                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 1%"></div>
-                                    {else}
-                                    <div class="progress-bar bg-primary" role="progressbar"
-                                         style="width: {$user->LastusedTrafficPercent()}%">
+                    <div class="row row-cards">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 class="card-title">{trans key='user.traffic_usage'}</h3>
+                                    <div class="progress progress-separated mb-3">
+                                        {if $user->LastusedTrafficPercent() < '1'}
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: 1%"></div>
+                                        {else}
+                                        <div class="progress-bar bg-primary" role="progressbar"
+                                             style="width: {$user->LastusedTrafficPercent()}%">
+                                        </div>
+                                        {/if}
+                                        {if $user->TodayusedTrafficPercent() < '1'}
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 1%"></div>
+                                        {else}
+                                        <div class="progress-bar bg-success" role="progressbar"
+                                             style="width: {$user->TodayusedTrafficPercent()}%"></div>
+                                        {/if}
                                     </div>
-                                    {/if}
-                                    {if $user->TodayusedTrafficPercent() < '1'}
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: 1%"></div>
-                                    {else}
-                                    <div class="progress-bar bg-success" role="progressbar"
-                                         style="width: {$user->TodayusedTrafficPercent()}%"></div>
-                                    {/if}
+                                    <div class="row">
+                                        <div class="col-auto d-flex align-items-center pe-2">
+                                            <span class="legend me-2 bg-primary"></span>
+                                            <span>{trans key='user.past_usage' traffic=$user->LastusedTraffic()}</span>
+                                        </div>
+                                        <div class="col-auto d-flex align-items-center px-2">
+                                            <span class="legend me-2 bg-success"></span>
+                                            <span>{trans key='user.today_usage' traffic=$user->TodayusedTraffic()}</span>
+                                        </div>
+                                        <div class="col-auto d-flex align-items-center ps-2">
+                                            <span class="legend me-2"></span>
+                                            <span>{trans key='user.remaining_traffic' traffic=$user->unusedTraffic()}</span>
+                                        </div>
+                                    </div>
+                                    <p class="my-3">
+                                        {if $user->class === 0}
+                                        {trans key='user.go_to'}
+                                        <a href="/user/product">{trans key='user.shop'}</a>
+                                        {trans key='user.to_buy_package'}
+                                        {else}
+                                        {trans key='user.account_expire_notice' class=$user->class days=$class_expire_days expire=$user->class_expire}
+                                        {/if}
+                                    </p>
                                 </div>
-                                <div class="row">
-                                    <div class="col-auto d-flex align-items-center pe-2">
-                                        <span class="legend me-2 bg-primary"></span>
-                                        <span>过去用量 {$user->LastusedTraffic()}</span>
-                                    </div>
-                                    <div class="col-auto d-flex align-items-center px-2">
-                                        <span class="legend me-2 bg-success"></span>
-                                        <span>今日用量 {$user->TodayusedTraffic()}</span>
-                                    </div>
-                                    <div class="col-auto d-flex align-items-center ps-2">
-                                        <span class="legend me-2"></span>
-                                        <span>剩余流量 {$user->unusedTraffic()}</span>
-                                    </div>
-                                </div>
-                                <p class="my-3">
-                                    {if $user->class === 0}
-                                    前往
-                                    <a href="/user/product">商店</a>
-                                    购买套餐
-                                    {else}
-                                    你的 LV. {$user->class} 账户会在 {$class_expire_days} 天后到期（{$user->class_expire}）
-                                    {/if}
-                                </p>
                             </div>
                         </div>
                         {if $public_setting['traffic_log']}
-                        <div class="card my-3 mb-0">
-                            <div class="card-body">
-                                <h3 class="card-title">每小时用量</h3>
-                                <div id="traffic-log"></div>
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 class="card-title">{trans key='user.hourly_usage'}</h3>
+                                    <div id="traffic-log"></div>
+                                </div>
                             </div>
                         </div>
                         {/if}
-                    </div>
-                </div>
-                {if $public_setting['enable_checkin']}
-                <div class="col-lg-6 col-sm-12">
-                    <div class="card">
-                        <div class="card-stamp">
-                            <div class="card-stamp-icon bg-green">
-                                <i class="ti ti-check"></i>
+                        {if $public_setting['enable_checkin']}
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-stamp">
+                                    <div class="card-stamp-icon bg-green">
+                                        <i class="ti ti-check"></i>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h3 class="card-title">{trans key='user.daily_checkin'}</h3>
+                                    <p>
+                                        {if $public_setting['checkin_min'] !== $public_setting['checkin_max']}
+                                        {trans key='user.checkin_range_reward' min=$public_setting['checkin_min'] max=$public_setting['checkin_max']}
+                                        {else}
+                                        {trans key='user.checkin_fixed_reward' min=$public_setting['checkin_min']}
+                                        {/if}
+                                    </p>
+                                    <p>
+                                        {trans key='user.last_checkin_time' time="<code id='last-checkin-time'>{$user->lastCheckInTime()}</code>"}
+                                    </p>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex">
+                                        {if !$user->isAbleToCheckin()}
+                                        <button id="check-in" class="btn btn-primary ms-auto" disabled>{trans key='user.already_checked_in'}</button>
+                                        {else}
+                                        {if $public_setting['enable_checkin_captcha']}
+                                        {include file='captcha/div.tpl'}
+                                        {/if}
+                                        <button id="check-in" class="btn btn-primary ms-auto"
+                                            hx-post="/user/checkin" hx-swap="none" hx-vals='js:{
+                                            {if $public_setting['enable_checkin_captcha']}
+                                            {include file='captcha/ajax.tpl'}
+                                            {/if}
+                                            }'>
+                                            {trans key='user.checkin'}
+                                        </button>
+                                        {/if}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3 class="card-title">每日签到</h3>
-                            <p>
-                                签到可领取
-                                {if $public_setting['checkin_min'] !== $public_setting['checkin_max']}
-                                &nbsp;
-                                <code>{$public_setting['checkin_min']} MB</code>
-                                至
-                                <code>{$public_setting['checkin_max']} MB</code>
-                                范围内的流量
-                                {else}
-                                <code>{$public_setting['checkin_min']} MB</code>
-                                {/if}
-                            </p>
-                            <p>
-                                上次签到时间：<code id="last-checkin-time">{$user->lastCheckInTime()}</code>
-                            </p>
-                        </div>
-                        <div class="card-footer">
-                            <div class="d-flex">
-                                {if !$user->isAbleToCheckin()}
-                                <button id="check-in" class="btn btn-primary ms-auto" disabled>已签到</button>
-                                {else}
-                                {if $public_setting['enable_checkin_captcha']}
-                                {include file='captcha/div.tpl'}
-                                {/if}
-                                <button id="check-in" class="btn btn-primary ms-auto"
-                                    hx-post="/user/checkin" hx-swap="none" hx-vals='js:{
-                                    {if $public_setting['enable_checkin_captcha']}
-                                    {include file='captcha/ajax.tpl'}
-                                    {/if}
-                                    }'>
-                                    签到
-                                </button>
-                                {/if}
+                        {/if}
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="ribbon ribbon-top bg-yellow">
+                                    <i class="ti ti-bell-ringing icon"></i>
+                                </div>
+                                <div class="card-body">
+                                    <h3 class="card-title">
+                                        {trans key='user.pinned_announcement'}
+                                        {if $ann !== null}
+                                        <span class="card-subtitle">{$ann->date}</span>
+                                        {/if}
+                                    </h3>
+                                    <p class="text-secondary">
+                                        {if $ann !== null}
+                                        {$ann->content}
+                                        {else}
+                                        {trans key='user.no_announcement'}
+                                        {/if}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                {/if}
-                <div class="col-lg-6 col-sm-12">
-                    <div class="card">
-                        <div class="ribbon ribbon-top bg-yellow">
-                            <i class="ti ti-bell-ringing icon"></i>
-                        </div>
-                        <div class="card-body">
-                            <h3 class="card-title">
-                                置顶公告
-                                {if $ann !== null}
-                                <span class="card-subtitle">{$ann->date}</span>
-                                {/if}
-                            </h3>
-                            <p class="text-secondary">
-                                {if $ann !== null}
-                                {$ann->content}
-                                {else}
-                                暂无公告
-                                {/if}
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -444,7 +440,7 @@
                 },
                 series: [
                     {
-                        name: "使用流量（MB）",
+                        name: "{trans key='user.traffic_used_mb' escape='js'}",
                         data: trafficData
                     }
                 ],
@@ -462,7 +458,7 @@
                 },
                 xaxis: {
                     title: {
-                        text: "小时"
+                        text: "{trans key='user.hour' escape='js'}"
                     },
                     labels: {
                         padding: 0
@@ -480,7 +476,7 @@
                 },
                 yaxis: {
                     title: {
-                        text: "使用流量（MB）",
+                        text: "{trans key='user.traffic_used_mb' escape='js'}",
                         rotate: -90
                     },
                     labels: {
@@ -502,7 +498,7 @@
                 const chart = new ApexCharts(chartElement, getTrafficChartConfig({$traffic_logs}));
                 chart.render();
             } catch (error) {
-                console.error('流量图表初始化失败:', error);
+                console.error('Failed to initialize traffic chart:', error);
             }
         }
         
@@ -528,35 +524,53 @@
     
     {literal}
     function detectOS() {
-        const userAgent = navigator.userAgent;
-        if (userAgent.indexOf("Win") !== -1) return "Windows";
-        if (userAgent.indexOf("Mac") !== -1) return "macOS";
-        if (userAgent.indexOf("Android") !== -1) return "Android";
-        if (userAgent.match(/iPhone|iPad|iPod/i)) return "iOS";
-        if (userAgent.indexOf("Linux") !== -1) return "Linux";
+        const ua = navigator.userAgent;
+        
+        // 1. Check iOS devices first (iPhone, iPod, iPad)
+        if (/iPhone|iPad|iPod/i.test(ua)) {
+            return "iOS";
+        }
+        
+        // iPadOS 13+ reports as Macintosh but has multi-touch screen
+        if ((navigator.platform === 'MacIntel' || /Macintosh/i.test(ua)) && navigator.maxTouchPoints > 1) {
+            return "iOS";
+        }
+        
+        // 2. Android
+        if (/Android/i.test(ua)) {
+            return "Android";
+        }
+        
+        // 3. Windows
+        if (/Win/i.test(ua) || /Windows/i.test(ua)) {
+            return "Windows";
+        }
+        
+        // 4. macOS (Mac without touch screen)
+        if (/Mac/i.test(ua)) {
+            return "macOS";
+        }
+        
+        // 5. Linux
+        if (/Linux/i.test(ua)) {
+            return "Linux";
+        }
+        
         return "Windows"; // default
     }
     
 
     const CONFIG = {
-        ANIMATION_DURATION: 350,        // 动画持续时间（毫秒）
-        FEEDBACK_TIMEOUT: 2000,         // 反馈提示持续时间（毫秒）
-        CLIPBOARD_SUCCESS_TEXT: '已复制',
-        CLIPBOARD_ERROR_TEXT: '复制失败，请手动选择并复制',
-        CLASSES: {
-            BTN_GROUP_MOBILE: 'btn-group-vertical',
-            BTN_GROUP_DESKTOP: 'btn-group btn-group-sm', 
-            MOBILE_ONLY: 'd-md-none w-100',
-            DESKTOP_ONLY: 'd-none d-md-flex',
-            MOBILE_SM: 'd-sm-none w-100',
-            DESKTOP_SM: 'd-none d-sm-flex'
-        },
+        ANIMATION_DURATION: 350,        // Animation duration (ms)
+        FEEDBACK_TIMEOUT: 2000,         // Feedback timeout (ms)
+        CLIPBOARD_SUCCESS_TEXT: '{/literal}{trans key="common.copied" escape="js"}{literal}',
+        CLIPBOARD_ERROR_TEXT: '{/literal}{trans key="common.copy_manual_prompt" escape="js"}{literal}',
         BUTTONS: {
-            download: { icon: 'ti-download', text: '下载', class: 'btn-primary' },
-            downloadAppStore: { icon: 'ti-brand-appstore', text: 'App Store', class: 'btn-primary' },
-            copy: { icon: 'ti-copy', text: '复制订阅', class: 'btn-info copy' },
-            import: { icon: 'ti-link', text: '一键导入', class: 'btn-success' },
-            importRecommended: { icon: 'ti-rocket', text: '一键导入', class: 'btn-success' }
+            download: { icon: 'ti-download', text: '{/literal}{trans key="user.client_download" escape="js"}{literal}', class: 'btn-primary' },
+            downloadAppStore: { icon: 'ti-brand-appstore', text: '{/literal}{trans key="user.client_app_store" escape="js"}{literal}', class: 'btn-primary' },
+            copy: { icon: 'ti-copy', text: '{/literal}{trans key="user.client_copy_sub" escape="js"}{literal}', class: 'btn-info copy' },
+            import: { icon: 'ti-link', text: '{/literal}{trans key="user.client_import" escape="js"}{literal}', class: 'btn-success' },
+            importRecommended: { icon: 'ti-rocket', text: '{/literal}{trans key="user.client_import" escape="js"}{literal}', class: 'btn-success' }
         }
     };
     
@@ -564,7 +578,7 @@
         try {
             fn();
         } catch (error) {
-            console.error(`${name} 初始化失败:`, error);
+            console.error(`${name} failed to initialize:`, error);
         }
     }
     
@@ -581,7 +595,7 @@
     }
     
     function createButton(type, options = {}) {
-        const { client, url, isMobile, isRecommended } = options;
+        const { client, url, isRecommended } = options;
         const btnConfig = CONFIG.BUTTONS[type];
         
         let config = { ...btnConfig };
@@ -591,10 +605,11 @@
             config = CONFIG.BUTTONS.importRecommended;
         }
         
-        const btn = createElement(type === 'copy' ? 'button' : 'a', 'btn ' + config.class);
+        const btn = createElement(type === 'copy' ? 'button' : 'a', 'btn btn-sm flex-fill client-action-btn ' + config.class);
         
         if (type === 'copy') {
             btn.setAttribute('data-clipboard-text', url);
+            btn.type = 'button';
         } else {
             btn.href = url;
             if (type === 'download' && client?.isAppStore) {
@@ -602,15 +617,15 @@
             }
         }
         
-        btn.appendChild(createIcon(config.icon));
-        btn.appendChild(document.createTextNode(' ' + config.text));
+        btn.appendChild(createIcon(config.icon + ' me-1'));
+        btn.appendChild(document.createTextNode(config.text));
         
         return btn;
     }
     
-    function createResponsiveButtonGroups(client, urls, isRecommended = false) {
+    function createActionButtons(client, urls, isRecommended = false) {
         const { downloadUrl, subUrl, importUrl } = urls;
-        const buttons = [];
+        const container = createElement('div', 'd-flex flex-wrap gap-2 w-100 mt-2');
         
         const buttonConfigs = [
             { type: 'download', url: downloadUrl, needsClient: true },
@@ -618,97 +633,72 @@
             { type: 'import', url: importUrl }
         ];
         
-        const variants = [
-            { 
-                isMobile: true, 
-                classes: isRecommended ? 
-                    `${CONFIG.CLASSES.BTN_GROUP_MOBILE} ${CONFIG.CLASSES.MOBILE_ONLY}` :
-                    `${CONFIG.CLASSES.BTN_GROUP_MOBILE} ${CONFIG.CLASSES.MOBILE_SM}`
-            },
-            { 
-                isMobile: false, 
-                classes: isRecommended ?
-                    `${CONFIG.CLASSES.BTN_GROUP_DESKTOP.replace('btn-group-sm', '')} ${CONFIG.CLASSES.DESKTOP_ONLY}` :
-                    `${CONFIG.CLASSES.BTN_GROUP_DESKTOP} ${CONFIG.CLASSES.DESKTOP_SM}`
+        buttonConfigs.forEach(btnConfig => {
+            if (btnConfig.type !== 'copy' && !btnConfig.url) {
+                return;
             }
-        ];
-        
-        variants.forEach(variant => {
-            const group = createElement('div', variant.classes);
-            
-            buttonConfigs.forEach(btnConfig => {
-                const options = {
-                    client: btnConfig.needsClient ? client : null,
-                    url: btnConfig.url,
-                    isMobile: variant.isMobile,
-                    isRecommended
-                };
-                group.appendChild(createButton(btnConfig.type, options));
-            });
-            
-            buttons.push(group);
+            const options = {
+                client: btnConfig.needsClient ? client : null,
+                url: btnConfig.url,
+                isRecommended
+            };
+            container.appendChild(createButton(btnConfig.type, options));
         });
         
-        return buttons;
-    }
-    
-    function createClientCardContent(client) {
-        const content = createElement('div');
-        
-        const title = createElement('h4', 'mb-1', client.name);
-        const desc = createElement('p', 'text-secondary mb-0', client.description);
-        
-        content.appendChild(title);
-        content.appendChild(desc);
-        
-        return content;
+        return container;
     }
     
     function generateClientHtml(client, isRecommended) {
         const config = window.APP_CONFIG;
         
         let downloadUrl = client.downloadUrl;
-        if (!client.isAppStore && downloadUrl.includes('/clients/')) {
+        if (!client.isAppStore && downloadUrl.startsWith('/clients/')) {
             downloadUrl = config.enableR2Download ? '/user' + downloadUrl : downloadUrl;
         }
         
         const subUrl = config.universalSubUrl + '/' + client.format;
         const importUrl = client.importUrl;
+        const urls = { downloadUrl, subUrl, importUrl };
         
         const container = createElement('div', 'col-12');
         
         if (isRecommended) {
-            const card = createElement('div', 'card');
-            const cardBody = createElement('div', 'card-body');
-            const flexContainer = createElement('div', 'd-flex flex-column flex-md-row align-items-center justify-content-between gap-3');
+            const card = createElement('div', 'card shadow-sm');
+            const cardBody = createElement('div', 'card-body p-3');
             
-            const contentDiv = createClientCardContent(client);
+            const headerDiv = createElement('div', 'd-flex align-items-center justify-content-between mb-1');
+            const title = createElement('h4', 'card-title mb-0 fw-bold', client.name);
+            headerDiv.appendChild(title);
+            if (client.format) {
+                const badge = createElement('span', 'badge bg-blue-lt text-uppercase', client.format);
+                headerDiv.appendChild(badge);
+            }
             
-            const buttonsContainer = createElement('div');
-            const urls = { downloadUrl, subUrl, importUrl };
-            const buttonGroups = createResponsiveButtonGroups(client, urls, true);
-            buttonGroups.forEach(group => buttonsContainer.appendChild(group));
+            const desc = createElement('p', 'text-secondary small mb-2', client.description);
+            const buttons = createActionButtons(client, urls, true);
             
-            flexContainer.appendChild(contentDiv);
-            flexContainer.appendChild(buttonsContainer);
-            cardBody.appendChild(flexContainer);
+            cardBody.appendChild(headerDiv);
+            cardBody.appendChild(desc);
+            cardBody.appendChild(buttons);
             card.appendChild(cardBody);
             container.appendChild(card);
         } else {
-            const item = createElement('div', 'client-item d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-between p-3 border rounded gap-2');
+            const item = createElement('div', 'client-item p-3 border rounded mb-2');
             
-            const contentDiv = createElement('div', 'flex-fill');
-            const title = createElement('h5', 'mb-0', client.name);
-            const desc = createElement('small', 'text-muted', client.description);
-            contentDiv.appendChild(title);
-            contentDiv.appendChild(desc);
+            const headerDiv = createElement('div', 'd-flex align-items-center justify-content-between mb-1');
+            const title = createElement('h5', 'mb-0 fw-bold', client.name);
+            headerDiv.appendChild(title);
+            if (client.format) {
+                const badge = createElement('span', 'badge bg-blue-lt text-uppercase', client.format);
+                headerDiv.appendChild(badge);
+            }
             
-            const urls = { downloadUrl, subUrl, importUrl };
-            const buttonGroups = createResponsiveButtonGroups(client, urls, false);
+            const desc = createElement('p', 'text-secondary small mb-2', client.description);
+            const buttons = createActionButtons(client, urls, false);
             
-            item.appendChild(contentDiv);
-            buttonGroups.forEach(group => item.appendChild(group));
-            
+            item.appendChild(headerDiv);
+            item.appendChild(desc);
+            item.appendChild(buttons);
             container.appendChild(item);
         }
         
@@ -762,7 +752,7 @@
     
     function initClipboard() {
         if (typeof ClipboardJS === 'undefined') {
-            console.warn('ClipboardJS 未加载');
+            console.warn('ClipboardJS not loaded');
             return;
         }
         
@@ -781,7 +771,7 @@
         });
         
         clipboard.on('error', function(e) {
-            console.error('复制失败:', e.action);
+            console.error('Copy failed:', e.action);
             alert(CONFIG.CLIPBOARD_ERROR_TEXT);
         });
     }
@@ -809,9 +799,9 @@
     }
     
     document.addEventListener('DOMContentLoaded', function() {
-        safeInit(initClientSelector, '客户端选择器');
-        safeInit(initClipboard, '剪贴板功能');
-        safeInit(initCollapseAnimations, '折叠动画');
+        safeInit(initClientSelector, 'Client selector');
+        safeInit(initClipboard, 'Clipboard feature');
+        safeInit(initCollapseAnimations, 'Collapse animation');
     });
     {/literal}
     </script>

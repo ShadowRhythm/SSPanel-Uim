@@ -9,10 +9,10 @@
             <div class="row align-items-center">
                 <div class="col">
                     <h2 class="page-title">
-                        <span class="home-title">资料修改</span>
+                        <span class="home-title">{trans key='user.edit_title'}</span>
                     </h2>
                     <div class="page-pretitle my-3">
-                        <span class="home-subtitle">修改账户的部分信息</span>
+                        <span class="home-subtitle">{trans key='user.edit_subtitle'}</span>
                     </div>
                 </div>
             </div>
@@ -28,28 +28,28 @@
                                 <a href="#personal_information" class="nav-link active" data-bs-toggle="tab"
                                    aria-selected="true" role="tab">
                                     <i class="ti ti-chart-candle icon"></i>&nbsp;
-                                    资料
+                                    {trans key='user.tab_profile'}
                                 </a>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <a href="#login_security" class="nav-link" data-bs-toggle="tab" aria-selected="true"
                                    role="tab">
                                     <i class="ti ti-shield-lock icon"></i>&nbsp;
-                                    登录
+                                    {trans key='user.tab_security'}
                                 </a>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <a href="#use_safety" class="nav-link" data-bs-toggle="tab" aria-selected="false"
                                    tabindex="-1" role="tab">
                                     <i class="ti ti-brand-telegram icon"></i>&nbsp;
-                                    使用
+                                    {trans key='user.tab_connectivity'}
                                 </a>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <a href="#other_settings" class="nav-link" data-bs-toggle="tab" aria-selected="false"
                                    tabindex="-1" role="tab">
                                     <i class="ti ti-settings icon"></i>&nbsp;
-                                    其他
+                                    {trans key='user.tab_preferences'}
                                 </a>
                             </li>
                         </ul>
@@ -60,17 +60,17 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">登录邮箱</h3>
-                                                    <p>当前邮箱：<code id="email">{$user->email}</code></p>
+                                                    <h3 class="card-title">{trans key='user.login_email'}</h3>
+                                                    <p>{trans key='user.current_email' email="<code id='email'>{$user->email}</code>"}</p>
                                                     <div class="mb-3">
                                                         <input id="new-email" type="email" class="form-control"
-                                                               placeholder="新邮箱"
+                                                               placeholder="{trans key='user.new_email'}"
                                                                {if ! $config['enable_change_email']}disabled=""{/if}>
                                                     </div>
                                                     {if $public_setting['reg_email_verify'] && $config['enable_change_email']}
                                                     <div class="mb-3">
                                                         <input id="email-code" type="text" class="form-control"
-                                                               placeholder="验证码">
+                                                               placeholder="{trans key='user.verification_code'}">
                                                     </div>
                                                     {/if}
                                                 </div>
@@ -80,7 +80,7 @@
                                                         <button class="btn btn-link"
                                                                 hx-post="/user/edit/send" hx-swap="none"
                                                                 hx-vals='js:{ email: document.getElementById("new-email").value }'>
-                                                            获取验证码
+                                                            {trans key='user.get_code'}
                                                         </button>
                                                         <button class="btn btn-primary ms-auto"
                                                                 hx-post="/user/edit/email" hx-swap="none"
@@ -88,17 +88,17 @@
                                                                     newemail: document.getElementById("new-email").value,
                                                                     emailcode: document.getElementById("email-code").value
                                                                 }'>
-                                                            修改
+                                                            {trans key='user.modify'}
                                                         </button>
                                                         {elseif $config['enable_change_email']}
                                                         <button class="btn btn-primary ms-auto"
                                                                 hx-post="/user/edit/email" hx-swap="none"
                                                                 hx-vals='js:{ newemail: document.getElementById("new-email").value }'>
-                                                            修改
+                                                            {trans key='user.modify'}
                                                         </button>
                                                         {else}
                                                         <button class="btn btn-primary ms-auto"
-                                                                disabled>不允许修改
+                                                                disabled>{trans key='user.not_allowed_to_modify'}
                                                         </button>
                                                         {/if}
                                                     </div>
@@ -108,11 +108,11 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">用戶名</h3>
-                                                    <p>当前用戶名：<code id="username">{$user->user_name}</code></p>
+                                                    <h3 class="card-title">{trans key='user.username'}</h3>
+                                                    <p>{trans key='user.current_username' username="<code id='username'>{$user->user_name}</code>"}</p>
                                                     <div class="mb-3">
                                                         <input id="new-username" type="text" class="form-control"
-                                                               placeholder="新用戶名" autocomplete="off">
+                                                               placeholder="{trans key='user.new_username'}" autocomplete="off">
                                                     </div>
                                                 </div>
                                                 <div class="card-footer">
@@ -120,7 +120,7 @@
                                                         <button class="btn btn-primary ms-auto"
                                                            hx-post="/user/edit/username" hx-swap="none"
                                                            hx-vals='js:{ newusername: document.getElementById("new-username").value }'>
-                                                            修改
+                                                            {trans key='user.modify'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -129,12 +129,12 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">IM 账号绑定</h3>
+                                                    <h3 class="card-title">{trans key='user.im_bind'}</h3>
                                                     <div class="mb-3">
                                                         <select id="imtype" class="form-select"
                                                                 {if $user->im_type !== 0 && $user->im_value !== ''}disabled=""{/if}>
                                                             <option value="0" {if $user->im_type === 0}selected{/if}>
-                                                                未绑定
+                                                                {trans key='user.im_not_bound'}
                                                             </option>
                                                             <option value="1" {if $user->im_type === 1}selected{/if}>
                                                                 Slack
@@ -153,22 +153,21 @@
                                                     </div>
                                                 </div>
                                                 <div class="card-footer">
-                                                    <div class="d-flex btn-list justify-content-end"
-                                                         id="oauth-provider"></div>
+                                                    <div id="oauth-provider"></div>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">解绑 IM 账户</h3>
+                                                    <h3 class="card-title">{trans key='user.im_unbind'}</h3>
                                                     {if $user->im_type === 0}
-                                                    <p>你的账户当前没有绑定任何 IM 服务</p>
+                                                    <p>{trans key='user.im_no_service_bound'}</p>
                                                     {else}
                                                     <p>
-                                                        当前绑定的 IM 服务：{$user->imType()}
+                                                        {trans key='user.im_current_bound' service=$user->imType()}
                                                         <br>
-                                                        账户 ID：<code>{$user->im_value}</code>
+                                                        {trans key='user.im_account_id' id="<code>{$user->im_value}</code>"}
                                                     </p>
                                                     {/if}
                                                 </div>
@@ -177,7 +176,7 @@
                                                     <div class="d-flex">
                                                         <button class="btn btn-red ms-auto"
                                                                 hx-post="/user/edit/unbind_im" hx-swap="none">
-                                                            解绑
+                                                            {trans key='user.unbind'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -191,24 +190,24 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">修改登录密码</h3>
+                                                    <h3 class="card-title">{trans key='user.change_password'}</h3>
                                                     <div class="mb-3">
                                                         <form>
                                                             <input id="password" type="password" class="form-control"
-                                                                   placeholder="当前登录密码" autocomplete="off">
+                                                                   placeholder="{trans key='user.current_password'}" autocomplete="off">
                                                         </form>
                                                     </div>
                                                     <div class="mb-3">
                                                         <form>
                                                             <input id="new_password" type="password"
-                                                                   class="form-control" placeholder="输入新密码"
+                                                                   class="form-control" placeholder="{trans key='user.enter_new_password'}"
                                                                    autocomplete="off">
                                                         </form>
                                                     </div>
                                                     <div class="mb-3">
                                                         <form>
                                                             <input id="confirm_new_password" type="password"
-                                                                   class="form-control" placeholder="再次输入新密码"
+                                                                   class="form-control" placeholder="{trans key='user.reenter_new_password'}"
                                                                    autocomplete="off">
                                                         </form>
                                                     </div>
@@ -222,7 +221,7 @@
                                                                     confirm_new_password: document.getElementById("confirm_new_password").value,
                                                                     password: document.getElementById("password").value
                                                                 }'>
-                                                            修改
+                                                            {trans key='user.modify'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -233,27 +232,25 @@
                                                 <div class="card-body">
                                                     <h3 class="card-title">TOTP
                                                         {if $totpDevices}
-                                                            <span class="badge bg-green text-green-fg">已启用</span>
+                                                            <span class="badge bg-green text-green-fg">{trans key='common.enabled'}</span>
                                                         {else}
-                                                            <span class="badge bg-red text-red-fg">未启用</span>
+                                                            <span class="badge bg-red text-red-fg">{trans key='common.disabled'}</span>
                                                         {/if}
                                                     </h3>
-                                                    <p class="card-subtitle">TOTP 是一种基于时间的一次性密码算法，可以使用
-                                                        Google Authenticator 或者 Authy
-                                                        等客户端进行验证</p>
+                                                    <p class="card-subtitle">{trans key='user.totp_desc'}</p>
                                                 </div>
                                                 <div class="card-footer">
                                                     <div class="d-flex">
                                                         {if $totpDevices}
                                                             <button class="btn btn-red ms-auto"
                                                                     hx-delete="/user/totp"
-                                                                    hx-confirm="确认禁用TOTP？"
+                                                                    hx-confirm="{trans key='user.confirm_disable_totp'}"
                                                                     hx-swap="none">
-                                                                禁用
+                                                                {trans key='user.disable'}
                                                             </button>
                                                         {else}
                                                             <button class="btn btn-primary ms-auto" id="enableTotp">
-                                                                启用
+                                                                {trans key='user.enable'}
                                                             </button>
                                                         {/if}
                                                     </div>
@@ -261,26 +258,27 @@
                                             </div>
                                         </div>
                                         <div class="col-sm-12 col-md-12">
+                                            {capture assign='unnamed_device'}{trans key='user.unnamed_device'}{/capture}
+                                            {capture assign='never_used'}{trans key='user.never_used'}{/capture}
                                             <div class="card">
                                                 <div class="card-body">
                                                     <h3 class="card-title">Passkey</h3>
-                                                    <p class="card-subtitle">Passkey
-                                                        是一种新的身份验证标准，使用生物识别或者安全密钥进行身份验证以取代传统密码。</p>
+                                                    <p class="card-subtitle">{trans key='user.passkey_desc'}</p>
                                                     <div class="row row-cols-1 row-cols-md-4 g-4">
                                                         {foreach $webauthnDevices as $device}
                                                             <div class="col">
                                                                 <div class="card">
                                                                     <div class="card-body">
-                                                                        <h5 class="card-title">{$device->name|default:'未命名'}</h5>
+                                                                        <h5 class="card-title">{$device->name|default:$unnamed_device}</h5>
                                                                         <p class="card-text">
-                                                                            添加时间: {$device->created_at}</p>
+                                                                            {trans key='user.added_at' time=$device->created_at}</p>
                                                                         <p class="card-text">
-                                                                            上次使用: {$device->used_at|default:'从未使用'}</p>
+                                                                            {trans key='user.last_used_at' time=($device->used_at|default:$never_used)}</p>
                                                                         <button class="btn btn-danger"
                                                                                 hx-delete="/user/webauthn/{$device->id}"
                                                                                 hx-swap="none"
-                                                                                hx-confirm="确认删除此设备？"
-                                                                        >删除
+                                                                                hx-confirm="{trans key='user.confirm_delete_device'}"
+                                                                        >{trans key='common.delete'}
                                                                         </button>
                                                                     </div>
                                                                 </div>
@@ -291,7 +289,7 @@
                                                 <div class="card-footer">
                                                     <div class="d-flex">
                                                         <button class="btn btn-primary ms-auto" id="webauthnReg">
-                                                            注册 Passkey 设备
+                                                            {trans key='user.register_passkey_device'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -302,29 +300,28 @@
                                                 <div class="card-body">
                                                     <h3 class="card-title">FIDO
                                                         {if $fidoDevices}
-                                                            <span class="badge bg-green text-green-fg">已启用</span>
+                                                            <span class="badge bg-green text-green-fg">{trans key='common.enabled'}</span>
                                                         {else}
-                                                            <span class="badge bg-red text-red-fg">未启用</span>
+                                                            <span class="badge bg-red text-red-fg">{trans key='common.disabled'}</span>
                                                         {/if}
                                                     </h3>
-                                                    <p class="card-subtitle">FIDO2
-                                                        是一种基于公钥加密的身份验证标准，可以提供更安全的登录方式。支持Yubikey等硬件安全密钥。</p>
+                                                    <p class="card-subtitle">{trans key='user.fido_desc'}</p>
                                                     {if $fidoDevices}
                                                         <div class="row row-cols-1 row-cols-md-4 g-4">
                                                             {foreach $fidoDevices as $device}
                                                                 <div class="col">
                                                                     <div class="card">
                                                                         <div class="card-body">
-                                                                            <h5 class="card-title">{$device->name|default:'未命名'}</h5>
+                                                                            <h5 class="card-title">{$device->name|default:$unnamed_device}</h5>
                                                                             <p class="card-text">
-                                                                                添加时间: {$device->created_at}</p>
+                                                                                {trans key='user.added_at' time=$device->created_at}</p>
                                                                             <p class="card-text">
-                                                                                上次使用: {$device->used_at|default:'从未使用'}</p>
+                                                                                {trans key='user.last_used_at' time=($device->used_at|default:$never_used)}</p>
                                                                             <button class="btn btn-danger"
                                                                                     hx-delete="/user/fido/{$device->id}"
                                                                                     hx-swap="none"
-                                                                                    hx-confirm="确认删除此设备？"
-                                                                            >删除
+                                                                                    hx-confirm="{trans key='user.confirm_delete_device'}"
+                                                                            >{trans key='common.delete'}
                                                                             </button>
                                                                         </div>
                                                                     </div>
@@ -336,7 +333,7 @@
                                                 <div class="card-footer">
                                                     <div class="d-flex">
                                                         <button class="btn btn-primary ms-auto" id="fidoReg">
-                                                            注册 FIDO 设备
+                                                            {trans key='user.register_fido_device'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -349,9 +346,9 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">更换加密方式</h3>
+                                                    <h3 class="card-title">{trans key='user.change_encryption'}</h3>
                                                     <p>
-                                                        不同的客户端支持的加密方式可能会有所不同，请参考客户端支持列表进行设置</p>
+                                                        {trans key='user.encryption_desc'}</p>
                                                     <div class="mb-3">
                                                         <select id="user-method" class="form-select">
                                                             {foreach $methods as $method}
@@ -368,7 +365,7 @@
                                                         <button class="btn btn-primary ms-auto"
                                                                 hx-post="/user/edit/method" hx-swap="none"
                                                                 hx-vals='js:{ method: document.getElementById("user-method").value }'>
-                                                            修改
+                                                            {trans key='user.modify'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -377,15 +374,14 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">重置订阅地址</h3>
-                                                    <p>重置订阅地址后，旧的订阅地址将无法获取配置，但节点配置仍能使用。
-                                                        如果希望作废旧节点配置请配合重置连接密码操作</p>
+                                                    <h3 class="card-title">{trans key='user.reset_sub_url'}</h3>
+                                                    <p>{trans key='user.reset_sub_desc'}</p>
                                                 </div>
                                                 <div class="card-footer">
                                                     <div class="d-flex">
-                                                        <button class="btn btn-primary ms-auto bg-red"
+                                                        <button class="btn btn-red ms-auto"
                                                                 hx-post="/user/edit/url_reset" hx-swap="none">
-                                                            重置
+                                                            {trans key='common.reset'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -394,16 +390,16 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">重置连接密码</h3>
-                                                    <p>重置连接密码与UUID ，重置后需更新订阅，才能继续使用</p>
-                                                    <p>当前连接密码：<code id="passwd" class="spoiler">{$user->passwd}</code></p>
-                                                    <p>当前UUID：<code id="uuid" class="spoiler">{$user->uuid}</code></p>
+                                                    <h3 class="card-title">{trans key='user.reset_connection_password'}</h3>
+                                                    <p>{trans key='user.reset_connection_password_desc'}</p>
+                                                    <p>{trans key='user.current_connection_password' passwd="<code id='passwd' class='spoiler'>{$user->passwd}</code>"}</p>
+                                                    <p>{trans key='user.current_uuid' uuid="<code id='uuid' class='spoiler'>{$user->uuid}</code>"}</p>
                                                 </div>
                                                 <div class="card-footer">
                                                     <div class="d-flex">
-                                                        <button class="btn btn-primary ms-auto bg-red"
+                                                        <button class="btn btn-red ms-auto"
                                                                 hx-post="/user/edit/passwd_reset" hx-swap="none">
-                                                            重置
+                                                            {trans key='common.reset'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -416,20 +412,20 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">每日流量报告</h3>
+                                                    <h3 class="card-title">{trans key='user.daily_mail_report'}</h3>
                                                     <div class="mb-3">
                                                         <select id="daily-mail" class="form-select">
                                                             <option value="0"
                                                                     {if $user->daily_mail_enable === 0}selected{/if}>
-                                                                不接收
+                                                                {trans key='user.report_none'}
                                                             </option>
                                                             <option value="1"
                                                                     {if $user->daily_mail_enable === 1}selected{/if}>
-                                                                邮件接收
+                                                                {trans key='user.report_email'}
                                                             </option>
                                                             <option value="2"
                                                                     {if $user->daily_mail_enable === 2}selected{/if}>
-                                                                IM 接收
+                                                                {trans key='user.report_im'}
                                                             </option>
                                                         </select>
                                                     </div>
@@ -439,7 +435,7 @@
                                                         <button class="btn btn-primary ms-auto"
                                                                 hx-post="/user/edit/daily_mail" hx-swap="none"
                                                                 hx-vals='js:{ mail: document.getElementById("daily-mail").value }'>
-                                                            修改
+                                                            {trans key='user.modify'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -448,17 +444,17 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">偏好的联系方式</h3>
-                                                    <p>当 IM 未绑定时站点依然会向账户邮箱发送通知信息</p>
+                                                    <h3 class="card-title">{trans key='user.contact_preference'}</h3>
+                                                    <p>{trans key='user.contact_preference_desc'}</p>
                                                     <div class="mb-3">
                                                         <select id="contact-method" class="form-select">
                                                             <option value="1"
                                                                     {if $user->contact_method === 1}selected{/if}>
-                                                                邮件
+                                                                {trans key='user.contact_email'}
                                                             </option>
                                                             <option value="2"
                                                                     {if $user->contact_method === 2}selected{/if}>
-                                                                IM
+                                                                {trans key='user.contact_im'}
                                                             </option>
                                                         </select>
                                                     </div>
@@ -468,7 +464,7 @@
                                                         <button class="btn btn-primary ms-auto"
                                                                 hx-post="/user/edit/contact_method" hx-swap="none"
                                                                 hx-vals='js:{ contact: document.getElementById("contact-method").value }'>
-                                                            修改
+                                                            {trans key='user.modify'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -477,7 +473,7 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">修改主题</h3>
+                                                    <h3 class="card-title">{trans key='user.theme'}</h3>
                                                     <div class="mb-3">
                                                         <select id="user-theme" class="form-select">
                                                             {foreach $themes as $theme}
@@ -493,7 +489,7 @@
                                                         <button class="btn btn-primary ms-auto"
                                                                 hx-post="/user/edit/theme" hx-swap="none"
                                                                 hx-vals='js:{ theme: document.getElementById("user-theme").value }'>
-                                                            修改
+                                                            {trans key='user.modify'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -502,17 +498,17 @@
                                         <div class="col-sm-12 col-md-6">
                                             <div class="card">
                                                 <div class="card-body">
-                                                    <h3 class="card-title">修改主题模式</h3>
+                                                    <h3 class="card-title">{trans key='user.theme_mode'}</h3>
                                                     <div class="mb-3">
                                                         <select id="theme-mode" class="form-select">
                                                             <option value="2" {if $user->is_dark_mode === 2}selected{/if}>
-                                                                自动
+                                                                {trans key='user.theme_auto'}
                                                             </option>
                                                             <option value="0" {if $user->is_dark_mode === 0}selected{/if}>
-                                                                浅色
+                                                                {trans key='user.theme_light'}
                                                             </option>
                                                             <option value="1" {if $user->is_dark_mode === 1}selected{/if}>
-                                                                深色
+                                                                {trans key='user.theme_dark'}
                                                             </option>
                                                         </select>
                                                     </div>
@@ -522,7 +518,7 @@
                                                         <button class="btn btn-primary ms-auto"
                                                                 hx-post="/user/edit/theme_mode" hx-swap="none"
                                                                 hx-vals='js:{ theme_mode: document.getElementById("theme-mode").value }'>
-                                                            修改
+                                                            {trans key='user.modify'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -537,13 +533,13 @@
                                                     </div>
                                                 </div>
                                                 <div class="card-body">
-                                                    <h3 class="card-title">删除账户数据</h3>
+                                                    <h3 class="card-title">{trans key='user.delete_account'}</h3>
                                                 </div>
                                                 <div class="card-footer">
                                                     <button class="btn btn-red" data-bs-toggle="modal"
                                                        data-bs-target="#destroy-account">
                                                         <i class="ti ti-trash icon"></i>
-                                                        确认删除
+                                                        {trans key='user.confirm_delete_account_btn'}
                                                     </button>
                                                 </div>
                                             </div>
@@ -567,14 +563,14 @@
                 <div class="modal-status bg-danger"></div>
                 <div class="modal-body text-center py-4">
                     <i class="ti ti-alert-circle icon mb-2 text-danger icon-lg" style="font-size:3.5rem;"></i>
-                    <h3>删除确认</h3>
+                    <h3>{trans key='common.delete_dialog_title'}</h3>
                     <div class="text-secondary">
-                        请确认是否真的要删除你的账户，此操作无法撤销，你的所有账户数据将会被从服务器上彻底删除
+                        {trans key='user.delete_account_warning'}
                     </div>
                     <div class="py-3">
                         <form>
                             <input id="confirm_kill_password" type="password" class="form-control"
-                                   placeholder="输入登录密码" autocomplete="off">
+                                   placeholder="{trans key='user.enter_password_to_delete'}" autocomplete="off">
                         </form>
                     </div>
                 </div>
@@ -583,14 +579,14 @@
                         <div class="row">
                             <div class="col">
                                 <button class="btn w-100" data-bs-dismiss="modal">
-                                    取消
+                                    {trans key='common.cancel'}
                                 </button>
                             </div>
                             <div class="col">
                                 <button href="#" class="btn btn-danger w-100" data-bs-dismiss="modal"
                                         hx-post="/user/edit/kill" hx-swap="none"
                                         hx-vals='js:{ password: document.getElementById("confirm_kill_password").value }'>
-                                    确认
+                                    {trans key='common.confirm'}
                                 </button>
                             </div>
                         </div>
@@ -605,29 +601,29 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">设置TOTP</h5>
+                    <h5 class="modal-title">{trans key='user.setup_totp'}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
                     <div class="row">
                         <div class="col-md-12">
-                            <p>请使用 Google Authenticator 或者 Authy 扫描下面的二维码</p>
+                            <p>{trans key='user.scan_qrcode_desc'}</p>
                         </div>
                         <div class="col-md-12 d-flex justify-content-center align-items-center">
                             <div id="qrcode"></div>
                         </div>
                         <div class="col-md-12">
-                            <p>若无法扫描二维码，可以手动输入以下密钥</p>
+                            <p>{trans key='user.manual_totp_key'}</p>
                             <p id="totpSecret"></p>
                         </div>
                         <div class="col-md-12">
-                            <input type="text" id="totpCode" placeholder="输入TOTP代码" class="form-control mx-auto">
+                            <input type="text" id="totpCode" placeholder="{trans key='user.enter_totp_code'}" class="form-control mx-auto">
                         </div>
                     </div>
                     <div id="qrcode"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="submitTotp">提交</button>
+                    <button type="button" class="btn btn-primary" id="submitTotp">{trans key='common.submit'}</button>
                 </div>
             </div>
         </div>
@@ -635,11 +631,12 @@
 
     {include file='user/footer.tpl'}
     <script>
+        let Modal = tabler.Modal || tabler.bootstrap.Modal;
         {if not $totpDevices}
         document.querySelector('#enableTotp').addEventListener('click', async () => {
             const resp = await fetch('/user/totp');
             const data = await resp.json();
-            var modal = new tabler.bootstrap.Modal(document.getElementById('totpModal'), {
+            var modal = new Modal(document.getElementById('totpModal'), {
                 backdrop: 'static',
                 keyboard: false
             });
@@ -658,7 +655,7 @@
                 });
                 modal.show();
             } else {
-                var fail_modal = new tabler.bootstrap.Modal(document.getElementById('fail-dialog'));
+                var fail_modal = new Modal(document.getElementById('fail-dialog'));
                 document.getElementById('fail-message').innerText = data.msg;
                 fail_modal.show();
             }
@@ -678,7 +675,7 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    var totpModal = new tabler.bootstrap.Modal(document.getElementById('totpModal'));
+                    var totpModal = new Modal(document.getElementById('totpModal'));
 
                     if (data.ret === 1) {
                         totpModal.hide();
@@ -706,7 +703,7 @@
                 failDialog.show();
                 throw error;
             }
-            attResp.name = prompt("请输入设备名称:");
+            attResp.name = prompt("{trans key='user.device_name_prompt' escape='js'}");
             const verificationResp = await fetch('/user/fido', {
                 method: 'POST',
                 headers: {
@@ -738,7 +735,7 @@
                 failDialog.show();
                 throw error;
             }
-            attResp.name = prompt("请输入设备名称:");
+            attResp.name = prompt("{trans key='user.device_name_prompt' escape='js'}");
             const verificationResp = await fetch('/user/webauthn', {
                 method: 'POST',
                 headers: {
@@ -760,28 +757,190 @@
         });
         {if $user->im_type === 0 && $user->im_value === ''}
         let oauthProvider = $('#oauth-provider');
+        let tgPollTimer = null;
+        let pollStartTime = 0;
+
+        function stopTgPolling() {
+            if (tgPollTimer) {
+                clearInterval(tgPollTimer);
+                tgPollTimer = null;
+            }
+        }
+
+        function checkTgBindStatus(manual = false) {
+            $.ajax({
+                type: "GET",
+                url: "/oauth/telegram",
+                data: { action: "check" },
+                dataType: "json",
+                success: function (res) {
+                    if (res.ret === 1 && res.bound) {
+                        stopTgPolling();
+                        $('#success-message').text('Telegram 账号绑定成功！');
+                        if (window.successDialog) {
+                            successDialog.show();
+                        } else if (typeof showToast === 'function') {
+                            showToast('Telegram 账号绑定成功！');
+                        }
+                        setTimeout(function () {
+                            location.reload();
+                        }, 1200);
+                    } else if (manual) {
+                        if (typeof showToast === 'function') {
+                            showToast('尚未检测到绑定完成，请在 Telegram 中确认操作', 'danger');
+                        } else {
+                            $('#error-message').text('尚未检测到绑定完成，请在 Telegram 中确认操作');
+                            if (window.failDialog) {
+                                failDialog.show();
+                            }
+                        }
+                    }
+                },
+                error: function () {
+                    if (manual) {
+                        if (typeof showToast === 'function') {
+                            showToast('检查状态失败，请稍后重试', 'danger');
+                        }
+                    }
+                }
+            });
+        }
+
+        function startTgPolling() {
+            stopTgPolling();
+            pollStartTime = Date.now();
+            tgPollTimer = setInterval(function () {
+                if (Date.now() - pollStartTime > 60000) {
+                    stopTgPolling();
+                    return;
+                }
+                checkTgBindStatus(false);
+            }, 3000);
+        }
+
+        function renderTelegramUI(data) {
+            let html = '<div class="w-100">' +
+                '<div class="card bg-light-lt border mb-3">' +
+                '<div class="card-body p-3">' +
+                '<div class="d-flex align-items-center justify-content-between mb-2">' +
+                '<span class="text-secondary fw-semibold">Telegram 绑定码</span>' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary copy-token-btn" data-token="' + data.token + '">' +
+                '<i class="ti ti-copy icon"></i> 复制绑定码' +
+                '</button>' +
+                '</div>' +
+                '<div class="text-center my-2">' +
+                '<code class="fs-2 fw-bold text-primary bg-body px-3 py-1 rounded border">' + data.token + '</code>' +
+                '</div>' +
+                '<div class="text-secondary small mt-2">' +
+                '可在 Telegram 中向 <strong>@' + data.bot_username + '</strong> 发送 <code>/start ' + data.token + '</code> 或 <code>/bind ' + data.token + '</code>，或直接点击下方按钮一键完成绑定。' +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="d-flex flex-wrap align-items-center justify-content-between gap-2">' +
+                '<div class="btn-list">' +
+                '<a href="' + data.bind_url + '" target="_blank" class="btn btn-primary">' +
+                '<i class="ti ti-brand-telegram icon"></i> 一键打开 Telegram 绑定' +
+                '</a>' +
+                '<button type="button" class="btn btn-outline-primary" id="refresh-tg-status">' +
+                '<i class="ti ti-refresh icon"></i> 刷新绑定状态' +
+                '</button>' +
+                '</div>' +
+                '<div>' +
+                '<a href="javascript:void(0)" id="toggle-tg-widget" class="text-secondary small ms-2">网页组件绑定</a>' +
+                '</div>' +
+                '</div>' +
+                '<div id="tg-widget-container" class="mt-3 text-center d-none"></div>' +
+                '</div>';
+            oauthProvider.html(html);
+        }
 
         $("#imtype").on('change', function () {
+            stopTgPolling();
             if ($(this).val() === '0') {
                 oauthProvider.empty();
             } else if ($(this).val() === '1') {
                 oauthProvider.empty();
                 oauthProvider.append(
-                    "<a id='bind-slack' class='btn btn-azure ms-auto'>绑定 Slack</a>"
+                    "<div class='d-flex btn-list justify-content-end'><a id='bind-slack' class='btn btn-azure ms-auto'>{trans key='user.bind_slack' escape='js'}</a></div>"
                 );
             } else if ($(this).val() === '2') {
                 oauthProvider.empty();
                 oauthProvider.append(
-                    "<a id='bind-discord' class='btn btn-indigo ms-auto'>绑定 Discord</a>"
+                    "<div class='d-flex btn-list justify-content-end'><a id='bind-discord' class='btn btn-indigo ms-auto'>{trans key='user.bind_discord' escape='js'}</a></div>"
                 );
             } else if ($(this).val() === '4') {
-                oauthProvider.empty();
-                oauthProvider.append(
-                    '<script async src=\"https://telegram.org/js/telegram-widget.js?22\"' +
-                    ' data-telegram-login=\"' + "{$public_setting['telegram_bot']}" +
-                    '\" data-size=\"large" data-onauth=\"onTelegramAuth(user)\"' +
-                    ' data-request-access=\"write\"><\/script>'
+                oauthProvider.empty().html(
+                    '<div class="d-flex align-items-center py-2">' +
+                    '<div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>' +
+                    '<span class="text-secondary small">正在获取绑定信息...</span>' +
+                    '</div>'
                 );
+
+                $.ajax({
+                    type: "GET",
+                    url: "/oauth/telegram",
+                    data: { action: "get_token" },
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.ret === 1) {
+                            renderTelegramUI(data);
+                            startTgPolling();
+                        } else {
+                            oauthProvider.html('<div class="text-danger small py-2">' + data.msg + '</div>');
+                        }
+                    },
+                    error: function () {
+                        oauthProvider.html('<div class="text-danger small py-2">获取绑定信息失败，请刷新重试</div>');
+                    }
+                });
+            }
+        });
+
+        oauthProvider.on('click', '.copy-token-btn', function () {
+            let token = $(this).attr('data-token');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(token).then(function () {
+                    if (typeof showToast === 'function') {
+                        showToast('绑定码已复制到剪贴板');
+                    } else {
+                        $('#success-message').text('绑定码已复制到剪贴板');
+                        if (window.successDialog) {
+                            successDialog.show();
+                        }
+                    }
+                }).catch(function () {
+                    prompt('请手动复制绑定码：', token);
+                });
+            } else {
+                prompt('请手动复制绑定码：', token);
+            }
+        });
+
+        oauthProvider.on('click', '#refresh-tg-status', function () {
+            let btn = $(this);
+            btn.prop('disabled', true);
+            checkTgBindStatus(true);
+            setTimeout(function () {
+                btn.prop('disabled', false);
+            }, 1500);
+        });
+
+        oauthProvider.on('click', '#toggle-tg-widget', function () {
+            let widgetContainer = $('#tg-widget-container');
+            if (widgetContainer.hasClass('d-none')) {
+                widgetContainer.removeClass('d-none');
+                if (!widgetContainer.children().length) {
+                    let script = document.createElement('script');
+                    script.async = true;
+                    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+                    script.setAttribute('data-telegram-login', "{$public_setting['telegram_bot']}");
+                    script.setAttribute('data-size', 'large');
+                    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+                    script.setAttribute('data-request-access', 'write');
+                    widgetContainer[0].appendChild(script);
+                }
+            } else {
+                widgetContainer.addClass('d-none');
             }
         });
 
@@ -791,9 +950,9 @@
                 url: "/oauth/slack",
                 dataType: "json",
                 success: function (data) {
-                    handleOauthResult(data, 'slack')
+                    handleOauthResult(data, 'slack');
                 }
-            })
+            });
         });
 
         oauthProvider.on('click', '#bind-discord', function () {
@@ -802,12 +961,12 @@
                 url: "/oauth/discord",
                 dataType: "json",
                 success: function (data) {
-                    handleOauthResult(data, 'discord')
+                    handleOauthResult(data, 'discord');
                 }
-            })
+            });
         });
 
-        function onTelegramAuth(user) {
+        window.onTelegramAuth = function (user) {
             $.ajax({
                 type: "POST",
                 url: "/oauth/telegram",
@@ -816,16 +975,20 @@
                     user: JSON.stringify(user),
                 },
                 success: function (data) {
-                    handleOauthResult(data, 'telegram')
+                    handleOauthResult(data, 'telegram');
                 }
-            })
-        }
+            });
+        };
 
         function handleOauthResult(data, type = 'telegram') {
             if (data.ret === 1) {
                 if (type === 'telegram') {
+                    stopTgPolling();
                     $('#success-message').text(data.msg);
                     successDialog.show();
+                    setTimeout(function () {
+                        location.reload();
+                    }, 1200);
                 } else {
                     window.location.replace(data.redir);
                 }

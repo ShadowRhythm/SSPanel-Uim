@@ -13,6 +13,7 @@ use App\Services\DB;
 use App\Services\Auth;
 use App\Services\Captcha;
 use App\Services\Config\ClientConfig;
+use App\Services\I18n;
 use App\Services\Reward;
 use App\Services\Subscribe;
 use App\Utils\ResponseHelper;
@@ -56,6 +57,9 @@ final class UserController extends BaseController
         }
 
         $universalSub = Subscribe::getUniversalSubLink($this->user);
+        $subUrlParts = explode('/sub/', $universalSub, 2);
+        $subUrlPrefix = count($subUrlParts) === 2 ? $subUrlParts[0] . '/sub/' : $universalSub;
+        $subUrlToken = count($subUrlParts) === 2 ? $subUrlParts[1] : '';
         $r2Enabled = filter_var($_ENV['enable_r2_client_download'] ?? 'false', FILTER_VALIDATE_BOOLEAN);
         $clientData = ClientConfig::getClients(
             $universalSub,
@@ -70,6 +74,8 @@ final class UserController extends BaseController
                 ->assign('traffic_logs', json_encode($traffic_logs))
                 ->assign('class_expire_days', $class_expire_days)
                 ->assign('UniversalSub', $universalSub)
+                ->assign('subUrlPrefix', $subUrlPrefix)
+                ->assign('subUrlToken', $subUrlToken)
                 ->assign('clientData', json_encode($clientData['clients']))
                 ->assign('platformIcons', json_encode($clientData['icons']))
                 ->assign('user_class', $this->user->class)
@@ -103,11 +109,14 @@ final class UserController extends BaseController
     public function media(ServerRequest $request, Response $response, array $args)
     {
         $results = [];
-        $pdo = DB::getPdo();
-        $nodes = $pdo->query('SELECT DISTINCT node_id FROM stream_media');
+        try {
+            $node_ids = StreamMedia::select('node_id')->distinct()->pluck('node_id')->toArray();
+        } catch (\Throwable) {
+            $node_ids = [];
+        }
 
-        foreach ($nodes as $node_id) {
-            $node = Node::where('id', $node_id)->first();
+        foreach ($node_ids as $node_id) {
+            $node = (new Node())->find($node_id);
             $unlock = StreamMedia::where('node_id', $node_id)
                 ->orderBy('id', 'desc')
                 ->where('created_at', '>', \time() - 86460) // 只获取最近一天零一分钟内上报的数据
@@ -116,14 +125,11 @@ final class UserController extends BaseController
             if ($unlock !== null && $node !== null) {
                 $details = \json_decode($unlock->result, true);
                 $details = str_replace('Yes (Native)', 'Yes', $details);
-                //$details = str_replace('Oversea Only', '仅限海外', $details);
-                foreach ($details as $key => $value) {
-                    $info = [
-                        'node_name' => $node->name,
-                        'created_at' => $unlock->created_at,
-                        'unlock_item' => $details,
-                    ];
-                }
+                $info = [
+                    'node_name' => $node->name,
+                    'created_at' => $unlock->created_at,
+                    'unlock_item' => $details,
+                ];
                 array_push($results, $info);
             }
         }
@@ -138,27 +144,29 @@ final class UserController extends BaseController
 	
     public function checkin(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
+
         if (! Config::obtain('enable_checkin') || ! $this->user->isAbleToCheckin()) {
-            return ResponseHelper::error($response, '暂时还不能签到');
+            return ResponseHelper::error($response, I18n::trans('user.checkin_not_allowed', $locale));
         }
 
         if (Config::obtain('enable_checkin_captcha')) {
             $ret = Captcha::verify($request->getParams());
 
             if (! $ret) {
-                return ResponseHelper::error($response, '系统无法接受你的验证结果，请刷新页面后重试');
+                return ResponseHelper::error($response, I18n::trans('user.captcha_failed', $locale));
             }
         }
 
         $traffic = Reward::issueCheckinReward($this->user->id);
 
         if (! $traffic) {
-            return ResponseHelper::error($response, '签到失败');
+            return ResponseHelper::error($response, I18n::trans('user.checkin_failed', $locale));
         }
 
         return $response->withJson([
             'ret' => 1,
-            'msg' => '获得了 ' . $traffic . 'MB 流量',
+            'msg' => I18n::trans('user.checkin_success', $locale, ['traffic' => $traffic]),
             'data' => [
                 'last-checkin-time' => Tools::toDateTime(time()),
             ],

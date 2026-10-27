@@ -22,7 +22,10 @@ use Smarty\Exception as SmartyException;
 use function hash;
 use function hash_hmac;
 use function implode;
+use function is_array;
 use function json_decode;
+use function ltrim;
+use function sort;
 use function strcmp;
 use function time;
 
@@ -225,7 +228,58 @@ final class OAuthController extends BaseController
 
     public function telegram(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $user_auth = json_decode($request->getParam('user'), true);
+        $action = $request->getParam('action');
+        $user_param = $request->getParam('user');
+
+        if ($action === 'check') {
+            if (! $this->user->isLogin) {
+                return ResponseHelper::error($response, '请先登录');
+            }
+
+            $user = (new User())->find($this->user->id) ?? $this->user;
+
+            return $response->withJson([
+                'ret' => 1,
+                'bound' => ($user->im_type === 4 && $user->im_value !== ''),
+                'im_value' => (string) $user->im_value,
+            ]);
+        }
+
+        if ($action === 'get_token' || ($user_param === null && $action === null)) {
+            if (! $this->user->isLogin) {
+                return ResponseHelper::error($response, '请先登录');
+            }
+
+            if ($this->user->im_type === 4 && $this->user->im_value !== '') {
+                return ResponseHelper::error($response, '你已绑定 Telegram，如需换绑请先解绑');
+            }
+
+            $redis = (new Cache())->initRedis();
+
+            $old_token = $redis->get('telegram_bind_user:' . $this->user->id);
+            if ($old_token) {
+                $redis->del('telegram_bind_token:' . $old_token);
+            }
+
+            $token = (string) Tools::genRandomChar(16);
+            $redis->setex('telegram_bind_token:' . $token, 600, (string) $this->user->id);
+            $redis->setex('telegram_bind_user:' . $this->user->id, 600, $token);
+
+            $bot_username = ltrim((string) Config::obtain('telegram_bot'), '@');
+            $bind_url = 'https://t.me/' . $bot_username . '?start=' . $token;
+
+            return $response->withJson([
+                'ret' => 1,
+                'token' => $token,
+                'bot_username' => $bot_username,
+                'bind_url' => $bind_url,
+            ]);
+        }
+
+        $user_auth = json_decode((string) $user_param, true);
+        if (! is_array($user_auth) || ! isset($user_auth['hash'], $user_auth['auth_date'], $user_auth['id'])) {
+            return ResponseHelper::error($response, self::$err_msg);
+        }
 
         $check_hash = $user_auth['hash'];
         unset($user_auth['hash']);

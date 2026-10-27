@@ -35,7 +35,7 @@ final class Notification
                     ]
                 );
             } else {
-                IM::send($admin->im_value, $msg, $admin->im_type);
+                IM::send((int) $admin->im_value, $msg, $admin->im_type);
             }
         }
     }
@@ -59,7 +59,7 @@ final class Notification
                 ]
             );
         } else {
-            IM::send($user->im_value, $msg, $user->im_type);
+            IM::send((int) $user->im_value, $msg, $user->im_type);
         }
     }
 
