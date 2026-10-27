@@ -8,6 +8,8 @@ use App\Services\Subscribe;
 use App\Utils\Tools;
 use function array_filter;
 use function array_merge;
+use function count;
+use function is_array;
 use function json_decode;
 use function json_encode;
 
@@ -62,7 +64,7 @@ final class SingBox extends Base
                 case 2:
                     $tuic_port = $node_custom_config['offset_port_user'] ??
                         ($node_custom_config['offset_port_node'] ?? 443);
-                    $host = $node_custom_config['host'] ?? '';
+                    $host = $node_custom_config['host'] ?? ($node_custom_config['sni'] ?? '');
                     $allow_insecure = $node_custom_config['allow_insecure'] ?? false;
                     $congestion_control = $node_custom_config['congestion_control'] ?? 'bbr';
 
@@ -88,16 +90,45 @@ final class SingBox extends Base
                 case 11:
                     $v2_port = $node_custom_config['offset_port_user'] ??
                         ($node_custom_config['offset_port_node'] ?? 443);
-                    $transport = ($node_custom_config['network'] ?? '') === 'tcp' ? '' : $node_custom_config['network'];
+                    $security = $node_custom_config['security'] ?? 'none';
+                    $network = $node_custom_config['network'] ?? '';
+                    $transport = $network === 'tcp' ? '' : $network;
+                    if ($transport === 'httpupgrade') {
+                        $transport = 'ws';
+                    }
+
+                    $ws_opts = $node_custom_config['ws-opts'] ?? ($node_custom_config['ws_opts'] ?? []);
+                    $ws_headers = is_array($ws_opts) ? ($ws_opts['headers'] ?? []) : [];
+
                     $host = $node_custom_config['header']['request']['headers']['Host'][0] ??
-                        $node_custom_config['host'] ?? '';
-                    $path = $node_custom_config['header']['request']['path'][0] ?? $node_custom_config['path'] ?? '';
-                    $headers = $node_custom_config['header']['request']['headers'] ?? [];
-                    $service_name = $node_custom_config['servicename'] ?? '';
+                        ($ws_headers['Host'] ?? ($ws_headers['host'] ?? ($node_custom_config['host'] ?? '')));
+                    $path = $node_custom_config['header']['request']['path'][0] ??
+                        ($ws_opts['path'] ?? ($node_custom_config['path'] ?? ''));
+
+                    $headers = $node_custom_config['header']['request']['headers'] ?? $ws_headers;
+                    if (! is_array($headers)) {
+                        $headers = [];
+                    }
+                    if ($host !== '' && ! isset($headers['Host']) && ! isset($headers['host'])) {
+                        $headers['Host'] = $host;
+                    }
+                    if (isset($headers['Host']) && is_array($headers['Host']) && count($headers['Host']) === 1) {
+                        $headers['Host'] = $headers['Host'][0];
+                    }
+
+                    $service_name = $node_custom_config['servicename'] ??
+                        ($node_custom_config['grpc-opts']['grpc_service_name'] ??
+                        ($node_custom_config['grpc_opts']['grpc_service_name'] ?? ''));
+                    $allow_insecure = $node_custom_config['allow_insecure'] ?? false;
+                    $tls_enabled = $security === 'tls' ||
+                        (isset($node_custom_config['tls']) && (bool) $node_custom_config['tls']) ||
+                        $host !== '';
                     $utls = $node_custom_config['utls'] ?? false;
                     $method = $node_custom_config['method'] ?? '';
-                    $max_early_data = $node_custom_config['max_early_data'] ?? '';
-                    $early_data_header_name = $node_custom_config['early_data_header_name'] ?? '';
+                    $max_early_data = $node_custom_config['max_early_data'] ??
+                        ($ws_opts['max_early_data'] ?? '');
+                    $early_data_header_name = $node_custom_config['early_data_header_name'] ??
+                        ($ws_opts['early_data_header_name'] ?? '');
 
                     $node = [
                         'type' => 'vmess',
@@ -107,18 +138,28 @@ final class SingBox extends Base
                         'uuid' => $user->uuid,
                         'security' => 'auto',
                         'alter_id' => 0,
-                        'tls' => [
-                            'enabled' => true,
-                            'server_name' => $host,
-                            'utls' => [
-                                'enabled' => $utls,
-                                'fingerprint' => 'chrome',
-                            ],
-                        ],
                         'packet_encoding' => 'xudp',
                         'global_padding' => true,
                         'authenticated_length' => true,
-                        'transport' => [
+                    ];
+
+                    if ($tls_enabled) {
+                        $tls = [
+                            'enabled' => true,
+                            'server_name' => $host,
+                            'insecure' => (bool) $allow_insecure,
+                        ];
+                        if ($utls) {
+                            $tls['utls'] = [
+                                'enabled' => true,
+                                'fingerprint' => 'chrome',
+                            ];
+                        }
+                        $node['tls'] = array_filter($tls);
+                    }
+
+                    if ($transport !== '') {
+                        $transport_config = [
                             'type' => $transport,
                             'path' => $path,
                             'method' => $method,
@@ -126,22 +167,46 @@ final class SingBox extends Base
                             'service_name' => $service_name,
                             'max_early_data' => (int) $max_early_data,
                             'early_data_header_name' => $early_data_header_name,
-                        ],
-                    ];
-
-                    $node['tls'] = array_filter($node['tls']);
-                    $node['transport'] = array_filter($node['transport']);
+                        ];
+                        $node['transport'] = array_filter($transport_config);
+                    }
 
                     break;
                 case 14:
                     $trojan_port = $node_custom_config['offset_port_user'] ??
                         ($node_custom_config['offset_port_node'] ?? 443);
-                    $host = $node_custom_config['host'] ?? '';
-                    $allow_insecure = $node_custom_config['allow_insecure'] ?? '0';
-                    $transport = $node_custom_config['network'] ?? '';
-                    $path = $node_custom_config['header']['request']['path'][0] ?? $node_custom_config['path'] ?? '';
-                    $headers = $node_custom_config['header']['request']['headers'] ?? [];
-                    $service_name = $node_custom_config['servicename'] ?? '';
+                    $network = $node_custom_config['network'] ?? 'tcp';
+                    $transport = $network === 'tcp' ? '' : $network;
+                    if ($transport === 'httpupgrade') {
+                        $transport = 'ws';
+                    }
+
+                    $ws_opts = $node_custom_config['ws-opts'] ?? ($node_custom_config['ws_opts'] ?? []);
+                    $ws_headers = is_array($ws_opts) ? ($ws_opts['headers'] ?? []) : [];
+
+                    $host = $node_custom_config['header']['request']['headers']['Host'][0] ??
+                        ($ws_headers['Host'] ??
+                        ($ws_headers['host'] ??
+                        ($node_custom_config['host'] ??
+                        ($node_custom_config['sni'] ?? ''))));
+                    $path = $node_custom_config['header']['request']['path'][0] ??
+                        ($ws_opts['path'] ?? ($node_custom_config['path'] ?? ''));
+
+                    $headers = $node_custom_config['header']['request']['headers'] ?? $ws_headers;
+                    if (! is_array($headers)) {
+                        $headers = [];
+                    }
+                    if ($host !== '' && ! isset($headers['Host']) && ! isset($headers['host'])) {
+                        $headers['Host'] = $host;
+                    }
+                    if (isset($headers['Host']) && is_array($headers['Host']) && count($headers['Host']) === 1) {
+                        $headers['Host'] = $headers['Host'][0];
+                    }
+
+                    $service_name = $node_custom_config['servicename'] ??
+                        ($node_custom_config['grpc-opts']['grpc_service_name'] ??
+                        ($node_custom_config['grpc_opts']['grpc_service_name'] ?? ''));
+                    $allow_insecure = $node_custom_config['allow_insecure'] ?? false;
 
                     $node = [
                         'type' => 'trojan',
@@ -154,16 +219,19 @@ final class SingBox extends Base
                             'server_name' => $host,
                             'insecure' => (bool) $allow_insecure,
                         ],
-                        'transport' => [
+                    ];
+
+                    if ($transport !== '') {
+                        $transport_config = [
                             'type' => $transport,
                             'path' => $path,
                             'headers' => $headers,
                             'service_name' => $service_name,
-                        ],
-                    ];
+                        ];
+                        $node['transport'] = array_filter($transport_config);
+                    }
 
                     $node['tls'] = array_filter($node['tls']);
-                    $node['transport'] = array_filter($node['transport']);
 
                     break;
                 default:

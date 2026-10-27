@@ -99,6 +99,7 @@ $_ENV['rememberMeDuration'] = 7;          //登录时记住账号时长天数
 $_ENV['timeZone'] = 'Asia/Shanghai';        //需使用 PHP 兼容的时区格式
 $_ENV['theme'] = 'tabler';                //默认主题
 $_ENV['locale'] = 'zh_CN';                //默认语言，可选值：en_US、ja_JP、zh_CN、zh_TW
+$_ENV['locale_auto_detect'] = false;   //是否自动检测浏览器语言，true时会根据Accept-Language自动选择语言
 $_ENV['jump_delay'] = 1000;               //跳转延时，单位ms
 $_ENV['keep_connect'] = false;            // 流量耗尽用户限速至 1Mbps
 
