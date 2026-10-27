@@ -27,9 +27,12 @@ final class ClientController extends BaseController
             'Clash.Nyanpasu_aarch64.dmg',
             'Clash.Verge.exe',
             'Clash.Verge.dmg',
+            'Clash.Verge_aarch64.dmg',
             'Clash.Verge.deb',
             'CMFA.apk',
             'SFA.apk',
+            'SFM.pkg',
+            'SFM.dmg',
             'SFM.zip',
             'Hiddify.apk',
             'Hiddify.AppImage',
@@ -39,6 +42,10 @@ final class ClientController extends BaseController
             'FlClash.dmg',
             'FlClash.deb',
             'FlClash.apk',
+            'v2rayNG_universal.apk',
+            'v2rayN-windows-64-desktop.zip',
+            'clashmi.exe',
+            'clashmi_arm64.apk',
         ];
 
         if (! in_array($clientName, $clients)) {

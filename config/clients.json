@@ -1,5 +1,5 @@
 {
-    "clients":[
+    "clients": [
         {
             "name": "Clash Verge",
             "tagMethod": "github_release",
@@ -12,7 +12,11 @@
                 },
                 {
                     "sourceName": "Clash.Verge_%tagName1%_aarch64.dmg",
-                    "saveName": "Clash.Verge_aarch64.dmg"
+                    "saveName": "Clash.Verge.dmg"
+                },
+                {
+                    "sourceName": "Clash.Verge_%tagName1%_amd64.deb",
+                    "saveName": "Clash.Verge.deb"
                 }
             ]
         },
@@ -27,12 +31,36 @@
                     "saveName": "Clash.Nyanpasu.exe"
                 },
                 {
-                    "sourceName": "clash-nyanpasu_%tagName1%_amd64.AppImage",
+                    "sourceName": "Clash.Nyanpasu_%tagName1%_amd64.AppImage",
                     "saveName": "Clash.Nyanpasu.AppImage"
                 },
                 {
                     "sourceName": "Clash.Nyanpasu_%tagName1%_aarch64.dmg",
                     "saveName": "Clash.Nyanpasu_aarch64.dmg"
+                }
+            ]
+        },
+        {
+            "name": "FlClash",
+            "tagMethod": "github_release",
+            "gitRepo": "chen08209/FlClash",
+            "savePath": "public/clients/",
+            "downloads": [
+                {
+                    "sourceName": "FlClash-%tagName1%-windows-amd64-setup.exe",
+                    "saveName": "FlClash.exe"
+                },
+                {
+                    "sourceName": "FlClash-%tagName1%-macos-arm64.dmg",
+                    "saveName": "FlClash.dmg"
+                },
+                {
+                    "sourceName": "FlClash-%tagName1%-android-arm64-v8a.apk",
+                    "saveName": "FlClash.apk"
+                },
+                {
+                    "sourceName": "FlClash-%tagName1%-linux-amd64.deb",
+                    "saveName": "FlClash.deb"
                 }
             ]
         },
@@ -43,7 +71,7 @@
             "savePath": "public/clients/",
             "downloads": [
                 {
-                    "sourceName": "cmfa-%tagName1%-meta-universal-release.apk ",
+                    "sourceName": "cmfa-%tagName1%-meta-universal-release.apk",
                     "saveName": "CMFA.apk"
                 }
             ]
@@ -83,8 +111,8 @@
                     "saveName": "SFA.apk"
                 },
                 {
-                    "sourceName": "SFM-%tagName1%-universal.dmg",
-                    "saveName": "SFM.dmg"
+                    "sourceName": "SFM-%tagName1%-Universal.pkg",
+                    "saveName": "SFM.pkg"
                 }
             ]
         },
@@ -99,7 +127,7 @@
                     "saveName": "Hiddify.apk"
                 },
                 {
-                    "sourceName": "Hiddify-Linux-x64.AppImage",
+                    "sourceName": "Hiddify-Linux-x64-AppImage.AppImage",
                     "saveName": "Hiddify.AppImage"
                 },
                 {
@@ -109,6 +137,22 @@
                 {
                     "sourceName": "Hiddify-Windows-Setup-x64.exe",
                     "saveName": "Hiddify.exe"
+                }
+            ]
+        },
+        {
+            "name": "ClashMi",
+            "tagMethod": "github_release",
+            "gitRepo": "KaringX/clashmi",
+            "savePath": "public/clients/",
+            "downloads": [
+                {
+                    "sourceName": "clashmi_%tagName1%_windows_x64.exe",
+                    "saveName": "clashmi.exe"
+                },
+                {
+                    "sourceName": "clashmi_%tagName1%_android_arm64-v8a.apk",
+                    "saveName": "clashmi_arm64.apk"
                 }
             ]
         }

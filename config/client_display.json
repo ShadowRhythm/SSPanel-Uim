@@ -69,7 +69,7 @@
       "name": "Hiddify",
       "description": "易用的多协议客户端",
       "format": "singbox",
-      "importUrl": "hiddify://import/{sub}/clash#{name}",
+      "importUrl": "hiddify://import/{sub}/singbox#{name}",
       "platforms": {
         "Windows": {
           "ext": "exe",
@@ -96,7 +96,7 @@
       "importUrl": "sing-box://import-remote-profile?url={sub}/singbox#{name}",
       "platforms": {
         "macOS": {
-          "ext": "dmg",
+          "ext": "pkg",
           "file": "SFM"
         }
       }
@@ -114,13 +114,13 @@
       }
     },
     {
-      "name": "SFI",
+      "name": "sing-box MT",
       "description": "sing-box 官方 iOS 客户端",
       "format": "singbox",
       "importUrl": "sing-box://import-remote-profile?url={sub}/singbox#{name}",
       "platforms": {
         "iOS": {
-          "storeUrl": "https://apps.apple.com/app/sing-box/id6451272673"
+          "storeUrl": "https://apps.apple.com/us/app/sing-box-mt/id6785326793"
         }
       }
     },
@@ -155,6 +155,52 @@
         },
         "macOS": {
           "storeUrl": "https://apps.apple.com/us/app/clash-mi/id6744321968"
+        }
+      }
+    },
+    {
+      "name": "V2RayNG",
+      "description": "功能强大的 Android 客户端",
+      "format": "v2ray",
+      "importUrl": "v2rayng://install-config?url={sub}/v2ray#{name}",
+      "platforms": {
+        "Android": {
+          "ext": "apk",
+          "file": "v2rayNG_universal"
+        }
+      }
+    },
+    {
+      "name": "V2RayN",
+      "description": "功能强大的 Windows 客户端",
+      "format": "v2ray",
+      "importUrl": "",
+      "platforms": {
+        "Windows": {
+          "ext": "zip",
+          "file": "v2rayN-windows-64-desktop"
+        }
+      }
+    },
+    {
+      "name": "Shadowrocket",
+      "description": "功能强大的 iOS 代理客户端",
+      "format": "clash",
+      "importUrl": "shadowrocket://add/sub://{sub_base64}?remark={name}",
+      "platforms": {
+        "iOS": {
+          "storeUrl": "https://apps.apple.com/app/shadowrocket/id932747118"
+        }
+      }
+    },
+    {
+      "name": "Quantumult X",
+      "description": "经典且功能强大的 iOS 代理客户端",
+      "format": "qx",
+      "importUrl": "quantumult-x:///add-resource?remote-resource={\"server_remote\":[\"{sub}/qx, tag={name}\"]}",
+      "platforms": {
+        "iOS": {
+          "storeUrl": "https://apps.apple.com/app/quantumult-x/id1443988620"
         }
       }
     }

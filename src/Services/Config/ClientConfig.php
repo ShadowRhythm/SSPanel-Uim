@@ -31,14 +31,15 @@ final class ClientConfig
         $result = [];
         foreach (self::$config['clients'] as $client) {
             foreach ($client['platforms'] as $platform => $data) {
+                $subUrlForClient = $sub . ($client['format'] !== '' ? '/' . $client['format'] : '');
                 $result[$platform][] = [
                     'name' => $client['name'],
                     'description' => $data['desc'] ?? $client['description'],
                     'format' => $client['format'],
                     'importUrl' => str_replace(
-                        ['{sub}', '{name}'],
-                        [$sub, rawurlencode($name)],
-                        $data['importUrl'] ?? $client['importUrl']
+                        ['{sub}', '{name}', '{sub_base64}'],
+                        [$sub, rawurlencode($name), base64_encode($subUrlForClient)],
+                        $data['importUrl'] ?? $client['importUrl'] ?? ''
                     ),
                     'downloadUrl' => $data['storeUrl'] ??
                         (isset($data['ext']) ? ($r2 ? '/user' : '') . '/clients/' . ($data['file'] ?? str_replace(' ', '.', $client['name'])) . ".{$data['ext']}" : ''),
