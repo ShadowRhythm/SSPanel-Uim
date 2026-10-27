@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh">
+<html lang="zh"{if $user->is_dark_mode} data-bs-theme="dark"{/if} data-bs-navbar-theme="dark">
 
 <head>
     <meta charset="utf-8"/>

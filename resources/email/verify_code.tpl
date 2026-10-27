@@ -9,16 +9,16 @@
                         <div border="0" cellpadding="0" cellspacing="0" width="100%">
                             <div align="center" valign="middle" style="padding-top:60px;padding-bottom:60px;">
                                 <h2 class="bigTitle">
-                                    邮箱验证
+                                    {trans key='email.verify_email_title'}
                                 </h2>
                             </div>
                         </div>
                         <div border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF" width="100%">
                             <div align="center" valign="top" style="padding-bottom:60px;padding-left:20px;padding-right:20px;">
                                 <p class="midText">
-                                    你请求的邮箱验证代码为:<b style="color:#505050">{$code}</b> <br>
-                                    本验证代码在 {$expire} 前有效。<br>
-                                    如果此验证码非你本人申请，请忽视此邮件。<br>
+                                    {trans key='email.verify_code_text' '%code%'=$code}<br>
+                                    {trans key='email.verify_code_expire' '%expire%'=$expire}<br>
+                                    {trans key='email.verify_code_ignore'}<br>
                                 </p>
                             </div>
                         </div>

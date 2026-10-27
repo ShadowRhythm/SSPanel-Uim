@@ -5,14 +5,14 @@
             <div class="modal-status bg-success"></div>
             <div class="modal-body text-center py-4">
                 <i class="ti ti-circle-check icon mb-2 text-green icon-lg" style="font-size:3.5rem;"></i>
-                <p id="success-message" class="text-secondary">成功</p>
+                <p id="success-message" class="text-secondary">{trans key='common.success'}</p>
             </div>
             <div class="modal-footer">
                 <div class="w-100">
                     <div class="row">
                         <div class="col">
                             <button type="button" id="success-confirm" class="btn w-100" data-bs-dismiss="modal">
-                                好
+                                {trans key='common.ok'}
                             </button>
                         </div>
                     </div>
@@ -29,14 +29,14 @@
             <div class="modal-status bg-danger"></div>
             <div class="modal-body text-center py-4">
                 <i class="ti ti-circle-x icon mb-2 text-danger icon-lg" style="font-size:3.5rem;"></i>
-                <p id="fail-message" class="text-secondary">失败</p>
+                <p id="fail-message" class="text-secondary">{trans key='common.error'}</p>
             </div>
             <div class="modal-footer">
                 <div class="w-100">
                     <div class="row">
                         <div class="col">
                             <a href="" class="btn btn-danger w-100" data-bs-dismiss="modal">
-                                确认
+                                {trans key='common.confirm'}
                             </a>
                         </div>
                     </div>
@@ -84,9 +84,12 @@
     }
 
     window.addEventListener('load', function() {
-        if (typeof tabler !== 'undefined' && tabler.bootstrap) {
-            window.successDialog = new tabler.bootstrap.Modal(document.getElementById('success-dialog'));
-            window.failDialog = new tabler.bootstrap.Modal(document.getElementById('fail-dialog'));
+        if (typeof tabler !== 'undefined') {
+            let Modal = tabler.Modal || (tabler.bootstrap && tabler.bootstrap.Modal);
+            if (Modal) {
+                window.successDialog = new Modal(document.getElementById('success-dialog'));
+                window.failDialog = new Modal(document.getElementById('fail-dialog'));
+            }
         }
     });
 
@@ -94,27 +97,26 @@
     if (typeof ClipboardJS !== 'undefined' && document.querySelector('.copy')) {
         let clipboard = new ClipboardJS('.copy');
         clipboard.on('success', function(e) {
-            showToast('已复制到剪切板');
+            showToast('{trans key="common.copied_to_clipboard" escape="js"}');
             e.clearSelection();
         });
         
         clipboard.on('error', function(e) {
-            console.error('复制失败:', e);
             const text = e.trigger.getAttribute('data-clipboard-text');
             if (text) {
                 // Try native API first, fallback to prompt
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(text).then(function() {
-                        showToast('已复制到剪切板');
+                        showToast('{trans key="common.copied_to_clipboard" escape="js"}');
                     }).catch(function(err) {
-                        console.error('原生 API 也失败了:', err);
-                        prompt('复制失败，请手动复制以下内容：', text);
+                        console.error('Copy failed:', err);
+                        prompt('{trans key="common.copy_manual_prompt" escape="js"}', text);
                     });
                 } else {
-                    prompt('复制失败，请手动复制以下内容：', text);
+                    prompt('{trans key="common.copy_manual_prompt" escape="js"}', text);
                 }
             } else {
-                showToast('复制失败，请重试', 'danger');
+                showToast('{trans key="common.copy_failed" escape="js"}', 'danger');
             }
         });
     } else if (typeof ClipboardJS === 'undefined') {
@@ -124,7 +126,7 @@
                 e.preventDefault();
                 const text = this.getAttribute('data-clipboard-text');
                 if (text) {
-                    prompt('请手动复制以下内容：', text);
+                    prompt('{trans key="common.copy_manual_prompt" escape="js"}', text);
                 }
             });
         });
@@ -153,7 +155,7 @@
 
                         if (key === "last-checkin-time") {
                             const checkInBtn = document.getElementById("check-in");
-                            checkInBtn.textContent = "已签到";
+                            checkInBtn.textContent = "{trans key='user.already_checked_in' escape='js'}";
                             checkInBtn.disabled = true;
                             continue;
                         }
@@ -183,7 +185,7 @@
             }
         } catch (e) {
             console.error("Failed to parse HTMX response:", e);
-            showToast('发生了意外错误', 'danger');
+            showToast('{trans key="common.unexpected_error" escape="js"}', 'danger');
         }
     });
 </script>

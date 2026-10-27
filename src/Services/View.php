@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Config;
+use App\Models\User;
 use Illuminate\Database\DatabaseManager;
 use Smarty\Smarty;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
+use Twig\TwigFilter;
 use const BASE_PATH;
 
 final class View
@@ -20,14 +22,61 @@ final class View
     {
         $smarty = new Smarty(); //实例化smarty
         $user = Auth::getUser();
+        $currentLocale = I18n::getCurrentLocale($user);
 
         $smarty->setTemplateDir(BASE_PATH . '/resources/views/' . self::getTheme($user) . '/'); //设置模板文件存放目录
         $smarty->setCompileDir(BASE_PATH . '/storage/framework/smarty/compile/'); //设置生成文件存放目录
         $smarty->setCacheDir(BASE_PATH . '/storage/framework/smarty/cache/'); //设置缓存文件存放目录
         // add config
-        $smarty->assign('config', self::getConfig());
+        $smarty->assign('config', self::getConfig($user));
         $smarty->assign('public_setting', Config::getPublicConfig());
         $smarty->assign('user', $user);
+        $smarty->assign('current_locale', $currentLocale);
+
+        // Smarty 5 i18n function plugin: {trans key='auth.login_title' escape='js'}
+        $smarty->registerPlugin('function', 'trans', static function (array $params) use ($currentLocale): string {
+            $key = $params['key'] ?? '';
+            $lang = $params['lang'] ?? $currentLocale;
+            $escape = $params['escape'] ?? null;
+            unset($params['key'], $params['lang'], $params['escape']);
+
+            $result = I18n::trans($key, $lang, $params);
+            if ($escape === 'javascript' || $escape === 'js') {
+                return strtr($result, [
+                    '\\' => '\\\\',
+                    "'" => "\\'",
+                    '"' => '\\"',
+                    "\r" => '\\r',
+                    "\n" => '\\n',
+                    '</' => '<\/',
+                ]);
+            }
+            if ($escape === 'html') {
+                return htmlspecialchars($result, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            }
+
+            return $result;
+        });
+
+        // Smarty 5 i18n modifier plugin: {'auth.login_title'|trans:'en_US':[]:'js'}
+        $smarty->registerPlugin('modifier', 'trans', static function (string $key, ?string $lang = null, array $params = [], ?string $escape = null) use ($currentLocale): string {
+            $result = I18n::trans($key, $lang ?? $currentLocale, $params);
+            if ($escape === 'javascript' || $escape === 'js') {
+                return strtr($result, [
+                    '\\' => '\\\\',
+                    "'" => "\\'",
+                    '"' => '\\"',
+                    "\r" => '\\r',
+                    "\n" => '\\n',
+                    '</' => '<\/',
+                ]);
+            }
+            if ($escape === 'html') {
+                return htmlspecialchars($result, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            }
+
+            return $result;
+        });
 
         return $smarty;
     }
@@ -35,15 +84,21 @@ final class View
     public static function getTwig(): Environment
     {
         $user = Auth::getUser();
+        $currentLocale = I18n::getCurrentLocale($user);
         $loader = new FilesystemLoader(BASE_PATH . '/resources/views/' . self::getTheme($user) . '/');
 
         $twig = new Environment($loader, [
             'cache' => BASE_PATH . '/storage/framework/twig/cache/',
         ]);
 
-        $twig->addGlobal('config', self::getConfig());
+        $twig->addGlobal('config', self::getConfig($user));
         $twig->addGlobal('public_setting', Config::getPublicConfig());
         $twig->addGlobal('user', $user);
+        $twig->addGlobal('current_locale', $currentLocale);
+
+        $twig->addFilter(new TwigFilter('trans', static function (string $key, ?string $lang = null, array $params = []) use ($currentLocale): string {
+            return I18n::trans($key, $lang ?? $currentLocale, $params);
+        }));
 
         return $twig;
     }
@@ -59,8 +114,10 @@ final class View
         return $theme;
     }
 
-    public static function getConfig(): array
+    public static function getConfig(?User $user = null): array
     {
+        $currentLocale = I18n::getCurrentLocale($user);
+
         return [
             'appName' => $_ENV['appName'],
             'baseUrl' => $_ENV['baseUrl'],
@@ -71,7 +128,8 @@ final class View
             'jsdelivr_url' => $_ENV['jsdelivr_url'],
             'enable_telemetry' => $_ENV['enable_telemetry'] ?? true,
             // site default language
-            'locale' => $_ENV['locale'],
+            'locale' => $currentLocale,
+            'current_locale' => $currentLocale,
         ];
     }
 }

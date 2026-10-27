@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{$config['locale']|replace:'_':'-'}" data-bs-theme="auto">
+<html lang="{$current_locale|replace:'_':'-'}" data-bs-theme="auto">
 
 <head>
     <meta charset="utf-8"/>

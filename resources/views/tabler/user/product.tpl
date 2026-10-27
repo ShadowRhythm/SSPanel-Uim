@@ -6,10 +6,10 @@
             <div class="row align-items-center">
                 <div class="col">
                     <h2 class="page-title">
-                        <span class="home-title">商品列表</span>
+                        <span class="home-title">{trans key='user.product_title'}</span>
                     </h2>
                     <div class="page-pretitle my-3">
-                        <span class="home-subtitle">浏览你所需要的商品</span>
+                        <span class="home-subtitle">{trans key='user.product_subtitle'}</span>
                     </div>
                 </div>
             </div>
@@ -24,19 +24,19 @@
                             <li class="nav-item">
                                 <a href="#tabp" class="nav-link active" data-bs-toggle="tab">
                                     <i class="ti ti-rotate-360 icon"></i>
-                                    &nbsp;时间流量包
+                                    &nbsp;{trans key='user.tab_time_bandwidth'}
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="#bandwidth" class="nav-link" data-bs-toggle="tab">
                                     <i class="ti ti-arrows-down-up icon"></i>
-                                    &nbsp;流量包（配合时间包）
+                                    &nbsp;{trans key='user.tab_bandwidth'}
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="#time" class="nav-link" data-bs-toggle="tab">
                                     <i class="ti ti-clock icon"></i>
-                                    &nbsp;时间包（配合流量包）
+                                    &nbsp;{trans key='user.tab_time'}
                                 </a>
                             </li>
                         </ul>
@@ -44,8 +44,8 @@
                             <div class="tab-content">
                                 <div class="tab-pane active show" id="tabp">
                                     <ul>
-                                        <li>订单会在5分钟内激活激活。</li>
-                                        <li>同一时间只能生效一个时间流量包，提前购买的新订单会在前订单过期后激活，临时增加流量请购买流量包。</li>
+                                        <li>{trans key='user.order_activation_notice'}</li>
+                                        <li>{trans key='user.single_package_notice'}</li>
                                     </ul>
                                     <div class="row">
                                         {foreach $tabps as $tabp}
@@ -67,7 +67,7 @@
                                                                         <div class="text-reset d-block">
                                                                             Lv. {$tabp->content->class}</div>
                                                                         <div class="d-block text-secondary text-truncate mt-n1">
-                                                                            等级
+                                                                            {trans key='user.level'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -75,11 +75,9 @@
                                                             <div class="list-group-item">
                                                                 <div class="row align-items-center">
                                                                     <div class="col text-truncate">
-                                                                        <div class="text-reset d-block">{$tabp->content->class_time}
-                                                                            天
-                                                                        </div>
+                                                                        <div class="text-reset d-block">{trans key='user.duration_days' days=$tabp->content->class_time}</div>
                                                                         <div class="d-block text-secondary text-truncate mt-n1">
-                                                                            等级时长
+                                                                            {trans key='user.class_duration'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -91,7 +89,7 @@
                                                                             GB
                                                                         </div>
                                                                         <div class="d-block text-secondary text-truncate mt-n1">
-                                                                            可用流量
+                                                                            {trans key='user.available_traffic'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -100,14 +98,14 @@
                                                                 <div class="row align-items-center">
                                                                     <div class="col text-truncate">
                                                                         {if $tabp->content->speed_limit === '0'}
-                                                                            <div class="text-reset d-block">不限制</div>
+                                                                            <div class="text-reset d-block">{trans key='user.unlimited'}</div>
                                                                         {else}
                                                                             <div class="text-reset d-block">{$tabp->content->speed_limit}
                                                                                 Mbps
                                                                             </div>
                                                                         {/if}
                                                                         <div class="d-block text-secondary text-truncate mt-n1">
-                                                                            连接速度
+                                                                            {trans key='user.speed_limit'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -116,12 +114,12 @@
                                                                 <div class="row align-items-center">
                                                                     <div class="col text-truncate">
                                                                         {if $tabp->content->ip_limit === '0'}
-                                                                            <div class="text-reset d-block">不限制</div>
+                                                                            <div class="text-reset d-block">{trans key='user.unlimited'}</div>
                                                                         {else}
                                                                             <div class="text-reset d-block">{$tabp->content->ip_limit}</div>
                                                                         {/if}
                                                                         <div class="d-block text-secondary text-truncate mt-n1">
-                                                                            同时连接 IP 数
+                                                                            {trans key='user.ip_limit'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -131,12 +129,12 @@
                                                             {if $tabp->stock === -1 || $tabp->stock > 0}
                                                                 <div class="col">
                                                                     <a href="/user/order/create?product_id={$tabp->id}"
-                                                                       class="btn btn-primary w-100 my-3">购买</a>
+                                                                       class="btn btn-primary w-100 my-3">{trans key='user.buy'}</a>
                                                                 </div>
                                                             {else}
                                                                 <div class="col">
                                                                     <a href="" class="btn btn-primary w-100 my-3"
-                                                                       disabled>告罄</a>
+                                                                       disabled>{trans key='user.out_of_stock'}</a>
                                                                 </div>
                                                             {/if}
                                                         </div>
@@ -148,9 +146,9 @@
                                 </div>
                                 <div class="tab-pane show" id="bandwidth">
                                     <ul>
-                                        <li>订单会在5分钟内激活激活。</li>
-                                        <li>购买流量包时需要保证账户未过期（需先购买时间流量包）。</li>
-                                        <li>未用完流量会随时间流量包重置。</li>
+                                        <li>{trans key='user.order_activation_notice'}</li>
+                                        <li>{trans key='user.bandwidth_package_notice'}</li>
+                                        <li>{trans key='user.unused_traffic_reset_notice'}</li>
                                     </ul>
                                     <div class="row">
                                         {foreach $bandwidths as $bandwidth}
@@ -173,7 +171,7 @@
                                                                             GB
                                                                         </div>
                                                                         <div class="d-block text-secondary text-truncate mt-n1">
-                                                                            可用流量
+                                                                            {trans key='user.available_traffic'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -183,12 +181,12 @@
                                                             {if $bandwidth->stock === -1 || $bandwidth->stock > 0}
                                                                 <div class="col">
                                                                     <a href="/user/order/create?product_id={$bandwidth->id}"
-                                                                       class="btn btn-primary w-100 my-3">购买</a>
+                                                                       class="btn btn-primary w-100 my-3">{trans key='user.buy'}</a>
                                                                 </div>
                                                             {else}
                                                                 <div class="col">
                                                                     <a href="" class="btn btn-primary w-100 my-3"
-                                                                       disabled>告罄</a>
+                                                                       disabled>{trans key='user.out_of_stock'}</a>
                                                                 </div>
                                                             {/if}
                                                         </div>
@@ -220,7 +218,7 @@
                                                                         <div class="text-reset d-block">
                                                                             Lv. {$time->content->class}</div>
                                                                         <div class="d-block text-secondary text-truncate mt-n1">
-                                                                            等级
+                                                                            {trans key='user.level'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -228,11 +226,9 @@
                                                             <div class="list-group-item">
                                                                 <div class="row align-items-center">
                                                                     <div class="col text-truncate">
-                                                                        <div class="text-reset d-block">{$time->content->class_time}
-                                                                            天
-                                                                        </div>
+                                                                        <div class="text-reset d-block">{trans key='user.duration_days' days=$time->content->class_time}</div>
                                                                         <div class="d-block text-secondary text-truncate mt-n1">
-                                                                            等级时长
+                                                                            {trans key='user.class_duration'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -241,14 +237,14 @@
                                                                 <div class="row align-items-center">
                                                                     <div class="col text-truncate">
                                                                         {if $time->content->speed_limit === '0'}
-                                                                            <div class="text-reset d-block">不限制</div>
+                                                                            <div class="text-reset d-block">{trans key='user.unlimited'}</div>
                                                                         {else}
                                                                             <div class="text-reset d-block">{$time->content->speed_limit}
                                                                                 Mbps
                                                                             </div>
                                                                         {/if}
                                                                         <div class="d-block text-secondary text-truncate mt-n1">
-                                                                            连接速度
+                                                                            {trans key='user.speed_limit'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -257,12 +253,12 @@
                                                                 <div class="row align-items-center">
                                                                     <div class="col text-truncate">
                                                                         {if $time->content->ip_limit === '0'}
-                                                                            <div class="text-reset d-block">不限制</div>
+                                                                            <div class="text-reset d-block">{trans key='user.unlimited'}</div>
                                                                         {else}
                                                                             <div class="text-reset d-block">{$time->content->ip_limit}</div>
                                                                         {/if}
                                                                         <div class="d-block text-secondary text-truncate mt-n1">
-                                                                            同时连接 IP 数
+                                                                            {trans key='user.ip_limit'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -272,12 +268,12 @@
                                                             {if $time->stock === -1 || $time->stock > 0}
                                                                 <div class="col">
                                                                     <a href="/user/order/create?product_id={$time->id}"
-                                                                       class="btn btn-primary w-100 my-3">购买</a>
+                                                                       class="btn btn-primary w-100 my-3">{trans key='user.buy'}</a>
                                                                 </div>
                                                             {else}
                                                                 <div class="col">
                                                                     <a href="" class="btn btn-primary w-100 my-3"
-                                                                       disabled>告罄</a>
+                                                                       disabled>{trans key='user.out_of_stock'}</a>
                                                                 </div>
                                                             {/if}
                                                         </div>

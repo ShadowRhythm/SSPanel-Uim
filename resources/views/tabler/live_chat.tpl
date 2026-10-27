@@ -32,22 +32,22 @@
         window.__lc.license = "{$public_setting['livechat_license']}";
         window.__lc.params = [
             {
-                name: '用户编号', value: '{$user->id}'
+                name: '{trans key="user.user_id" escape="js"}', value: '{$user->id}'
             },
             {
-                name: '用户类别', value: '{$user->class}'
+                name: '{trans key="user.user_class" escape="js"}', value: '{$user->class}'
             },
             {
-                name: '注册邮箱', value: '{$user->email}'
+                name: '{trans key="auth.email" escape="js"}', value: '{$user->email}'
             },
             {
-                name: '等级时间', value: '{$user->class_expire}'
+                name: '{trans key="user.class_expire_time" escape="js"}', value: '{$user->class_expire}'
             },
             {
-                name: '剩余流量', value: '{$user->unusedTraffic()}'
+                name: '{trans key="user.available_traffic" escape="js"}', value: '{$user->unusedTraffic()}'
             },
             {
-                name: '账户余额', value: '{$user->money}'
+                name: '{trans key="user.balance" escape="js"}', value: '{$user->money}'
             }
         ];
 

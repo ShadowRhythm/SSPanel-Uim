@@ -10,16 +10,16 @@
                         <div border="0" cellpadding="0" cellspacing="0" width="100%">
                             <div align="center" valign="middle" style="padding-top:60px;padding-bottom:60px;">
                                 <h2 class="bigTitle">
-                                    密码重置
+                                    {trans key='email.password_reset_title'}
                                 </h2>
                             </div>
                         </div>
                         <div border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF" width="100%">
                             <div align="center" valign="top" style="padding-bottom:60px;padding-left:20px;padding-right:20px;">
                                 <p class="midText">
-                                    你收到此邮件是因为你在 {$config['appName']} 系统申请了密码重置，如果非本人申请，请忽略此邮件。
+                                    {trans key='email.password_reset_desc' '%app_name%'=$config['appName']}
                                     <br><br>
-                                    <a href="{$resetUrl}" style="color:#505050" target="_blank">点击此链接重置密码</a>
+                                    <a href="{$resetUrl}" style="color:#505050" target="_blank">{trans key='email.click_to_reset_password'}</a>
                                 </p>
                             </div>
                         </div>

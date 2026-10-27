@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh">
+<html lang="{$current_locale|replace:'_':'-'}"{if $user->is_dark_mode} data-bs-theme="dark"{/if} data-bs-navbar-theme="dark">
 
 <head>
     <meta charset="utf-8"/>
@@ -43,6 +43,20 @@
                      class="navbar-brand-image" style="filter: none;">
             </h1>
             <div class="navbar-nav flex-row order-md-last">
+                <div class="nav-item dropdown me-2">
+                    <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown">
+                        <i class="ti ti-language icon"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end">
+                        <a class="dropdown-item {if $config['locale'] == 'zh_CN'}active{/if}" href="/locale/zh_CN">中文</a>
+                        <a class="dropdown-item {if $config['locale'] == 'zh_TW'}active{/if}" href="/locale/zh_TW">繁體中文</a>
+                        <a class="dropdown-item {if $config['locale'] == 'en_US'}active{/if}" href="/locale/en_US">English</a>
+                        <a class="dropdown-item {if $config['locale'] == 'ja_JP'}active{/if}" href="/locale/ja_JP">日本語</a>
+                        <a class="dropdown-item {if $config['locale'] == 'ru_RU'}active{/if}" href="/locale/ru_RU">Русский</a>
+                        <a class="dropdown-item {if $config['locale'] == 'fr_FR'}active{/if}" href="/locale/fr_FR">Français</a>
+                        <a class="dropdown-item {if $config['locale'] == 'pt_BR'}active{/if}" href="/locale/pt_BR">Português</a>
+                    </div>
+                </div>
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown"
                        aria-label="Open user menu">
@@ -56,14 +70,14 @@
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                         {if $user->is_dark_mode}
                             <a class="dropdown-item" hx-post="/user/switch_theme_mode" hx-swap="none">
-                                浅色模式
+                                {trans key='common.light_mode'}
                             </a>
                         {else}
                             <a class="dropdown-item" hx-post="/user/switch_theme_mode" hx-swap="none">
-                                深色模式
+                                {trans key='common.dark_mode'}
                             </a>
                         {/if}
-                        <a href="/user/logout" class="dropdown-item">登出</a>
+                        <a href="/user/logout" class="dropdown-item">{trans key='common.logout'}</a>
                     </div>
                 </div>
             </div>
@@ -76,7 +90,7 @@
                                         <i class="ti ti-home icon"></i>
                                     </span>
                                 <span class="nav-link-title">
-                                        主页
+                                        {trans key='common.home'}
                                     </span>
                             </a>
                         </li>
@@ -87,7 +101,7 @@
                                         <i class="ti ti-user icon"></i>
                                     </span>
                                 <span class="nav-link-title">
-                                        我的
+                                        {trans key='common.my_account'}
                                     </span>
                             </a>
                             <div class="dropdown-menu">
@@ -95,15 +109,15 @@
                                     <div class="dropdown-menu-column">
                                         <a class="dropdown-item" href="/user/profile">
                                             <i class="ti ti-info-square"></i>&nbsp;
-                                            账户
+                                            {trans key='common.profile'}
                                         </a>
                                         <a class="dropdown-item" href="/user/edit">
                                             <i class="ti ti-edit"></i>&nbsp;
-                                            资料
+                                            {trans key='common.edit_profile'}
                                         </a>
                                         <a class="dropdown-item" href="/user/invite">
                                             <i class="ti ti-friends"></i>&nbsp;
-                                            邀请
+                                            {trans key='common.invite'}
                                         </a>
                                     </div>
                                 </div>
@@ -116,21 +130,21 @@
                                         <i class="ti ti-brand-telegram icon"></i>
                                     </span>
                                 <span class="nav-link-title">
-                                        使用
+                                        {trans key='common.usage'}
                                     </span>
                             </a>
                             <div class="dropdown-menu">
                                 <a class="dropdown-item" href="/user/server">
                                     <i class="ti ti-server"></i>&nbsp;
-                                    节点
+                                    {trans key='common.servers'}
                                 </a>
                                 <a class="dropdown-item" href="/user/rate">
                                     <i class="ti ti-chart-bar"></i>&nbsp;
-                                    流量倍率
+                                    {trans key='common.traffic_rate'}
                                 </a>
                                 <a class="dropdown-item" href="/user/media">
                                     <i class="ti ti-key"></i>&nbsp;
-                                    流媒体解锁
+                                    {trans key='common.media_unlock'}
                                 </a>
                             </div>
                         </li>
@@ -141,25 +155,25 @@
                                         <i class="ti ti-dots-circle-horizontal icon"></i>
                                     </span>
                                 <span class="nav-link-title">
-                                        支援
+                                        {trans key='common.support'}
                                     </span>
                             </a>
                             <div class="dropdown-menu">
                                 <a class="dropdown-item" href="/user/announcement">
                                     <i class="ti ti-speakerphone"></i>&nbsp;
-                                    公告
+                                    {trans key='common.announcement'}
                                 </a>
                                 {if $public_setting['enable_ticket']}
                                     <a class="dropdown-item" href="/user/ticket">
                                         <i class="ti ti-ticket"></i>&nbsp;
-                                        工单
+                                        {trans key='common.ticket'}
                                     </a>
                                 {/if}
                                 {if $public_setting['display_docs'] &&
                                 (! $public_setting['display_docs_only_for_paid_user'] || $user->class !== 0)}
                                     <a class="dropdown-item" href="/user/docs">
                                         <i class="ti ti-notes"></i>&nbsp;
-                                        文档
+                                        {trans key='common.docs'}
                                     </a>
                                 {/if}
                             </div>
@@ -171,18 +185,18 @@
                                         <i class="ti ti-shield-check icon"></i>
                                     </span>
                                 <span class="nav-link-title">
-                                        审计
+                                        {trans key='common.audit'}
                                     </span>
                             </a>
                             <div class="dropdown-menu">
                                 <a class="dropdown-item" href="/user/detect">
                                     <i class="ti ti-barrier-block"></i>&nbsp;
-                                    规则
+                                    {trans key='common.rules'}
                                 </a>
                                 {if $public_setting['display_detect_log']}
                                     <a class="dropdown-item" href="/user/detect/log">
                                         <i class="ti ti-notes"></i>&nbsp;
-                                        日志
+                                        {trans key='common.logs'}
                                     </a>
                                 {/if}
                             </div>
@@ -194,7 +208,7 @@
                                         <i class="ti ti-building-store icon"></i>
                                     </span>
                                 <span class="nav-link-title">
-                                        商店
+                                        {trans key='common.shop'}
                                     </span>
                             </a>
                             <div class="dropdown-menu">
@@ -202,19 +216,19 @@
                                     <div class="dropdown-menu-column">
                                         <a class="dropdown-item" href="/user/product">
                                             <i class="ti ti-list"></i>&nbsp;
-                                            商品
+                                            {trans key='common.product'}
                                         </a>
                                         <a class="dropdown-item" href="/user/order">
                                             <i class="ti ti-file-invoice"></i>&nbsp;
-                                            订单
+                                            {trans key='common.order'}
                                         </a>
                                         <a class="dropdown-item" href="/user/invoice">
                                             <i class="ti ti-file-dollar"></i>&nbsp;
-                                            账单
+                                            {trans key='common.invoice'}
                                         </a>
                                         <a class="dropdown-item" href="/user/money">
                                             <i class="ti ti-home-dollar"></i>&nbsp;
-                                            余额
+                                            {trans key='common.money'}
                                         </a>
                                     </div>
                                 </div>
@@ -227,7 +241,7 @@
                                         <i class="ti ti-settings icon"></i>
                                     </span>
                                     <span class="nav-link-title">
-                                        站点管理
+                                        {trans key='common.site_admin'}
                                     </span>
                                 </a>
                             </li>

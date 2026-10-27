@@ -82,9 +82,10 @@
 <!-- js -->
 <script src="//{$config['jsdelivr_url']}/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
 <script>
-    let successDialog = new tabler.bootstrap.Modal(document.getElementById('success-dialog'));
-    let failDialog = new tabler.bootstrap.Modal(document.getElementById('fail-dialog'));
-    let noticeDialog = new tabler.bootstrap.Modal(document.getElementById('notice-dialog'));
+    let Modal = tabler.Modal || tabler.bootstrap.Modal;
+    let successDialog = new Modal(document.getElementById('success-dialog'));
+    let failDialog = new Modal(document.getElementById('fail-dialog'));
+    let noticeDialog = new Modal(document.getElementById('notice-dialog'));
 
     htmx.on("htmx:afterRequest", function(evt) {
         if (evt.detail.xhr.getResponseHeader('HX-Refresh') === 'true' ||

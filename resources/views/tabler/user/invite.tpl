@@ -6,10 +6,10 @@
             <div class="row align-items-center">
                 <div class="col">
                     <h2 class="page-title">
-                        <span class="home-title">邀请注册</span>
+                        <span class="home-title">{trans key='user.invite_title'}</span>
                     </h2>
                     <div class="page-pretitle my-3">
-                        <span class="home-subtitle">查看邀请注册链接和邀请返利记录</span>
+                        <span class="home-subtitle">{trans key='user.invite_subtitle'}</span>
                     </div>
                 </div>
             </div>
@@ -23,21 +23,19 @@
                         <div class="col-sm-12 col-lg-6">
                             <div class="card">
                                 <div class="card-body">
-                                    <h3 class="card-title">邀请规则</h3>
+                                    <h3 class="card-title">{trans key='user.invite_rules'}</h3>
                                     <ul>
-                                        <li>邀请注册的用户在账单确认后，你可获得其账单金额的 <code>{$invite_reward_rate}%</code>
-                                            作为返利
-                                        </li>
-                                        <li>部分商品的返利比例可能不遵循上面的比例</li>
+                                        <li>{trans key='user.invite_reward_rate_desc' rate="<code>{$invite_reward_rate}</code>"}</li>
+                                        <li>{trans key='user.invite_reward_exception'}</li>
                                     </ul>
-                                    <p>你目前通过邀请好友获得的总返利为 <code>{$paybacks_sum}</code> 元</p>
+                                    <p>{trans key='user.total_referral_reward' amount="<code>{$paybacks_sum}</code>"}</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-12 col-lg-6">
                             <div class="card">
                                 <div class="card-body">
-                                    <h3 class="card-title">邀请链接</h3>
+                                    <h3 class="card-title">{trans key='user.invitation_link'}</h3>
                                     {if $user->class >= 2}
                                     <input class="form-control" id="invite-url" value="{$invite_url}" disabled>
                                 </div>
@@ -45,16 +43,16 @@
                                     <div class="d-flex">
                                         <button class="btn text-red btn-link"
                                                 hx-post="/user/invite/reset" hx-swap="none">
-                                            重置
+                                            {trans key='common.reset'}
                                         </button>
                                         <button data-clipboard-text="{$invite_url}"
-                                           class="copy btn btn-primary ms-auto">复制</button>
+                                           class="copy btn btn-primary ms-auto">{trans key='common.copy'}</button>
                                     </div>
                                 </div>
                                 {else}
-                                <p>您因为不满足下列条件，所以暂无邀请权限。过段时间再来看看吧</p>
+                                <p>{trans key='user.no_invite_permission'}</p>
                                 <ul>
-                                    <li>账户等级未满 2</li>
+                                    <li>{trans key='user.class_below_min' class=2}</li>
                                 </ul>
                             </div>
                                 {/if}
@@ -65,17 +63,17 @@
                 <div class="col-12 my-3">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">返利记录</h3>
+                            <h3 class="card-title">{trans key='user.rebate_history'}</h3>
                         </div>
                         <div class="table-responsive">
                             <table class="table card-table table-vcenter text-nowrap datatable">
                                 <thead>
                                 <tr>
-                                    <th>记录ID</th>
-                                    <th>邀请用户ID</th>
-                                    <th>邀请用户昵称</th>
-                                    <th>返利金额</th>
-                                    <th>返利时间</th>
+                                    <th>{trans key='user.record_id'}</th>
+                                    <th>{trans key='user.invitee_id'}</th>
+                                    <th>{trans key='user.invitee_name'}</th>
+                                    <th>{trans key='user.rebate_amount'}</th>
+                                    <th>{trans key='user.rebate_time'}</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -84,7 +82,7 @@
                                         <td>{$payback->id}</td>
                                         <td>{$payback->userid}</td>
                                         <td>{$payback->user_name}</td>
-                                        <td>{$payback->ref_get} 元</td>
+                                        <td>{$payback->ref_get} {trans key='user.cny'}</td>
                                         <td>{$payback->datetime}</td>
                                     </tr>
                                 {/foreach}

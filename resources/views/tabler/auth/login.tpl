@@ -12,17 +12,17 @@
         </div>
         <div class="card card-md">
             <div class="card-body">
-                <h2 class="card-title text-center mb-4">登录到用户中心</h2>
+                <h2 class="card-title text-center mb-4">{trans key='auth.login_title'}</h2>
                 <div class="mb-3">
-                    <label class="form-label">邮箱</label>
+                    <label class="form-label">{trans key='auth.email'}</label>
                     <input id="email" type="email" class="form-control">
                 </div>
                 <div class="mb-2">
                     <label class="form-label">
-                        登录密码
-                        <li>面板已升级，若提示密码不正确请<a href="/password/reset">重置密码</a>后登录！</li>
+                        {trans key='auth.password'}
+                        <li>{trans key='auth.login_upgrade_notice'}</li>
                         <span class="form-label-description">
-                                <a href="/password/reset">忘记密码</a>
+                                <a href="/password/reset">{trans key='auth.forgot_password'}</a>
                             </span>
                     </label>
                     <div class="input-group input-group-flat">
@@ -32,7 +32,7 @@
                 <div class="mb-2">
                     <label class="form-check">
                         <input id="remember_me" type="checkbox" class="form-check-input"/>
-                        <span class="form-check-label">记住此设备</span>
+                        <span class="form-check-label">{trans key='auth.remember_me'}</span>
                     </label>
                 </div>
                 <div class="mb-3">
@@ -52,16 +52,16 @@
                                 password: document.getElementById("password").value,
                                 remember_me: document.getElementById("remember_me").checked,
                              }'>
-                        登录
+                        {trans key='auth.btn_login'}
                     </button>
                     <button class="btn btn-primary w-100" id="webauthnLogin">
-                        使用WebAuthn登录
+                        {trans key='auth.btn_webauthn_login'}
                     </button>
                 </div>
             </div>
         </div>
         <div class="text-center text-secondary mt-3">
-            还没有账户？ <a href="/auth/register" tabindex="-1">点击注册</a>
+            {trans key='auth.no_account'} <a href="/auth/register" tabindex="-1">{trans key='auth.click_to_register'}</a>
         </div>
     </div>
 </div>

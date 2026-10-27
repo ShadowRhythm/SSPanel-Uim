@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Auth;
 use App\Services\Cache;
 use App\Services\Filter;
+use App\Services\I18n;
 use App\Utils\Hash;
 use App\Utils\ResponseHelper;
 use App\Utils\Tools;
@@ -55,28 +56,29 @@ final class InfoController extends BaseController
      */
     public function updateEmail(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $new_email = $this->antiXss->xss_clean($request->getParam('newemail'));
         $user = $this->user;
         $old_email = $user->email;
 
         if (! $_ENV['enable_change_email'] || $user->is_shadow_banned) {
-            return ResponseHelper::error($response, '修改失败');
+            return ResponseHelper::error($response, I18n::trans('user.update_failed', $locale));
         }
 
         if ($new_email === '') {
-            return ResponseHelper::error($response, '未填写邮箱');
+            return ResponseHelper::error($response, I18n::trans('user.email_empty', $locale));
         }
 
         if (! Filter::checkEmailFilter($new_email)) {
-            return ResponseHelper::error($response, '无效的邮箱');
+            return ResponseHelper::error($response, I18n::trans('user.invalid_email', $locale));
         }
 
         if ($new_email === $old_email) {
-            return ResponseHelper::error($response, '新邮箱不能和旧邮箱一样');
+            return ResponseHelper::error($response, I18n::trans('user.new_email_same_as_old', $locale));
         }
 
         if ((new User())->where('email', $new_email)->first() !== null) {
-            return ResponseHelper::error($response, '邮箱已经被使用了');
+            return ResponseHelper::error($response, I18n::trans('user.email_already_used', $locale));
         }
 
         if (Config::obtain('reg_email_verify')) {
@@ -85,7 +87,7 @@ final class InfoController extends BaseController
             $email_verify = $redis->get('email_verify:' . $email_verify_code);
 
             if (! $email_verify) {
-                return ResponseHelper::error($response, '你的邮箱验证码不正确');
+                return ResponseHelper::error($response, I18n::trans('user.email_verify_code_incorrect', $locale));
             }
 
             $redis->del('email_verify:' . $email_verify_code);
@@ -94,12 +96,12 @@ final class InfoController extends BaseController
         $user->email = $new_email;
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '修改失败');
+            return ResponseHelper::error($response, I18n::trans('user.update_failed', $locale));
         }
 
         return $response->withJson([
             'ret' => 1,
-            'msg' => '修改成功',
+            'msg' => I18n::trans('user.update_success', $locale),
             'data' => [
                 'email' => $user->email,
             ],
@@ -108,22 +110,23 @@ final class InfoController extends BaseController
 
     public function updateUsername(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $newusername = $this->antiXss->xss_clean($request->getParam('newusername'));
         $user = $this->user;
 
         if ($user->is_shadow_banned) {
-            return ResponseHelper::error($response, '修改失败');
+            return ResponseHelper::error($response, I18n::trans('user.update_failed', $locale));
         }
 
         $user->user_name = $newusername;
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '修改失败');
+            return ResponseHelper::error($response, I18n::trans('user.update_failed', $locale));
         }
 
         return $response->withJson([
             'ret' => 1,
-            'msg' => '修改成功',
+            'msg' => I18n::trans('user.update_success', $locale),
             'data' => [
                 'username' => $user->user_name,
             ],
@@ -132,8 +135,10 @@ final class InfoController extends BaseController
 
     public function unbindIm(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
+
         if (! $this->user->unbindIM()) {
-            return ResponseHelper::error($response, '解绑失败');
+            return ResponseHelper::error($response, I18n::trans('user.unbind_failed', $locale));
         }
 
         return $response->withHeader('HX-Refresh', 'true');
@@ -141,53 +146,55 @@ final class InfoController extends BaseController
 
     public function updatePassword(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $password = $request->getParam('password');
         $new_password = $request->getParam('new_password');
         $confirm_new_password = $request->getParam('confirm_new_password');
         $user = $this->user;
 
         if ($password === '' || $new_password === '' || $confirm_new_password === '') {
-            return ResponseHelper::error($response, '密码不能为空');
+            return ResponseHelper::error($response, I18n::trans('user.password_empty', $locale));
         }
 
         if (! Hash::checkPassword($user->pass, $password)) {
-            return ResponseHelper::error($response, '旧密码错误');
+            return ResponseHelper::error($response, I18n::trans('user.wrong_old_password', $locale));
         }
 
         if ($new_password !== $confirm_new_password) {
-            return ResponseHelper::error($response, '两次输入不符合');
+            return ResponseHelper::error($response, I18n::trans('user.password_not_match', $locale));
         }
 
         if (strlen($new_password) < 8) {
-            return ResponseHelper::error($response, '密码太短啦');
+            return ResponseHelper::error($response, I18n::trans('user.password_too_short', $locale));
         }
 
         $user->pass = Hash::passwordHash($new_password);
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '修改失败');
+            return ResponseHelper::error($response, I18n::trans('user.update_failed', $locale));
         }
 
         if (Config::obtain('enable_forced_replacement')) {
             $user->removeLink();
         }
 
-        return ResponseHelper::success($response, '修改成功');
+        return ResponseHelper::success($response, I18n::trans('user.update_success', $locale));
     }
 
     public function resetPasswd(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $user = $this->user;
         $user->passwd = Tools::genRandomChar(16);
         $user->uuid = Uuid::uuid4();
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '重置失败');
+            return ResponseHelper::error($response, I18n::trans('user.reset_failed', $locale));
         }
 
         return $response->withJson([
             'ret' => 1,
-            'msg' => '重置成功',
+            'msg' => I18n::trans('user.reset_success', $locale),
             'data' => [
                 'passwd' => $user->passwd,
                 'uuid' => $user->uuid,
@@ -197,94 +204,100 @@ final class InfoController extends BaseController
 
     public function resetApiToken(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $user = $this->user;
         $user->api_token = Tools::genRandomChar(32);
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '重置失败');
+            return ResponseHelper::error($response, I18n::trans('user.reset_failed', $locale));
         }
 
-        return ResponseHelper::success($response, '重置成功');
+        return ResponseHelper::success($response, I18n::trans('user.reset_success', $locale));
     }
 
     public function updateMethod(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $user = $this->user;
         $method = strtolower($this->antiXss->xss_clean($request->getParam('method')));
 
         if ($method === '') {
-            ResponseHelper::error($response, '非法输入');
+            ResponseHelper::error($response, I18n::trans('user.invalid_input', $locale));
         }
 
         if (! Tools::isParamValidate('method', $method)) {
-            ResponseHelper::error($response, '加密无效');
+            ResponseHelper::error($response, I18n::trans('user.invalid_encryption_method', $locale));
         }
 
         $user->method = $method;
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '修改失败');
+            return ResponseHelper::error($response, I18n::trans('user.update_failed', $locale));
         }
 
-        return ResponseHelper::success($response, '修改成功');
+        return ResponseHelper::success($response, I18n::trans('user.update_success', $locale));
     }
 
     public function resetUrl(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $this->user->removeLink();
 
-        return ResponseHelper::success($response, '重置成功');
+        return ResponseHelper::success($response, I18n::trans('user.reset_success', $locale));
     }
 
     public function updateDailyMail(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $value = (int) $request->getParam('mail');
 
         if (! in_array($value, [0, 1, 2])) {
-            return ResponseHelper::error($response, '参数错误');
+            return ResponseHelper::error($response, I18n::trans('user.invalid_parameter', $locale));
         }
 
         $user = $this->user;
         $user->daily_mail_enable = $value;
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '修改失败');
+            return ResponseHelper::error($response, I18n::trans('user.update_failed', $locale));
         }
 
-        return ResponseHelper::success($response, '修改成功');
+        return ResponseHelper::success($response, I18n::trans('user.update_success', $locale));
     }
 
     public function updateContactMethod(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $value = (int) $request->getParam('contact');
 
         if (! in_array($value, [1, 2])) {
-            return ResponseHelper::error($response, '参数错误');
+            return ResponseHelper::error($response, I18n::trans('user.invalid_parameter', $locale));
         }
 
         $user = $this->user;
         $user->contact_method = $value;
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '修改失败');
+            return ResponseHelper::error($response, I18n::trans('user.update_failed', $locale));
         }
 
-        return ResponseHelper::success($response, '修改成功');
+        return ResponseHelper::success($response, I18n::trans('user.update_success', $locale));
     }
 
     public function updateTheme(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $theme = $this->antiXss->xss_clean($request->getParam('theme'));
         $user = $this->user;
 
         if ($theme === '') {
-            return ResponseHelper::error($response, '主题不能为空');
+            return ResponseHelper::error($response, I18n::trans('user.theme_empty', $locale));
         }
 
         $user->theme = $theme;
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '修改失败');
+            return ResponseHelper::error($response, I18n::trans('user.update_failed', $locale));
         }
 
         return $response->withHeader('HX-Refresh', 'true');
@@ -292,13 +305,14 @@ final class InfoController extends BaseController
 
     public function updateThemeMode(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $theme_mode = (int) $this->antiXss->xss_clean($request->getParam('theme_mode'));
         $user = $this->user;
 
         $user->is_dark_mode = in_array($theme_mode, [0, 1, 2]) ? $theme_mode : 0;
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '切换失败');
+            return ResponseHelper::error($response, I18n::trans('user.switch_failed', $locale));
         }
 
         return $response->withHeader('HX-Refresh', 'true');
@@ -306,11 +320,12 @@ final class InfoController extends BaseController
 
     public function switchThemeMode(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $user = $this->user;
         $user->is_dark_mode = $user->is_dark_mode === 1 ? 0 : 1;
 
         if (! $user->save()) {
-            return ResponseHelper::error($response, '切换失败');
+            return ResponseHelper::error($response, I18n::trans('user.switch_failed', $locale));
         }
 
         return $response->withHeader('HX-Refresh', 'true');
@@ -318,11 +333,12 @@ final class InfoController extends BaseController
 
     public function sendToGulag(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $user = $this->user;
         $password = $request->getParam('password');
 
         if ($password === '' || ! Hash::checkPassword($user->pass, $password)) {
-            return ResponseHelper::error($response, '密码错误');
+            return ResponseHelper::error($response, I18n::trans('user.wrong_password', $locale));
         }
 
         if ($_ENV['enable_kill']) {
@@ -332,6 +348,6 @@ final class InfoController extends BaseController
             return $response->withHeader('HX-Redirect', '/auth/login');
         }
 
-        return ResponseHelper::error($response, '自助账号删除未启用');
+        return ResponseHelper::error($response, I18n::trans('user.self_delete_disabled', $locale));
     }
 }

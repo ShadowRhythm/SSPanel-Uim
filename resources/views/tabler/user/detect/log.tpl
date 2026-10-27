@@ -6,10 +6,10 @@
             <div class="row align-items-center">
                 <div class="col">
                     <h2 class="page-title">
-                        <span class="home-title">审计记录</span>
+                        <span class="home-title">{trans key='user.detect_log_title'}</span>
                     </h2>
                     <div class="page-pretitle my-3">
-                        <span class="home-subtitle">系统中所有审计记录</span>
+                        <span class="home-subtitle">{trans key='user.detect_log_subtitle'}</span>
                     </div>
                 </div>
             </div>
@@ -24,15 +24,15 @@
                             <table class="table table-vcenter card-table">
                                 <thead>
                                 <tr>
-                                    <th>事件ID</th>
-                                    <th>节点ID</th>
-                                    <th>节点名称</th>
-                                    <th>规则ID</th>
-                                    <th>名称</th>
-                                    <th>描述</th>
-                                    <th>正则表达式</th>
-                                    <th>类型</th>
-                                    <th>时间</th>
+                                    <th>{trans key='user.event_id'}</th>
+                                    <th>{trans key='user.node_id'}</th>
+                                    <th>{trans key='user.node_name'}</th>
+                                    <th>{trans key='user.rule_id'}</th>
+                                    <th>{trans key='user.name'}</th>
+                                    <th>{trans key='common.description'}</th>
+                                    <th>{trans key='user.detect_regex'}</th>
+                                    <th>{trans key='common.type'}</th>
+                                    <th>{trans key='common.time'}</th>
                                 </tr>
                                 </thead>
                                 <tbody>

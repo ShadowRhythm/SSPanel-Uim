@@ -2,12 +2,12 @@
 
 <div class="card-inner">
     <h4>
-        支付宝当面付
+        {trans key='user.alipay_f2f'}
     </h4>
     <p class="card-heading"></p>
     <div id="f2f-qrcode"></div>
     <button class="btn btn-flat waves-attach" id="f2fpay-button" type="button" onclick="f2fpay();">
-        生成付款QR Code
+        {trans key='user.generate_payment_qrcode'}
     </button>
 </div>
 
@@ -25,7 +25,7 @@
             success: (data) => {
                 if (data.ret === 1) {
                     f2fQrcode.remove();
-                    f2fQrcode.append('<div class="text-center"><p>手机支付宝扫描支付</p></div>');
+                    f2fQrcode.append('<div class="text-center"><p>{trans key='user.alipay_mobile_scan_pay' escape='js'}</p></div>');
                     new QRCode("f2f-qrcode", {
                         text: data.qrcode,
                         width: 200,
@@ -34,7 +34,7 @@
                         colorLight: '#ffffff',
                         correctLevel: QRCode.CorrectLevel.H,
                     });
-                    f2fQrcode.append('<div class="text-center my-3"><p>支付成功后请手动刷新页面</p></div>');
+                    f2fQrcode.append('<div class="text-center my-3"><p>{trans key='user.payment_success_refresh_prompt' escape='js'}</p></div>');
                     f2fQrcode.attr('href', data.qrcode);
                 } else {
                     $('#fail-message').text(data.msg);

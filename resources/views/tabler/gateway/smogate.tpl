@@ -1,13 +1,13 @@
 <div class="card-inner">
     <h4>
-        支付宝当面付
+        {trans key='user.alipay_f2f'}
     </h4>
     <p class="card-heading"></p>
     <input hidden id="amount-smogate" name="amount-smogate" value="{$invoice->price}">
     <input hidden id="invoice_id" name="invoice_id" value="{$invoice->id}">
     <div id="smogate-qrcode"></div>
     <button class="btn btn-flat waves-attach" id="smogate-button" type="button" onclick="smogate();">
-        充值
+        {trans key='user.recharge'}
     </button>
 </div>
 
@@ -31,7 +31,7 @@
                 if (data.ret === 1) {
                     pid = data.pid;
                     paymentButton.remove();
-                    paymentButton.append('<div class="text-center"><p>支付宝扫描支付</p></div>');
+                    paymentButton.append('<div class="text-center"><p>{trans key='user.alipay_scan_pay' escape='js'}</p></div>');
                     new QRCode("smogate-qrcode", {
                         render: "canvas",
                         width: 200,
@@ -39,7 +39,7 @@
                         text: encodeURI(data.qrcode)
                     });
                     
-                    paymentButton.append('<div class="text-center my-3"><p>支付成功后请手动刷新页面</p></div>');
+                    paymentButton.append('<div class="text-center my-3"><p>{trans key='user.payment_success_refresh_prompt' escape='js'}</p></div>');
                     paymentButton.attr('href', data.qrcode);
                 } else {
                     $('#fail-message').text(data.msg);

@@ -9,24 +9,24 @@
                         <div border="0" cellpadding="0" cellspacing="0" width="100%">
                             <div align="center" valign="middle" style="padding-top:60px;padding-bottom:60px;">
                                 <h2 class="bigTitle">
-                                    每日流量报告
+                                    {trans key='email.traffic_report_title'}
                                 </h2>
                             </div>
                         </div>
                         <div border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF" width="100%">
                             <div align="center" valign="top" style="padding-bottom:60px;padding-left:20px;padding-right:20px;">
                                 <p class="midText">
-                                    用户名: {$user->user_name}
+                                    {trans key='email.username_label' '%username%'=$user->user_name}
                                     <br>
                                     Email: {$user->email}
                                     <br><br>
-                                    总流量: {$enable_traffic}
+                                    {trans key='email.total_traffic' '%traffic%'=$enable_traffic}
                                     <br>
-                                    已用流量: {$used_traffic}
+                                    {trans key='email.used_traffic' '%traffic%'=$used_traffic}
                                     <br>
-                                    剩余流量: {$unused_traffic}
+                                    {trans key='email.remaining_traffic' '%traffic%'=$unused_traffic}
                                     <br>
-                                    今日使用流量: {$lastday_traffic}
+                                    {trans key='email.today_traffic' '%traffic%'=$lastday_traffic}
                                     <br><br>
                                 </p>
                                 <p class="midText">

@@ -76,7 +76,7 @@ final class MoneyController extends BaseController
             '礼品卡充值 ' . $giftcard->card
         );
 
-        return $response->withJson([
+        return $response->withHeader('HX-Refresh', 'true')->withJson([
             'ret' => 1,
             'msg' => '充值成功',
         ]);

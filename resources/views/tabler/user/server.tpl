@@ -6,10 +6,10 @@
             <div class="row align-items-center">
                 <div class="col">
                     <h2 class="page-title">
-                        <span class="home-title">节点列表</span>
+                        <span class="home-title">{trans key='user.server_title'}</span>
                     </h2>
                     <div class="page-pretitle my-3">
-                        <span class="home-subtitle">查看节点在线情况</span>
+                        <span class="home-subtitle">{trans key='user.server_subtitle'}</span>
                     </div>
                 </div>
             </div>
@@ -27,7 +27,7 @@
                                         <div class="col-lg-4 col-md-6 col-sm-12">
                                             <div class="card">
                                                 {if $server['class'] === 0}
-                                                    <div class="ribbon ribbon-start bg-blue">免费</div>
+                                                    <div class="ribbon ribbon-start bg-blue">{trans key='user.server_free'}</div>
                                                 {else}
                                                     <div class="ribbon ribbon-start bg-blue">LV. {$server['class']}</div>
                                                 {/if}
@@ -49,15 +49,15 @@
                                                                     {$server['node_bandwidth_limit']}
                                                                 </span>
                                                             </h2>
-                                                            <div class="text-secondary badges-list">
+                                                            <div class="text-secondary badge-list">
                                                                 <span class="badge bg-blue-lt">
                                                                     <i class="ti ti-users"></i>
                                                                     {$server['online_user']}</span>
                                                                 <span class="badge bg-blue-lt">
                                                                     {if $server['is_dynamic_rate']}
-                                                                        动态倍率
+                                                                        {trans key='user.server_dynamic_rate'}
                                                                     {else}
-                                                                        {$server['traffic_rate']} 倍
+                                                                        {trans key='user.server_rate_multiplier' rate=$server['traffic_rate']}
                                                                     {/if}
                                                                 </span>
                                                                 <span class="badge bg-blue-lt">{$server['sort']}</span>
@@ -65,8 +65,8 @@
                                                                 <span class="badge bg-blue-lt">IPv6</span>
                                                                 {/if}
                                                                 {if $user->class < $server['class']}
-                                                                <span class="badge bg-pink-lt">当前账户等级小于节点等级</span>
-                                                                <span class="badge bg-green-lt">前往 <a href="/user/product">商品页面</a> 订购时间流量包</span>
+                                                                <span class="badge bg-pink-lt">{trans key='user.server_class_too_low'}</span>
+                                                                <span class="badge bg-green-lt">{trans key='user.go_to'} <a href="/user/product">{trans key='user.server_product_page'}</a> {trans key='user.to_buy_package'}</span>
                                                                 {/if}
                                                             </div>
                                                         </div>
