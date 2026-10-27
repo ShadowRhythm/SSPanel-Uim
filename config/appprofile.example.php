@@ -155,15 +155,8 @@ $_ENV['SingBox_Config'] = [
     ],
     'inbounds' => [
         [
-            'type' => 'mixed',
-            'tag' => 'mixed-in',
-            'listen' => '127.0.0.1',
-            'listen_port' => 2080,
-            'sniff' => true,
-        ],
-        [
             'type' => 'tun',
-            'tag' => 'tun-in',
+            'tag' => 'in',
             'address' => [
                 '172.18.0.1/30',
                 'fdfe:dcba:9876::1/126',
@@ -172,7 +165,6 @@ $_ENV['SingBox_Config'] = [
             'strict_route' => true,
             'endpoint_independent_nat' => true,
             'stack' => 'mixed',
-            'sniff' => true,
         ],
     ],
     'outbounds' => [
