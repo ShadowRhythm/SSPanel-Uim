@@ -249,7 +249,6 @@ $_ENV['SingBox_Config'] = [
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geoip@rule-set/geoip-cn.srs',
-                'download_detour' => 'select',
                 'update_interval' => '1d',
             ],
             [
@@ -257,7 +256,6 @@ $_ENV['SingBox_Config'] = [
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-cn.srs',
-                'download_detour' => 'select',
                 'update_interval' => '1d',
             ],
             [
@@ -265,7 +263,6 @@ $_ENV['SingBox_Config'] = [
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-category-ads-all.srs',
-                'download_detour' => 'select',
                 'update_interval' => '1d',
             ],
             [
@@ -273,7 +270,6 @@ $_ENV['SingBox_Config'] = [
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-cn.srs',
-                'download_detour' => 'select',
                 'update_interval' => '1d',
             ],
             [
@@ -281,7 +277,6 @@ $_ENV['SingBox_Config'] = [
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs',
-                'download_detour' => 'select',
                 'update_interval' => '1d',
             ],
             [
@@ -289,7 +284,6 @@ $_ENV['SingBox_Config'] = [
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-netease.srs',
-                'download_detour' => 'select',
                 'update_interval' => '1d',
             ],
             [
@@ -297,16 +291,22 @@ $_ENV['SingBox_Config'] = [
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-bilibili.srs',
-                'download_detour' => 'select',
                 'update_interval' => '1d',
             ],
         ],
         'final' => 'select',
         'auto_detect_interface' => true,
         'override_android_vpn' => $isSfaVisitor,
+        'default_http_client' => 'rules-client',
         'default_domain_resolver' => [
             'server' => 'local',
             'rewrite_ttl' => 60,
+        ],
+    ],
+    'http_clients' => [
+        [
+            'tag' => 'rules-client',
+            'detour' => 'select',
         ],
     ],
     'experimental' => [
