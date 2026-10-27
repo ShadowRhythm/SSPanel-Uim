@@ -112,9 +112,11 @@ final class SingBox extends Base
                     if ($host !== '' && ! isset($headers['Host']) && ! isset($headers['host'])) {
                         $headers['Host'] = $host;
                     }
-                    if (isset($headers['Host']) && is_array($headers['Host']) && count($headers['Host']) === 1) {
-                        $headers['Host'] = $headers['Host'][0];
+                    $clean_headers = [];
+                    foreach ($headers as $hk => $hv) {
+                        $clean_headers[(string) $hk] = is_array($hv) ? (string) ($hv[0] ?? '') : (string) $hv;
                     }
+                    $headers = $clean_headers;
 
                     $service_name = $node_custom_config['servicename'] ??
                         ($node_custom_config['grpc-opts']['grpc_service_name'] ??
@@ -199,9 +201,11 @@ final class SingBox extends Base
                     if ($host !== '' && ! isset($headers['Host']) && ! isset($headers['host'])) {
                         $headers['Host'] = $host;
                     }
-                    if (isset($headers['Host']) && is_array($headers['Host']) && count($headers['Host']) === 1) {
-                        $headers['Host'] = $headers['Host'][0];
+                    $clean_headers = [];
+                    foreach ($headers as $hk => $hv) {
+                        $clean_headers[(string) $hk] = is_array($hv) ? (string) ($hv[0] ?? '') : (string) $hv;
                     }
+                    $headers = $clean_headers;
 
                     $service_name = $node_custom_config['servicename'] ??
                         ($node_custom_config['grpc-opts']['grpc_service_name'] ??
@@ -248,7 +252,14 @@ final class SingBox extends Base
             $singbox_config['outbounds'][1]['outbounds'][] = $node_raw->name;
         }
 
-        $singbox_config['outbounds'] = array_merge($singbox_config['outbounds'], $nodes);
+        if ($nodes === []) {
+            unset($singbox_config['outbounds'][1]);
+            $singbox_config['outbounds'] = array_values($singbox_config['outbounds']);
+            $singbox_config['outbounds'][0]['outbounds'] = ['direct'];
+        } else {
+            $singbox_config['outbounds'] = array_merge($singbox_config['outbounds'], $nodes);
+        }
+
         $singbox_config['experimental']['cache_file']['cache_id'] = $_ENV['appName'];
 
         return json_encode($singbox_config);

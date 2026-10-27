@@ -57,22 +57,17 @@ $_ENV['SingBox_Config'] = [
             [
                 'tag' => 'local',
                 'type' => 'local',
-                //'detour' => 'direct',
             ],
             [
                 'tag' => 'alidns',
-                'type' => 'quic',
-                'server' => '223.6.6.6',
-                'server_port' => 853,
-                //'domain_resolver' => 'local',
-                //'detour' => 'direct',
+                'type' => 'https',
+                'server' => '223.5.5.5',
             ],
             [
                 'tag' => 'cloudflare',
                 'type' => 'tls',
                 'server' => '1.1.1.1',
                 'server_port' => 853,
-                //'domain_resolver' => 'local',
                 'detour' => 'select',
             ],
             [
@@ -80,7 +75,6 @@ $_ENV['SingBox_Config'] = [
                 'type' => 'tls',
                 'server' => '8.8.8.8',
                 'server_port' => 853,
-                //'domain_resolver' => 'local',
                 'detour' => 'select',
             ],
             [
@@ -88,7 +82,6 @@ $_ENV['SingBox_Config'] = [
                 'type' => 'tls',
                 'server' => '208.67.222.222',
                 'server_port' => 853,
-                //'domain_resolver' => 'local',
                 'detour' => 'select',
             ],
             [
@@ -96,8 +89,7 @@ $_ENV['SingBox_Config'] = [
                 'type' => $_ENV['dns_type_853'] ?? 'tls',
                 'server' => $_ENV['dns_server_853'] ?? 'dns.google',
                 'server_port' => (int) ($_ENV['dns_server_port_853'] ?? 853),
-                'domain_resolver' => 'alidns',
-                //'detour' => 'select',
+                'domain_resolver' => 'local',
             ],
             [
                 'tag' => 'mine_443',
@@ -105,8 +97,7 @@ $_ENV['SingBox_Config'] = [
                 'server' => $_ENV['dns_server_443'] ?? 'dns.google',
                 'server_port' => (int) ($_ENV['dns_server_port_443'] ?? 443),
                 'path' => $_ENV['dns_path_443'] ?? '/dns-query',
-                'domain_resolver' => 'alidns',
-                //'detour' => 'select',
+                'domain_resolver' => 'local',
             ],
             [
                 'tag' => 'fakeip',
@@ -132,6 +123,10 @@ $_ENV['SingBox_Config'] = [
                 'rcode' => 'REFUSED',
             ],
             [
+                'clash_mode' => 'Direct',
+                'server' => 'local',
+            ],
+            [
                 'clash_mode' => 'Global',
                 'server' => 'fakeip',
             ],
@@ -142,69 +137,42 @@ $_ENV['SingBox_Config'] = [
                     'geosite-netease',
                     'geosite-bilibili',
                 ],
-                'server' => 'fakeip',
-            ],
-            [
-                'action' => 'evaluate',
-                'server' => $_ENV['dns_select'] ?? 'google',
-                'disable_cache' => true,
-                'client_subnet' => '111.222.0.0',
+                'server' => 'local',
             ],
             [
                 'rule_set' => [
                     'geosite-geolocation-!cn',
                 ],
-                'server' => $_ENV['dns_select'] ?? 'google',
-                'disable_cache' => true,
-                'client_subnet' => '111.222.0.0',
-            ],
-            [
-                'type' => 'logical',
-                'mode' => 'and',
-                'rules' => [
-                    [
-                        'rule_set' => [
-                            'geosite-geolocation-!cn',
-                        ],
-                        'invert' => true,
-                    ],
-                    [
-                        'match_response' => true,
-                        'rule_set' => [
-                            'geoip-cn',
-                        ],
-                    ],
-                ],
-                'action' => 'route',
-                'server' => $_ENV['dns_select'] ?? 'google',
-                'disable_cache' => true,
-                'client_subnet' => '111.222.0.0',
+                'server' => 'fakeip',
             ],
             [
                 'clash_mode' => 'Rule',
                 'server' => 'fakeip',
             ],
-            [
-                'clash_mode' => 'Direct',
-                'server' => 'local',
-            ],
         ],
         'final' => 'cloudflare',
-        'disable_cache' => true,
-        //'independent_cache' => true,
+        'strategy' => 'prefer_ipv4',
     ],
     'inbounds' => [
         [
+            'type' => 'mixed',
+            'tag' => 'mixed-in',
+            'listen' => '127.0.0.1',
+            'listen_port' => 2080,
+            'sniff' => true,
+        ],
+        [
             'type' => 'tun',
-            'tag' => 'in',
+            'tag' => 'tun-in',
             'address' => [
                 '172.18.0.1/30',
                 'fdfe:dcba:9876::1/126',
             ],
             'auto_route' => true,
             'strict_route' => true,
-            'udp_timeout' => 60,
+            'endpoint_independent_nat' => true,
             'stack' => 'mixed',
+            'sniff' => true,
         ],
     ],
     'outbounds' => [
@@ -235,17 +203,16 @@ $_ENV['SingBox_Config'] = [
     'route' => [
         'rules' => [
             [
-                'inbound' => 'in',
                 'action' => 'sniff',
                 'timeout' => '1s',
             ],
             [
-                'inbound' => 'in',
                 'protocol' => 'dns',
-                'port' => [
-                    53,
-                ],
                 'action' => 'hijack-dns',
+            ],
+            [
+                'ip_is_private' => true,
+                'outbound' => 'direct',
             ],
             [
                 'rule_set' => [
@@ -263,45 +230,9 @@ $_ENV['SingBox_Config'] = [
                 'outbound' => 'select',
             ],
             [
-                'protocol' => 'stun',
-                'action' => 'reject',
-                'method' => 'default',
-            ],
-            [
                 'rule_set' => [
                     'geosite-geolocation-!cn',
                 ],
-                'outbound' => 'select',
-            ],
-            //[
-                //'action' => 'resolve',
-                //'server' => $_ENV['dns_select'],
-                //'disable_cache' => true,
-                //'rewrite_ttl' => 60,
-                //'client_subnet' => '111.222.0.0',
-            //],
-            [
-                'type' => 'logical',
-                'mode' => 'and',
-                'rules' => [
-                    [
-                        'rule_set' => [
-                            'geosite-geolocation-!cn',
-                            'geosite-geolocation-cn',
-                            'geosite-cn',
-                            'geosite-netease',
-                            'geosite-bilibili',
-                        ],
-                        'invert' => true,
-                    ],
-                    [
-                        'rule_set' => [
-                            'geoip-cn',
-                        ],
-                        'invert' => true,
-                    ],
-                ],
-                'action' => 'route',
                 'outbound' => 'select',
             ],
             [
@@ -319,29 +250,6 @@ $_ENV['SingBox_Config'] = [
                 ],
                 'outbound' => 'direct',
             ],
-            [
-                'type' => 'logical',
-                'mode' => 'and',
-                'rules' => [
-                    [
-                        'rule_set' => [
-                            'geosite-geolocation-!cn',
-                        ],
-                        'invert' => true,
-                    ],
-                    [
-                        'rule_set' => [
-                            'geoip-cn',
-                        ],
-                    ],
-                ],
-                'action' => 'route',
-                'outbound' => 'direct',
-            ],
-            [
-                'ip_is_private' => true,
-                'outbound' => 'direct',
-            ],
         ],
         'rule_set' => [
             [
@@ -349,84 +257,56 @@ $_ENV['SingBox_Config'] = [
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geoip@rule-set/geoip-cn.srs',
+                'download_detour' => 'select',
                 'update_interval' => '1d',
-                'http_client' => [
-                    'engine' => 'go',
-                    'version' => 2,
-                    'disable_version_fallback' => false,
-                ],
             ],
             [
                 'tag' => 'geosite-cn',
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-cn.srs',
+                'download_detour' => 'select',
                 'update_interval' => '1d',
-                'http_client' => [
-                    'engine' => 'go',
-                    'version' => 2,
-                    'disable_version_fallback' => false,
-                ],
             ],
             [
                 'tag' => 'geosite-category-ads-all',
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-category-ads-all.srs',
+                'download_detour' => 'select',
                 'update_interval' => '1d',
-                'http_client' => [
-                    'engine' => 'go',
-                    'version' => 2,
-                    'disable_version_fallback' => false,
-                ],
             ],
             [
                 'tag' => 'geosite-geolocation-cn',
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-cn.srs',
+                'download_detour' => 'select',
                 'update_interval' => '1d',
-                'http_client' => [
-                    'engine' => 'go',
-                    'version' => 2,
-                    'disable_version_fallback' => false,
-                ],
             ],
             [
                 'tag' => 'geosite-geolocation-!cn',
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-geolocation-!cn.srs',
+                'download_detour' => 'select',
                 'update_interval' => '1d',
-                'http_client' => [
-                    'engine' => 'go',
-                    'version' => 2,
-                    'disable_version_fallback' => false,
-                ],
             ],
             [
                 'tag' => 'geosite-netease',
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-netease.srs',
+                'download_detour' => 'select',
                 'update_interval' => '1d',
-                'http_client' => [
-                    'engine' => 'go',
-                    'version' => 2,
-                    'disable_version_fallback' => false,
-                ],
             ],
             [
                 'tag' => 'geosite-bilibili',
                 'type' => 'remote',
                 'format' => 'binary',
                 'url' => 'https://' . ($_ENV['jsdelivr_url'] ?? 'fastly.jsdelivr.net') . '/gh/SagerNet/sing-geosite@rule-set/geosite-bilibili.srs',
+                'download_detour' => 'select',
                 'update_interval' => '1d',
-                'http_client' => [
-                    'engine' => 'go',
-                    'version' => 2,
-                    'disable_version_fallback' => false,
-                ],
             ],
         ],
         'final' => 'select',
