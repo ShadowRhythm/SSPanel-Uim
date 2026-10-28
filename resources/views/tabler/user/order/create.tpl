@@ -131,7 +131,7 @@
                             {if $product->type === 'tabp' || $product->type === 'time'}
                                 <div class="mb-3">
                                     <label class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="auto-renew" checked>
+                                        <input class="form-check-input" type="checkbox" id="auto-renew">
                                         <span class="form-check-label">到期前自动续费（从账户余额扣款）</span>
                                     </label>
                                 </div>

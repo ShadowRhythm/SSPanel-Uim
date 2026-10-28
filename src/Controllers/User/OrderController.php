@@ -121,26 +121,46 @@ final class OrderController extends BaseController
     public function toggleRenew(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
         $id = (int) $this->antiXss->xss_clean($args['id']);
-        $order = Order::where('user_id', $this->user->id)->where('id', $id)->first();
-
-        if ($order === null || ! in_array($order->product_type, ['tabp', 'time'], true)) {
-            return ResponseHelper::error($response, '订单不存在或不支持自动续费');
+        $requested = $request->getParam('auto_renew');
+        if (! in_array($requested, [0, 1, '0', '1', false, true], true)) {
+            return ResponseHelper::error($response, '自动续费状态无效');
         }
+        $enabled = in_array($requested, [1, '1', true], true);
 
-        if ($order->status !== 'activated') {
-            return ResponseHelper::error($response, '只有已激活的订单可开启或关闭自动续费');
-        }
+        return DB::transaction(function () use ($response, $id, $enabled): ResponseInterface {
+            $order = Order::where('user_id', $this->user->id)->where('id', $id)->lockForUpdate()->first();
 
-        $order->auto_renew = $order->auto_renew === 1 ? 0 : 1;
-        $order->save();
+            if ($order === null || ! in_array($order->product_type, ['tabp', 'time'], true)) {
+                return ResponseHelper::error($response, '订单不存在或不支持自动续费');
+            }
 
-        $statusText = $order->autoRenew();
-        $btnText = $order->auto_renew === 1 ? '关闭自动续费' : '开启自动续费';
+            if ($enabled && $order->status !== 'activated') {
+                return ResponseHelper::error($response, '只有已激活的订单可开启自动续费');
+            }
+            if (! $enabled && ! in_array($order->status, ['activated', 'expired'], true)) {
+                return ResponseHelper::error($response, '此订单当前不能关闭自动续费');
+            }
 
-        return ResponseHelper::successWithData($response, $order->auto_renew === 1 ? '已开启自动续费' : '已关闭自动续费', [
-            'auto-renew-badge' => $statusText,
-            'toggle-renew-btn' => $btnText,
-        ]);
+            if ($enabled) {
+                $order->auto_renew = 1;
+                $order->save();
+            } else {
+                Order::where('user_id', $this->user->id)
+                    ->where('product_type', $order->product_type)
+                    ->whereIn('status', ['activated', 'pending_activation', 'expired'])
+                    ->whereIn('auto_renew', [1, 2])
+                    ->update(['auto_renew' => 0]);
+                $order->auto_renew = 0;
+            }
+
+            $statusText = $order->autoRenew();
+            $btnText = $enabled ? '关闭自动续费' : '开启自动续费';
+
+            return ResponseHelper::successWithData($response, $enabled ? '已开启自动续费' : '已关闭自动续费', [
+                'auto-renew-badge' => $statusText,
+                'toggle-renew-btn' => $btnText,
+            ]);
+        });
     }
 
     public function process(ServerRequest $request, Response $response, array $args): ResponseInterface

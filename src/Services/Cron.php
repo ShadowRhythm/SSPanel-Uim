@@ -460,12 +460,8 @@ final class Cron
                 $expireTime = strtotime($user->class_expire ?? '');
             }
 
-            if ($expireTime <= 0) {
-                continue;
-            }
-
             $timeLeft = $expireTime - time();
-            if ($timeLeft > 86400 || $timeLeft < 0) {
+            if ($expireTime <= 0 || $timeLeft > 86400 || $timeLeft < 0) {
                 continue;
             }
 
@@ -485,12 +481,23 @@ final class Cron
 
             DB::transaction(static function () use ($order, $product, $price): void {
                 $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
-                if ($lockedOrder === null || $lockedOrder->status !== 'activated' || ! in_array($lockedOrder->auto_renew, [1, 2], true)) {
+                if ($lockedOrder === null || $lockedOrder->status !== 'activated' ||
+                    ! in_array($lockedOrder->auto_renew, [1, 2], true) ||
+                    $lockedOrder->product_type !== $product->type
+                ) {
                     return;
                 }
 
                 $user = User::where('id', $lockedOrder->user_id)->lockForUpdate()->first();
                 if ($user === null) {
+                    return;
+                }
+
+                if (Order::where('user_id', $user->id)
+                    ->where('product_type', $lockedOrder->product_type)
+                    ->whereIn('status', ['pending_payment', 'pending_activation'])
+                    ->exists()
+                ) {
                     return;
                 }
 
@@ -502,7 +509,7 @@ final class Cron
                             Notification::notifyUser(
                                 $user,
                                 $_ENV['appName'] . ' - 订单自动续费扣款失败提醒',
-                                "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 即将到期，自动续费扣款失败（需要 ¥{$price}，当前账户余额 ¥{$user->money}）。请及时充值，充值后系统将自动重试续费。"
+                                "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 即将到期，自动续费扣款失败（需要 ¥{$price}，当前账户余额 ¥{$user->money}）。请在套餐/等级有效期到期前充值，系统会继续尝试续费；有效期到期后将不再自动重试。"
                             );
                         } catch (Throwable $e) {
                             echo $e->getMessage() . PHP_EOL;
