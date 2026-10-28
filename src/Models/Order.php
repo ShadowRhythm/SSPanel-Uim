@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\I18n;
 use Illuminate\Database\Query\Builder;
 
 /**
@@ -37,9 +38,9 @@ final class Order extends Model
     public function autoRenew(): string
     {
         return match ($this->auto_renew) {
-            1 => '已开启',
-            2 => '扣款失败',
-            default => '未开启',
+            1 => I18n::trans('user.auto_renew_enabled'),
+            2 => I18n::trans('user.auto_renew_failed'),
+            default => I18n::trans('user.auto_renew_disabled'),
         };
     }
 
@@ -49,12 +50,12 @@ final class Order extends Model
     public function status(): string
     {
         return match ($this->status) {
-            'pending_payment' => '等待中',
-            'pending_activation' => '待激活',
-            'activated' => '已激活',
-            'expired' => '已过期',
-            'cancelled' => '已取消',
-            default => '未知',
+            'pending_payment' => I18n::trans('user.order_status_pending_payment'),
+            'pending_activation' => I18n::trans('user.order_status_pending_activation'),
+            'activated' => I18n::trans('user.order_status_activated'),
+            'expired' => I18n::trans('user.order_status_expired'),
+            'cancelled' => I18n::trans('user.order_status_cancelled'),
+            default => I18n::trans('user.order_status_unknown'),
         };
     }
 
@@ -64,11 +65,11 @@ final class Order extends Model
     public function productType(): string
     {
         return match ($this->product_type) {
-            'tabp' => '时间流量包',
-            'time' => '时间包',
-            'bandwidth' => '流量包',
-            'topup' => '充值',
-            default => '其他',
+            'tabp' => I18n::trans('user.product_type_tabp'),
+            'time' => I18n::trans('user.product_type_time'),
+            'bandwidth' => I18n::trans('user.product_type_bandwidth'),
+            'topup' => I18n::trans('user.product_type_topup'),
+            default => I18n::trans('user.product_type_other'),
         };
     }
 }

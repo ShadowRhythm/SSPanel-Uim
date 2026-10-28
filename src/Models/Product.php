@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\I18n;
 use Illuminate\Database\Query\Builder;
 
 /**
@@ -40,10 +41,10 @@ final class Product extends Model
     public function type(): string
     {
         return match ($this->type) {
-            'tabp' => '时间流量包',
-            'time' => '时间包',
-            'bandwidth' => '流量包',
-            default => '其他',
+            'tabp' => I18n::trans('user.product_type_tabp'),
+            'time' => I18n::trans('user.product_type_time'),
+            'bandwidth' => I18n::trans('user.product_type_bandwidth'),
+            default => I18n::trans('user.product_type_other'),
         };
     }
 

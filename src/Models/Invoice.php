@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\I18n;
 use Illuminate\Database\Query\Builder;
 use function in_array;
 use function json_decode;
@@ -35,23 +36,23 @@ final class Invoice extends Model
     public function status(): string
     {
         return match ($this->status) {
-            'unpaid' => '未支付',
-            'paid_gateway' => '已支付（支付网关）',
-            'paid_balance' => '已支付（账户余额）',
-            'paid_admin' => '已支付（管理员）',
-            'cancelled' => '已取消',
-            'refunded_balance' => '已退款（账户余额）',
-            'partially_paid' => '部分支付',
-            default => '未知',
+            'unpaid' => I18n::trans('user.invoice_status_unpaid'),
+            'paid_gateway' => I18n::trans('user.invoice_status_paid_gateway'),
+            'paid_balance' => I18n::trans('user.invoice_status_paid_balance'),
+            'paid_admin' => I18n::trans('user.invoice_status_paid_admin'),
+            'cancelled' => I18n::trans('user.invoice_status_cancelled'),
+            'refunded_balance' => I18n::trans('user.invoice_status_refunded_balance'),
+            'partially_paid' => I18n::trans('user.invoice_status_partially_paid'),
+            default => I18n::trans('user.invoice_status_unknown'),
         };
     }
 
     public function type(): string
     {
         return match ($this->type) {
-            'product' => '商品',
-            'topup' => '充值',
-            default => '未知',
+            'product' => I18n::trans('user.invoice_type_product'),
+            'topup' => I18n::trans('user.invoice_type_topup'),
+            default => I18n::trans('user.invoice_type_unknown'),
         };
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\I18n;
 use Illuminate\Database\Query\Builder;
 
 /**
@@ -28,10 +29,10 @@ final class Ticket extends Model
     public function type(): string
     {
         return match ($this->type) {
-            'howto' => '使用',
-            'billing' => '财务',
-            'account' => '账户',
-            default => '其他',
+            'howto' => I18n::trans('user.ticket_type_howto'),
+            'billing' => I18n::trans('user.ticket_type_billing'),
+            'account' => I18n::trans('user.ticket_type_account'),
+            default => I18n::trans('user.ticket_type_other'),
         };
     }
 
@@ -41,10 +42,10 @@ final class Ticket extends Model
     public function status(): string
     {
         return match ($this->status) {
-            'closed' => '已结单',
-            'open_wait_user' => '等待用户回复',
-            'open_wait_admin' => '进行中',
-            default => '未知',
+            'closed' => I18n::trans('user.ticket_status_closed'),
+            'open_wait_user' => I18n::trans('user.ticket_status_open_wait_user'),
+            'open_wait_admin' => I18n::trans('user.ticket_status_open_wait_admin'),
+            default => I18n::trans('user.ticket_status_unknown'),
         };
     }
 }

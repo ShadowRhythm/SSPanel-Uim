@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\I18n;
 use Illuminate\Database\Query\Builder;
 
 /**
@@ -25,6 +26,8 @@ final class DetectRule extends Model
      */
     public function type(): string
     {
-        return $this->type === 1 ? '数据包明文匹配' : '数据包 hex 匹配';
+        return $this->type === 1
+            ? I18n::trans('user.detect_type_packet_plaintext')
+            : I18n::trans('user.detect_type_packet_hex');
     }
 }

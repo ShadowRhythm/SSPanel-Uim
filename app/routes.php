@@ -320,6 +320,7 @@ return static function (Slim\App $app): void {
         $group->post('/order/{id:[0-9]+}/cancel', App\Controllers\Admin\OrderController::class . ':cancel');
         $group->delete('/order/{id:[0-9]+}', App\Controllers\Admin\OrderController::class . ':delete');
         $group->post('/order/ajax', App\Controllers\Admin\OrderController::class . ':ajax');
+        $group->post('/order/{id:[0-9]+}/toggle-renew', App\Controllers\Admin\OrderController::class . ':toggleRenew');
         // 账单
         $group->get('/invoice', App\Controllers\Admin\InvoiceController::class . ':index');
         $group->get('/invoice/{id:[0-9]+}/view', App\Controllers\Admin\InvoiceController::class . ':detail');

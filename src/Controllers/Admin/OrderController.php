@@ -33,6 +33,7 @@ final class OrderController extends BaseController
             'coupon' => '优惠码',
             'price' => '金额',
             'status' => '状态',
+            'auto_renew' => '自动续费',
             'create_time' => '创建时间',
             'update_time' => '更新时间',
         ],
@@ -84,6 +85,7 @@ final class OrderController extends BaseController
 
         $order->product_type_text = $order->productType();
         $order->status_text = $order->status();
+        $order->auto_renew_text = $order->autoRenew();
         $order->create_time = Tools::toDateTime($order->create_time);
         $order->update_time = Tools::toDateTime($order->update_time);
         $order->content = json_decode($order->product_content);
@@ -210,7 +212,7 @@ final class OrderController extends BaseController
             (new Order())->newQuery(),
             $request,
             ['id', 'user_id', 'product_name', 'product_type', 'status'],
-            ['id', 'user_id', 'product_name', 'product_type', 'price', 'status', 'create_time', 'update_time']
+            ['id', 'user_id', 'product_name', 'product_type', 'price', 'status', 'auto_renew', 'create_time', 'update_time']
         );
 
         foreach ($orders['data'] as $order) {
@@ -225,6 +227,18 @@ final class OrderController extends BaseController
 
             $order->op .= '
             <a class="btn btn-primary" href="/admin/order/' . $order->id . '/view">查看</a>';
+
+            if (in_array($order->product_type, ['tabp', 'time'], true)) {
+                $badgeClass = match ($order->auto_renew) {
+                    1 => 'bg-green text-green-fg',
+                    2 => 'bg-danger text-danger-fg',
+                    default => 'bg-secondary text-secondary-fg',
+                };
+                $order->auto_renew = '<span class="badge ' . $badgeClass . '">' . $order->autoRenew() . '</span>';
+            } else {
+                $order->auto_renew = '-';
+            }
+
             $order->product_type = $order->productType();
             $order->status = $order->status();
             $order->create_time = Tools::toDateTime($order->create_time);
@@ -234,5 +248,50 @@ final class OrderController extends BaseController
         $orders['orders'] = $orders['data'];
         unset($orders['data']);
         return $response->withJson($orders);
+    }
+
+    public function toggleRenew(ServerRequest $request, Response $response, array $args): ResponseInterface
+    {
+        $id = (int) $args['id'];
+        $order = (new Order())->find($id);
+
+        if ($order === null || ! in_array($order->product_type, ['tabp', 'time'], true)) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '订单不存在或不支持自动续费',
+            ]);
+        }
+
+        $requested = $request->getParam('auto_renew');
+        if ($requested !== null && $requested !== '' && ! in_array($requested, [0, 1, '0', '1', false, true], true)) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '自动续费状态无效',
+            ]);
+        }
+
+        $enabled = ($requested !== null && $requested !== '')
+            ? in_array($requested, [1, '1', true], true)
+            : ($order->auto_renew === 0);
+
+        $order->auto_renew = $enabled ? 1 : 0;
+        $order->save();
+
+        $badgeClass = match ($order->auto_renew) {
+            1 => 'bg-green text-green-fg',
+            2 => 'bg-danger text-danger-fg',
+            default => 'bg-secondary text-secondary-fg',
+        };
+        $badgeHtml = '<span id="auto-renew-badge" class="badge ' . $badgeClass . '">' . $order->autoRenew() . '</span>';
+        $btnText = '<i class="icon ti ti-refresh"></i> ' . ($order->auto_renew === 1 ? '关闭自动续费' : '开启自动续费');
+
+        return $response->withJson([
+            'ret' => 1,
+            'msg' => $order->auto_renew === 1 ? '已为该订单开启自动续费' : '已为该订单关闭自动续费',
+            'data' => [
+                'auto-renew-badge-container' => $badgeHtml,
+                'admin-toggle-renew-btn' => $btnText,
+            ],
+        ]);
     }
 }

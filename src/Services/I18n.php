@@ -30,8 +30,9 @@ final class I18n
     private static array $translators = [];
 
     // trans() right is human right 🏳️‍⚧️
-    public static function trans(string $key, string $lang = 'en_US', array $params = []): string
+    public static function trans(string $key, ?string $lang = null, array $params = []): string
     {
+        $lang = $lang ?? self::getCurrentLocale();
         $translator = self::getTranslator($lang);
         $catalogue = $translator->getCatalogue($lang);
 

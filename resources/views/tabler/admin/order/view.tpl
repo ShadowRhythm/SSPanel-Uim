@@ -22,6 +22,14 @@
                             <i class="icon ti ti-file-dollar"></i>
                             查看关联账单
                         </a>
+                        {if $order->product_type === 'tabp' || $order->product_type === 'time'}
+                            <button id="admin-toggle-renew-btn" class="btn {if $order->auto_renew === 1}btn-outline-danger{else}btn-outline-primary{/if}"
+                                    hx-post="/admin/order/{$order->id}/toggle-renew"
+                                    hx-swap="none">
+                                <i class="icon ti ti-refresh"></i>
+                                {if $order->auto_renew === 1}关闭自动续费{else}开启自动续费{/if}
+                            </button>
+                        {/if}
                         {if $order->status === 'pending_payment'}
                             <button href="#" class="btn btn-red" data-bs-toggle="modal"
                                     data-bs-target="#cancel_order_confirm_dialog">
@@ -70,6 +78,18 @@
                             <div class="datagrid-title">订单状态</div>
                             <div class="datagrid-content">{$order->status_text}</div>
                         </div>
+                        {if $order->product_type === 'tabp' || $order->product_type === 'time'}
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">自动续费</div>
+                                <div class="datagrid-content">
+                                    <span id="auto-renew-badge-container">
+                                        <span id="auto-renew-badge" class="badge {if $order->auto_renew === 1}bg-green text-green-fg{elseif $order->auto_renew === 2}bg-danger text-danger-fg{else}bg-secondary text-secondary-fg{/if}">
+                                            {$order->auto_renew_text}
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                        {/if}
                         <div class="datagrid-item">
                             <div class="datagrid-title">创建时间</div>
                             <div class="datagrid-content">{$order->create_time}</div>
