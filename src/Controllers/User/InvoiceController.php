@@ -10,6 +10,7 @@ use App\Models\Paylist;
 use App\Models\User;
 use App\Models\UserMoneyLog;
 use App\Services\DB;
+use App\Services\DataTable;
 use App\Services\Payment;
 use App\Utils\Tools;
 use Exception;
@@ -150,9 +151,14 @@ final class InvoiceController extends BaseController
 
     public function ajax(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $invoices = (new Invoice())->orderBy('id', 'desc')->where('user_id', $this->user->id)->get();
+        $invoices = DataTable::paginate(
+            (new Invoice())->newQuery()->where('user_id', $this->user->id),
+            $request,
+            ['id', 'order_id', 'type', 'status'],
+            ['id', 'order_id', 'price', 'status', 'create_time', 'update_time', 'pay_time']
+        );
 
-        foreach ($invoices as $invoice) {
+        foreach ($invoices['data'] as $invoice) {
             $invoice->op = '<a class="btn btn-primary" href="/user/invoice/' . $invoice->id . '/view">查看</a>';
             $invoice->status = $invoice->status();
             $invoice->create_time = Tools::toDateTime($invoice->create_time);
@@ -160,8 +166,8 @@ final class InvoiceController extends BaseController
             $invoice->pay_time = Tools::toDateTime($invoice->pay_time);
         }
 
-        return $response->withJson([
-            'invoices' => $invoices,
-        ]);
+        $invoices['invoices'] = $invoices['data'];
+        unset($invoices['data']);
+        return $response->withJson($invoices);
     }
 }

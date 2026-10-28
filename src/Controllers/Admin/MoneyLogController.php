@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Models\UserMoneyLog;
+use App\Services\DataTable;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
@@ -46,14 +47,19 @@ final class MoneyLogController extends BaseController
      */
     public function ajax(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $money_logs = (new UserMoneyLog())->orderBy('id', 'desc')->get();
+        $money_logs = DataTable::paginate(
+            (new UserMoneyLog())->newQuery(),
+            $request,
+            ['id', 'user_id', 'remark'],
+            ['id', 'user_id', 'before', 'after', 'amount', 'create_time']
+        );
 
-        foreach ($money_logs as $money_log) {
+        foreach ($money_logs['data'] as $money_log) {
             $money_log->create_time = Tools::toDateTime((int) $money_log->create_time);
         }
 
-        return $response->withJson([
-            'money_logs' => $money_logs,
-        ]);
+        $money_logs['money_logs'] = $money_logs['data'];
+        unset($money_logs['data']);
+        return $response->withJson($money_logs);
     }
 }

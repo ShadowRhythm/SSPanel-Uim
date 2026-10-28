@@ -41,11 +41,13 @@ final class SubController extends BaseController
 
         $token = $this->antiXss->xss_clean($args['token']);
 
-        if ($_ENV['enable_rate_limit'] &&
-            (! (new RateLimit())->checkRateLimit('sub_ip', $request->getServerParam('REMOTE_ADDR')) ||
-            ! (new RateLimit())->checkRateLimit('sub_token', $token))
-        ) {
-            return ResponseHelper::error($response, $err_msg);
+        if ($_ENV['enable_rate_limit']) {
+            $rateLimit = new RateLimit();
+            if (! $rateLimit->checkRateLimit('sub_ip', $request->getServerParam('REMOTE_ADDR')) ||
+                ! $rateLimit->checkRateLimit('sub_token', $token)
+            ) {
+                return ResponseHelper::error($response, $err_msg);
+            }
         }
 
         $link = (new Link())->where('token', $token)->first();

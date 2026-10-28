@@ -186,12 +186,16 @@ jobs:
           --ansi
     
     - name: Run PHP CodeSniffer
-      if: always()
-      run: vendor/bin/phpcs --standard=PSR12 src/ || true
+      run: vendor/bin/phpcs --standard=PSR12 src/
     
     - name: Run PHPStan
       if: always()
-      run: vendor/bin/phpstan analyse src/ --level=5 || true
+      run: |
+        if [ -x vendor/bin/phpstan ]; then
+          vendor/bin/phpstan analyse src/ --level=5
+        else
+          echo "PHPStan is not installed in the locked dependency set; skipping."
+        fi
 
   security-check:
     runs-on: ubuntu-latest

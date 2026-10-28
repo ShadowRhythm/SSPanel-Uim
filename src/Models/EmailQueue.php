@@ -15,6 +15,9 @@ use function time;
  * @property string $template 邮件模板
  * @property string $array    模板内容
  * @property int    $time     添加时间
+ * @property int    $attempts 重试次数
+ * @property int    $next_attempt_at 下次尝试时间
+ * @property string $last_error 最近一次错误
  *
  * @mixin Builder
  */
@@ -30,6 +33,7 @@ final class EmailQueue extends Model
         $this->template = $template;
         $this->time = time();
         $this->array = json_encode($array);
+        $this->next_attempt_at = time();
         $this->save();
     }
 }

@@ -45,8 +45,9 @@
         tableConfig.ajax = {
             url: '/user/invoice/ajax',
             type: 'POST',
-            dataSrc: 'invoices'
+            dataSrc: function (json) { return json.invoices; }
         };
+        tableConfig.serverSide = true;
         tableConfig.order = [
             [1, 'desc']
         ];

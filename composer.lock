@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d30571b77dd9a9c62b6a5ad1108953a7",
+    "content-hash": "48e21de26cf498cbb3493c855cf5eaa1",
     "packages": [
         {
             "name": "adbario/php-dot-notation",
@@ -506,16 +506,16 @@
         },
         {
             "name": "alipaysdk/openapi",
-            "version": "dev-master",
+            "version": "3.0.95",
             "source": {
                 "type": "git",
                 "url": "https://github.com/alipay/alipay-sdk-php-all.git",
-                "reference": "1a9b8a701f03a7889a79f1e240454daf0169b0c0"
+                "reference": "ea70e049a3fa9a48d91a9086f6b59320c5941287"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/alipay/alipay-sdk-php-all/zipball/1a9b8a701f03a7889a79f1e240454daf0169b0c0",
-                "reference": "1a9b8a701f03a7889a79f1e240454daf0169b0c0",
+                "url": "https://api.github.com/repos/alipay/alipay-sdk-php-all/zipball/ea70e049a3fa9a48d91a9086f6b59320c5941287",
+                "reference": "ea70e049a3fa9a48d91a9086f6b59320c5941287",
                 "shasum": ""
             },
             "require": {
@@ -533,7 +533,6 @@
                 "friendsofphp/php-cs-fixer": "^3.5",
                 "phpunit/phpunit": "^8.0 || ^9.0"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -562,9 +561,9 @@
                 "sdk"
             ],
             "support": {
-                "source": "https://github.com/alipay/alipay-sdk-php-all/tree/master"
+                "source": "https://github.com/alipay/alipay-sdk-php-all/tree/v3.0.95"
             },
-            "time": "2025-07-29T04:31:39+00:00"
+            "time": "2026-09-02T03:37:06+00:00"
         },
         {
             "name": "aws/aws-crt-php",

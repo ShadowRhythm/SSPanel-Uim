@@ -102,8 +102,9 @@
         tableConfig.ajax = {
             url: '/admin/user/ajax',
             type: 'POST',
-            dataSrc: 'users'
+            dataSrc: function (json) { return json.users; }
         };
+        tableConfig.serverSide = true;
         tableConfig.order = [
             [1, 'asc']
         ];
@@ -115,7 +116,6 @@
         ];
 
         let table = new DataTable('#data-table', tableConfig);
-		table.page.len(100).draw(); // 设置为100并刷新表格
         function loadTable() {
             table;
         }

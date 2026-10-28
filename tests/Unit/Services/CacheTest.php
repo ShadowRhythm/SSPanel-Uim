@@ -61,3 +61,16 @@ it('gets redis config with optional parameters not set', function () {
     $result = Cache::getRedisConfig();
     expect($result)->toMatchArray($expected);
 });
+
+it('keeps SSL context absent when TLS is disabled', function () {
+    $_ENV['redis_host'] = 'localhost';
+    $_ENV['redis_port'] = 6379;
+    $_ENV['redis_db'] = 0;
+    $_ENV['redis_connect_timeout'] = 1.0;
+    $_ENV['redis_read_timeout'] = 1.0;
+    $_ENV['redis_username'] = '';
+    $_ENV['redis_password'] = '';
+    $_ENV['redis_ssl'] = false;
+
+    expect(Cache::getRedisConfig())->not->toHaveKey('ssl');
+});

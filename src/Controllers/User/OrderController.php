@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\UserCoupon;
 use App\Services\DB;
+use App\Services\DataTable;
 use App\Utils\Cookie;
 use App\Utils\Tools;
 use Exception;
@@ -258,6 +259,27 @@ final class OrderController extends BaseController
                     }
                 }
 
+                if ($coupon !== null) {
+                    $lockedCoupon = UserCoupon::where('id', $coupon->id)->lockForUpdate()->first();
+                    if ($lockedCoupon === null || $lockedCoupon->expire_time !== 0 && $lockedCoupon->expire_time < time()) {
+                        throw new Exception('优惠码不存在或已过期');
+                    }
+                    $lockedLimit = json_decode($lockedCoupon->limit);
+                    if ($lockedLimit->disabled) {
+                        throw new Exception('优惠码已被禁用');
+                    }
+                    if ($lockedLimit->use_time > 0 &&
+                        (new Order())->where('user_id', $user->id)->where('coupon', $lockedCoupon->code)->count() >= $lockedLimit->use_time
+                    ) {
+                        throw new Exception('优惠码使用次数已达上限');
+                    }
+                    if (property_exists($lockedLimit, 'total_use_time') && $lockedLimit->total_use_time > 0 &&
+                        $lockedCoupon->use_count >= $lockedLimit->total_use_time
+                    ) {
+                        throw new Exception('优惠码使用次数已达上限');
+                    }
+                }
+
                 Product::where('id', $product->id)->increment('sale_count', 1);
 
                 $order = new Order();
@@ -365,13 +387,20 @@ final class OrderController extends BaseController
 
     public function ajax(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $orders = (new Order())->orderBy('id', 'desc')->where('user_id', $this->user->id)->get();
+        $orders = DataTable::paginate(
+            (new Order())->newQuery()->where('user_id', $this->user->id),
+            $request,
+            ['id', 'product_name', 'product_type', 'status'],
+            ['id', 'product_id', 'product_type', 'product_name', 'coupon', 'price', 'status', 'create_time', 'update_time']
+        );
+        $invoiceIds = (new Invoice())->whereIn('order_id', $orders['data']->pluck('id'))
+            ->pluck('id', 'order_id');
 
-        foreach ($orders as $order) {
+        foreach ($orders['data'] as $order) {
             $order->op = '<a class="btn btn-primary" href="/user/order/' . $order->id . '/view">查看</a>';
 
             if ($order->status === 'pending_payment') {
-                $invoice_id = (new Invoice())->where('order_id', $order->id)->first()->id;
+                $invoice_id = $invoiceIds[$order->id] ?? 0;
                 $order->op .= '
                 <a class="btn btn-red" href="/user/invoice/' . $invoice_id . '/view">支付</a>';
             }
@@ -382,8 +411,8 @@ final class OrderController extends BaseController
             $order->update_time = Tools::toDateTime($order->update_time);
         }
 
-        return $response->withJson([
-            'orders' => $orders,
-        ]);
+        $orders['orders'] = $orders['data'];
+        unset($orders['data']);
+        return $response->withJson($orders);
     }
 }

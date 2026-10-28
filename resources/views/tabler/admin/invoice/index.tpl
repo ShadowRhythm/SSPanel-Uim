@@ -45,8 +45,9 @@
         tableConfig.ajax = {
             url: '/admin/invoice/ajax',
             type: 'POST',
-            dataSrc: 'invoices'
+            dataSrc: function (json) { return json.invoices; }
         };
+        tableConfig.serverSide = true;
         tableConfig.order = [
             [1, 'desc']
         ];
@@ -58,7 +59,6 @@
         ];
 
         let table = new DataTable('#data-table', tableConfig);
-		table.page.len(100).draw(); // 设置为100并刷新表格
         function loadTable() {
             table;
         }

@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Models\Paylist;
+use App\Services\DataTable;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
@@ -47,15 +48,20 @@ final class PaylistController extends BaseController
      */
     public function ajax(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $paylists = (new Paylist())->orderBy('id', 'desc')->get();
+        $paylists = DataTable::paginate(
+            (new Paylist())->newQuery(),
+            $request,
+            ['id', 'userid', 'tradeno', 'gateway'],
+            ['id', 'userid', 'total', 'status', 'gateway', 'tradeno', 'datetime', 'invoice_id']
+        );
 
-        foreach ($paylists as $paylist) {
+        foreach ($paylists['data'] as $paylist) {
             $paylist->status = $paylist->status();
             $paylist->datetime = Tools::toDateTime((int) $paylist->datetime);
         }
 
-        return $response->withJson([
-            'paylists' => $paylists,
-        ]);
+        $paylists['paylists'] = $paylists['data'];
+        unset($paylists['data']);
+        return $response->withJson($paylists);
     }
 }

@@ -43,8 +43,9 @@
         tableConfig.ajax = {
             url: '/admin/gateway/ajax',
             type: 'POST',
-            dataSrc: 'paylists'
+            dataSrc: function (json) { return json.paylists; }
         };
+        tableConfig.serverSide = true;
         tableConfig.order = [
             [0, 'desc']
         ];
@@ -54,7 +55,6 @@
         function loadTable() {
             table;
         }
-		table.page.len(100).draw(); // 设置为100并刷新表格
         loadTable();
     </script>
 

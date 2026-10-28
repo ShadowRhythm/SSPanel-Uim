@@ -12,7 +12,17 @@ final class Cache
     {
         $config = self::getRedisConfig();
         $redis = new Redis();
-        $redis->connect($config['host'], $config['port'], $config['connectTimeout']);
+        $ssl = $config['ssl'] ?? [];
+        $host = $_ENV['redis_ssl'] ? 'tls://' . $config['host'] : $config['host'];
+        $redis->connect(
+            $host,
+            $config['port'],
+            $config['connectTimeout'],
+            null,
+            0,
+            $config['readTimeout'],
+            $ssl
+        );
         // 认证
         if (($config['auth']['user'] ?? '') !== '' && ($config['auth']['pass'] ?? '') !== '') {
             $redis->auth([$config['auth']['user'], $config['auth']['pass']]);

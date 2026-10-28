@@ -8,6 +8,7 @@ use App\Controllers\AuthController;
 use App\Controllers\BaseController;
 use App\Models\Config;
 use App\Models\User;
+use App\Services\DataTable;
 use App\Models\UserMoneyLog;
 use App\Services\I18n;
 use App\Utils\Hash;
@@ -251,9 +252,14 @@ final class UserController extends BaseController
 
     public function ajax(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $users = (new User())->orderBy('id', 'desc')->get();
+        $users = DataTable::paginate(
+            (new User())->newQuery(),
+            $request,
+            ['id', 'user_name', 'email'],
+            ['id', 'user_name', 'email', 'money', 'class', 'class_expire']
+        );
 
-        foreach ($users as $user) {
+        foreach ($users['data'] as $user) {
             $user->op = '<button class="btn btn-red" id="delete-user-' . $user->id . '" 
             onclick="deleteUser(' . $user->id . ')">删除</button>
             <a class="btn btn-primary" href="/admin/user/' . $user->id . '/edit">编辑</a>';
@@ -268,8 +274,8 @@ final class UserController extends BaseController
             $user->is_inactive = $user->is_inactive === 1 ? '是' : '否';
         }
 
-        return $response->withJson([
-            'users' => $users,
-        ]);
+        $users['users'] = $users['data'];
+        unset($users['data']);
+        return $response->withJson($users);
     }
 }

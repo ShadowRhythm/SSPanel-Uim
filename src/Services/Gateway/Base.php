@@ -54,7 +54,7 @@ abstract class Base
     public function postPayment(string $trade_no): void
     {
         DB::transaction(function () use ($trade_no): void {
-            $paylist = (new Paylist())->where('tradeno', $trade_no)->first();
+            $paylist = (new Paylist())->where('tradeno', $trade_no)->lockForUpdate()->first();
 
             if ($paylist === null || $paylist->status !== 0) {
                 return;
@@ -64,7 +64,7 @@ abstract class Base
             $paylist->status = 1;
             $paylist->save();
 
-            $invoice = (new Invoice())->where('id', $paylist->invoice_id)->first();
+            $invoice = (new Invoice())->where('id', $paylist->invoice_id)->lockForUpdate()->first();
 
             if ($invoice !== null &&
                 ($invoice->status === 'unpaid' || $invoice->status === 'partially_paid') &&
@@ -76,7 +76,7 @@ abstract class Base
                 $invoice->save();
             }
 
-            $user = (new User())->find($paylist->userid);
+            $user = (new User())->where('id', $paylist->userid)->lockForUpdate()->first();
 
             if ($user !== null && $invoice !== null && (float) $paylist->total > (float) $invoice->price) {
                 $money_before = $user->money;

@@ -43,8 +43,9 @@
         tableConfig.ajax = {
             url: '/admin/money/ajax',
             type: 'POST',
-            dataSrc: 'money_logs'
+            dataSrc: function (json) { return json.money_logs; }
         };
+        tableConfig.serverSide = true;
         tableConfig.order = [
             [0, 'desc']
         ];

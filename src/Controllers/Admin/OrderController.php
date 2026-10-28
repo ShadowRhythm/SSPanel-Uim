@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Services\DataTable;
 use App\Models\Paylist;
 use App\Utils\Tools;
 use Exception;
@@ -187,9 +188,14 @@ final class OrderController extends BaseController
 
     public function ajax(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $orders = (new Order())->orderBy('id', 'desc')->get();
+        $orders = DataTable::paginate(
+            (new Order())->newQuery(),
+            $request,
+            ['id', 'user_id', 'product_name', 'product_type', 'status'],
+            ['id', 'user_id', 'product_name', 'product_type', 'price', 'status', 'create_time', 'update_time']
+        );
 
-        foreach ($orders as $order) {
+        foreach ($orders['data'] as $order) {
             $order->op = '<button class="btn btn-red" id="delete-order-' . $order->id . '"
              onclick="deleteOrder(' . $order->id . ')">删除</button>';
 
@@ -207,8 +213,8 @@ final class OrderController extends BaseController
             $order->update_time = Tools::toDateTime($order->update_time);
         }
 
-        return $response->withJson([
-            'orders' => $orders,
-        ]);
+        $orders['orders'] = $orders['data'];
+        unset($orders['data']);
+        return $response->withJson($orders);
     }
 }

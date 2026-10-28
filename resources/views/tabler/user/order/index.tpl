@@ -45,8 +45,9 @@
         tableConfig.ajax = {
             url: '/user/order/ajax',
             type: 'POST',
-            dataSrc: 'orders'
+            dataSrc: function (json) { return json.orders; }
         };
+        tableConfig.serverSide = true;
         tableConfig.order = [
             [1, 'desc']
         ];
