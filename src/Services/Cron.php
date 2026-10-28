@@ -183,6 +183,7 @@ final class Cron
             Order::where('user_id', $user->id)
                 ->where('product_type', 'time')
                 ->where('status', 'activated')
+                ->where('auto_renew', 0)
                 ->update(['status' => 'expired', 'update_time' => time()]);
         }
 
@@ -452,16 +453,24 @@ final class Cron
             if ($order->product_type === 'tabp') {
                 $content = json_decode($order->product_content);
                 $expireTime = $order->update_time + ((int) ($content->time ?? 0)) * 86400;
+                $timeLeft = $expireTime - time();
+                if ($expireTime <= 0 || $timeLeft > 86400 || $timeLeft < 0 || $order->status === 'expired') {
+                    continue;
+                }
             } elseif ($order->product_type === 'time') {
                 $user = User::find($order->user_id);
                 if ($user === null) {
                     continue;
                 }
                 $expireTime = strtotime($user->class_expire ?? '');
-            }
-
-            $timeLeft = $expireTime - time();
-            if ($expireTime <= 0 || $timeLeft > 86400 || $timeLeft < 0) {
+                if ($expireTime === false || $expireTime <= 0) {
+                    continue;
+                }
+                $timeLeft = $expireTime - time();
+                if ($timeLeft > 86400) {
+                    continue;
+                }
+            } else {
                 continue;
             }
 
@@ -493,6 +502,19 @@ final class Cron
                     return;
                 }
 
+                if ($lockedOrder->product_type === 'tabp') {
+                    $content = json_decode($lockedOrder->product_content);
+                    $expireTime = $lockedOrder->update_time + ((int) ($content->time ?? 0)) * 86400;
+                    if ($expireTime - time() < 0) {
+                        return;
+                    }
+                } elseif ($lockedOrder->product_type === 'time') {
+                    $expireTime = strtotime($user->class_expire ?? '');
+                    if ($expireTime === false || $expireTime <= 0 || ($expireTime - time()) > 86400) {
+                        return;
+                    }
+                }
+
                 if (Order::where('user_id', $user->id)
                     ->where('product_type', $lockedOrder->product_type)
                     ->whereIn('status', ['pending_payment', 'pending_activation'])
@@ -506,10 +528,16 @@ final class Cron
                         $lockedOrder->auto_renew = 2;
                         $lockedOrder->save();
                         try {
+                            $tip = $lockedOrder->product_type === 'tabp'
+                                ? '请在订单到期前及时充值，系统会继续尝试续费；订单过期后将不再自动重试。'
+                                : '请及时充值，充值后系统将自动重试续费。';
+                            $prefix = $lockedOrder->product_type === 'tabp'
+                                ? "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 即将到期，自动续费扣款失败（需要 ¥{$price}，当前账户余额 ¥{$user->money}）。"
+                                : "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 自动续费扣款失败（需要 ¥{$price}，当前账户余额 ¥{$user->money}）。";
                             Notification::notifyUser(
                                 $user,
                                 $_ENV['appName'] . ' - 订单自动续费扣款失败提醒',
-                                "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 即将到期，自动续费扣款失败（需要 ¥{$price}，当前账户余额 ¥{$user->money}）。请在套餐/等级有效期到期前充值，系统会继续尝试续费；有效期到期后将不再自动重试。"
+                                "{$prefix}{$tip}"
                             );
                         } catch (Throwable $e) {
                             echo $e->getMessage() . PHP_EOL;

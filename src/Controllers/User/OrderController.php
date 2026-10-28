@@ -8,6 +8,7 @@ use App\Controllers\BaseController;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
 use App\Models\UserCoupon;
 use App\Services\DB;
 use App\Services\DataTable;
@@ -24,6 +25,7 @@ use function json_decode;
 use function json_encode;
 use function max;
 use function property_exists;
+use function strtotime;
 use function time;
 
 final class OrderController extends BaseController
@@ -122,17 +124,20 @@ final class OrderController extends BaseController
     {
         $id = (int) $this->antiXss->xss_clean($args['id']);
         $requested = $request->getParam('auto_renew');
-        if (! in_array($requested, [0, 1, '0', '1', false, true], true)) {
+        if ($requested !== null && $requested !== '' && ! in_array($requested, [0, 1, '0', '1', false, true], true)) {
             return ResponseHelper::error($response, '自动续费状态无效');
         }
-        $enabled = in_array($requested, [1, '1', true], true);
 
-        return DB::transaction(function () use ($response, $id, $enabled): ResponseInterface {
+        return DB::transaction(function () use ($response, $id, $requested): ResponseInterface {
             $order = Order::where('user_id', $this->user->id)->where('id', $id)->lockForUpdate()->first();
 
             if ($order === null || ! in_array($order->product_type, ['tabp', 'time'], true)) {
                 return ResponseHelper::error($response, '订单不存在或不支持自动续费');
             }
+
+            $enabled = ($requested !== null && $requested !== '')
+                ? in_array($requested, [1, '1', true], true)
+                : ($order->auto_renew === 0);
 
             if ($enabled && $order->status !== 'activated') {
                 return ResponseHelper::error($response, '只有已激活的订单可开启自动续费');
@@ -151,6 +156,27 @@ final class OrderController extends BaseController
                     ->whereIn('auto_renew', [1, 2])
                     ->update(['auto_renew' => 0]);
                 $order->auto_renew = 0;
+
+                $isExpired = false;
+                if ($order->product_type === 'time') {
+                    $user = User::where('id', $this->user->id)->lockForUpdate()->first() ?? $this->user;
+                    $classExpire = strtotime($user->class_expire ?? '');
+                    if ($classExpire !== false && $classExpire <= time()) {
+                        $isExpired = true;
+                    }
+                } elseif ($order->product_type === 'tabp') {
+                    $content = json_decode($order->product_content);
+                    $packageExpireTime = $order->update_time + ((int) ($content->time ?? 0)) * 86400;
+                    if ($packageExpireTime <= time()) {
+                        $isExpired = true;
+                    }
+                }
+
+                if ($isExpired) {
+                    $order->status = 'expired';
+                    $order->update_time = time();
+                }
+                $order->save();
             }
 
             $statusText = $order->autoRenew();
