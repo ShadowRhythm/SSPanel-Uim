@@ -235,9 +235,9 @@ final class OrderController extends BaseController
                     default => 'bg-secondary text-secondary-fg',
                 };
                 $badgeText = $order->autoRenew();
-                $order->auto_renew = '<span class="badge ' . $badgeClass . '">' . $badgeText . '</span>';
+                $order->auto_renew_html = '<span class="badge ' . $badgeClass . '">' . $badgeText . '</span>';
             } else {
-                $order->auto_renew = '-';
+                $order->auto_renew_html = '-';
             }
 
             $order->product_type = $order->productType();
@@ -246,7 +246,12 @@ final class OrderController extends BaseController
             $order->update_time = Tools::toDateTime($order->update_time);
         }
 
-        $orders['orders'] = $orders['data'];
+        $orders['orders'] = $orders['data']->map(static function (Order $order): array {
+            $row = $order->toArray();
+            $row['auto_renew'] = $order->auto_renew_html ?? '-';
+            unset($row['auto_renew_html']);
+            return $row;
+        });
         unset($orders['data']);
         return $response->withJson($orders);
     }

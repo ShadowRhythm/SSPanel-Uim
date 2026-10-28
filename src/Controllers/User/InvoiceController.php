@@ -106,7 +106,20 @@ final class InvoiceController extends BaseController
         $invoice_id = $this->antiXss->xss_clean($request->getParam('invoice_id'));
 
         return DB::transaction(function () use ($response, $invoice_id): ResponseInterface {
-            $invoice = (new Invoice())->where('user_id', $this->user->id)->where('id', $invoice_id)->lockForUpdate()->first();
+            $invoice = (new Invoice())->where('user_id', $this->user->id)->where('id', $invoice_id)->first();
+
+            if ($invoice === null) {
+                return $response->withJson([
+                    'ret' => 0,
+                    'msg' => I18n::trans('user.invoice_not_found'),
+                ]);
+            }
+
+            $order = Order::where('id', $invoice->order_id)->lockForUpdate()->first();
+            $invoice = Invoice::where('user_id', $this->user->id)
+                ->where('id', $invoice_id)
+                ->lockForUpdate()
+                ->first();
 
             if ($invoice === null) {
                 return $response->withJson([
@@ -163,7 +176,6 @@ final class InvoiceController extends BaseController
             $invoice->pay_time = time();
             $invoice->save();
 
-            $order = Order::where('id', $invoice->order_id)->lockForUpdate()->first();
             if ($order !== null && $order->status === 'pending_payment') {
                 $order->status = 'pending_activation';
                 $order->update_time = time();
