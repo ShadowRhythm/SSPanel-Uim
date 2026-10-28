@@ -7,8 +7,10 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\Invoice;
 use App\Models\Order;
-use App\Services\DataTable;
 use App\Models\Paylist;
+use App\Models\Product;
+use App\Models\UserCoupon;
+use App\Services\DataTable;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
@@ -136,6 +138,8 @@ final class OrderController extends BaseController
             ]);
         }
 
+        $isUnpaid = $order->status === 'pending_payment' || ! in_array($invoice->status, ['paid_gateway', 'paid_balance', 'paid_admin'], true);
+
         $order->update_time = time();
         $order->status = 'cancelled';
         $order->save();
@@ -147,6 +151,20 @@ final class OrderController extends BaseController
                 'ret' => 1,
                 'msg' => '订单取消成功，关联账单已退款至余额',
             ]);
+        }
+
+        // If order was pending_payment or not yet paid, roll back stock and coupon
+        if ($isUnpaid || ! in_array($invoice->status, ['paid_gateway', 'paid_balance', 'paid_admin'], true)) {
+            $product = Product::find($order->product_id);
+            if ($product !== null) {
+                if ($product->stock >= 0) {
+                    Product::where('id', $product->id)->increment('stock', 1);
+                }
+                Product::where('id', $product->id)->where('sale_count', '>', 0)->decrement('sale_count', 1);
+            }
+            if ($order->coupon !== '') {
+                UserCoupon::where('code', $order->coupon)->where('use_count', '>', 0)->decrement('use_count', 1);
+            }
         }
 
         $invoice->update_time = time();

@@ -65,21 +65,11 @@
                                 <div class="datagrid-content">
                                     <span id="auto-renew-badge" class="badge {if $order->auto_renew === 1}bg-green text-green-fg{elseif $order->auto_renew === 2}bg-danger text-danger-fg{else}bg-secondary text-secondary-fg{/if} me-2">{$order->auto_renew_text}</span>
                                     {if $order->raw_status === 'activated' || ($order->raw_status === 'expired' && ($order->auto_renew === 1 || $order->auto_renew === 2))}
-                                        {if $order->auto_renew === 1 || $order->auto_renew === 2}
                                         <button id="toggle-renew-btn" class="btn btn-sm btn-outline-primary ms-1"
                                                 hx-post="/user/order/{$order->id}/toggle-renew"
-                                                hx-vals='js:{auto_renew: 0}'
                                                 hx-swap="none">
-                                            关闭自动续费
+                                            {if $order->auto_renew === 1 || $order->auto_renew === 2}关闭自动续费{else}开启自动续费{/if}
                                         </button>
-                                        {else}
-                                            <button id="toggle-renew-btn" class="btn btn-sm btn-outline-primary ms-1"
-                                                    hx-post="/user/order/{$order->id}/toggle-renew"
-                                                    hx-vals='js:{auto_renew: 1}'
-                                                    hx-swap="none">
-                                                开启自动续费
-                                            </button>
-                                        {/if}
                                     {/if}
                                 </div>
                             </div>

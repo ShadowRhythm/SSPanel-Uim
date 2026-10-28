@@ -139,11 +139,21 @@ final class OrderController extends BaseController
                 ? in_array($requested, [1, '1', true], true)
                 : ($order->auto_renew === 0);
 
-            if ($enabled && $order->status !== 'activated') {
-                return ResponseHelper::error($response, '只有已激活的订单可开启自动续费');
-            }
-            if (! $enabled && ! in_array($order->status, ['activated', 'expired'], true)) {
-                return ResponseHelper::error($response, '此订单当前不能关闭自动续费');
+            if ($enabled) {
+                if ($order->status !== 'activated') {
+                    return ResponseHelper::error($response, '只有已激活的订单可开启自动续费');
+                }
+                $hasPending = Order::where('user_id', $this->user->id)
+                    ->where('product_type', $order->product_type)
+                    ->where('status', 'pending_activation')
+                    ->exists();
+                if ($hasPending) {
+                    return ResponseHelper::error($response, '当前已有待激活的续期订单，无需在此开启自动续费');
+                }
+            } else {
+                if (! in_array($order->status, ['activated', 'expired'], true)) {
+                    return ResponseHelper::error($response, '此订单当前不能关闭自动续费');
+                }
             }
 
             if ($enabled) {
@@ -156,26 +166,6 @@ final class OrderController extends BaseController
                     ->whereIn('auto_renew', [1, 2])
                     ->update(['auto_renew' => 0]);
                 $order->auto_renew = 0;
-
-                $isExpired = false;
-                if ($order->product_type === 'time') {
-                    $user = User::where('id', $this->user->id)->lockForUpdate()->first() ?? $this->user;
-                    $classExpire = strtotime($user->class_expire ?? '');
-                    if ($classExpire !== false && $classExpire <= time()) {
-                        $isExpired = true;
-                    }
-                } elseif ($order->product_type === 'tabp') {
-                    $content = json_decode($order->product_content);
-                    $packageExpireTime = $order->update_time + ((int) ($content->time ?? 0)) * 86400;
-                    if ($packageExpireTime <= time()) {
-                        $isExpired = true;
-                    }
-                }
-
-                if ($isExpired) {
-                    $order->status = 'expired';
-                    $order->update_time = time();
-                }
                 $order->save();
             }
 

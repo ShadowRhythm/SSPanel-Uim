@@ -18,6 +18,7 @@ use App\Models\Product;
 use App\Models\StreamMedia;
 use App\Models\SubscribeLog;
 use App\Models\User;
+use App\Models\UserCoupon;
 use App\Models\UserMoneyLog;
 use App\Utils\Tools;
 use DateTime;
@@ -346,6 +347,19 @@ final class Cron
      */
     public static function processTimeOrderActivation(): void
     {
+        $activeTimeOrders = Order::where('status', 'activated')
+            ->where('product_type', 'time')
+            ->get();
+        foreach ($activeTimeOrders as $activeOrder) {
+            $user = User::find($activeOrder->user_id);
+            if ($user === null || strtotime($user->class_expire ?? '') <= time()) {
+                $activeOrder->status = 'expired';
+                $activeOrder->update_time = time();
+                $activeOrder->save();
+                echo "时间包订单 #{$activeOrder->id} 已过期。\n";
+            }
+        }
+
         $orderIds = Order::where('status', 'pending_activation')
             ->where('product_type', 'time')
             ->orderBy('id')
@@ -467,7 +481,7 @@ final class Cron
                     continue;
                 }
                 $timeLeft = $expireTime - time();
-                if ($timeLeft > 86400) {
+                if ($timeLeft > 86400 || $timeLeft < 0) {
                     continue;
                 }
             } else {
@@ -484,6 +498,22 @@ final class Cron
 
             $product = Product::find($order->product_id);
             if ($product === null || $product->status !== 1) {
+                if ($order->auto_renew === 1) {
+                    $order->auto_renew = 0;
+                    $order->save();
+                    $user = User::find($order->user_id);
+                    if ($user !== null) {
+                        try {
+                            Notification::notifyUser(
+                                $user,
+                                $_ENV['appName'] . ' - 订单自动续费已停用',
+                                "您的商品【{$order->product_name}】(订单 #{$order->id}) 因商品已下架或停售，系统已自动关闭该订单的自动续费。请及时前往商城选购其他套餐。"
+                            );
+                        } catch (Throwable $e) {
+                            echo $e->getMessage() . PHP_EOL;
+                        }
+                    }
+                }
                 continue;
             }
             $price = (float) $product->price;
@@ -510,7 +540,7 @@ final class Cron
                     }
                 } elseif ($lockedOrder->product_type === 'time') {
                     $expireTime = strtotime($user->class_expire ?? '');
-                    if ($expireTime === false || $expireTime <= 0 || ($expireTime - time()) > 86400) {
+                    if ($expireTime === false || $expireTime <= 0 || ($expireTime - time()) > 86400 || ($expireTime - time()) < 0) {
                         return;
                     }
                 }
@@ -547,6 +577,19 @@ final class Cron
                 }
 
                 if ($product->stock === 0) {
+                    if ($lockedOrder->auto_renew === 1) {
+                        $lockedOrder->auto_renew = 2;
+                        $lockedOrder->save();
+                        try {
+                            Notification::notifyUser(
+                                $user,
+                                $_ENV['appName'] . ' - 订单自动续费库存不足提醒',
+                                "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 即将到期，因商品暂时售罄无法自动续费。请留意库存补充或前往商城选购其他套餐。"
+                            );
+                        } catch (Throwable $e) {
+                            echo $e->getMessage() . PHP_EOL;
+                        }
+                    }
                     return;
                 }
                 if ($product->stock > 0) {
@@ -651,7 +694,21 @@ final class Cron
                     $invoice->status = 'cancelled';
                     $invoice->update_time = time();
                     $invoice->save();
-                    echo "已取消超时订单 #{$order->id} 和账单 #{$invoice->id}。\n";
+
+                    // Rollback stock and sale count
+                    $product = Product::find($order->product_id);
+                    if ($product !== null) {
+                        if ($product->stock >= 0) {
+                            Product::where('id', $product->id)->increment('stock', 1);
+                        }
+                        Product::where('id', $product->id)->where('sale_count', '>', 0)->decrement('sale_count', 1);
+                    }
+                    // Rollback coupon usage
+                    if ($order->coupon !== '') {
+                        UserCoupon::where('code', $order->coupon)->where('use_count', '>', 0)->decrement('use_count', 1);
+                    }
+
+                    echo "已取消超时订单 #{$order->id} 和账单 #{$invoice->id}，并恢复库存及优惠码使用次数。\n";
                 }
             });
         }
