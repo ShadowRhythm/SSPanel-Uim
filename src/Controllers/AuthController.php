@@ -120,6 +120,9 @@ final class AuthController extends BaseController
         $time = $rememberMe ? 86400 * ($_ENV['rememberMeDuration'] ?? 7) : 3600; // Cookie 过期时间
 
         Auth::login($user->id, $time);
+        if (! empty($user->locale) && I18n::isValidLocale($user->locale)) {
+            Cookie::set(['locale' => $user->locale], time() + 86400 * 365);
+        }
         // 记录登录成功
         $loginIp->collectLoginIP($_SERVER['REMOTE_ADDR'], 0, $user->id);
         $user->last_login_time = time();
@@ -288,7 +291,7 @@ final class AuthController extends BaseController
         $user->reg_date = date('Y-m-d H:i:s');
         $user->reg_ip = $_SERVER['REMOTE_ADDR'];
         $user->theme = $_ENV['theme'];
-        $user->locale = $_ENV['locale'];
+        $user->locale = I18n::getCurrentLocale();
         $random_group = Config::obtain('random_group');
 
         if ($random_group === '') {
@@ -306,6 +309,7 @@ final class AuthController extends BaseController
             }
 
             Auth::login($user->id, 3600);
+            Cookie::set(['locale' => $user->locale], time() + 86400 * 365);
             (new LoginIp())->collectLoginIP($_SERVER['REMOTE_ADDR'], 0, $user->id);
 
             return $response->withHeader('HX-Redirect', $redir);
