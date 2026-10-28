@@ -66,6 +66,12 @@ abstract class Base
             $paylist->status = 1;
             $paylist->save();
 
+            $preInvoice = (new Invoice())->where('id', $paylist->invoice_id)->first();
+            $order = null;
+            if ($preInvoice !== null) {
+                $order = Order::where('id', $preInvoice->order_id)->lockForUpdate()->first();
+            }
+
             $invoice = (new Invoice())->where('id', $paylist->invoice_id)->lockForUpdate()->first();
 
             if ($invoice !== null &&
@@ -77,7 +83,6 @@ abstract class Base
                 $invoice->pay_time = time();
                 $invoice->save();
 
-                $order = Order::where('id', $invoice->order_id)->lockForUpdate()->first();
                 if ($order !== null && $order->status === 'pending_payment') {
                     $order->status = 'pending_activation';
                     $order->update_time = time();

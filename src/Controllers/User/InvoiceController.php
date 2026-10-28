@@ -152,6 +152,13 @@ final class InvoiceController extends BaseController
                 ]);
             }
 
+            if ($order === null || $order->status !== 'pending_payment') {
+                return $response->withJson([
+                    'ret' => 0,
+                    'msg' => '关联订单已失效或已被取消',
+                ]);
+            }
+
             if ($user->money < $invoice->price) {
                 return $response->withJson([
                     'ret' => 0,
