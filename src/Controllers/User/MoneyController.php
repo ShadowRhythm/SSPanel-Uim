@@ -7,6 +7,7 @@ namespace App\Controllers\User;
 use App\Controllers\BaseController;
 use App\Models\GiftCard;
 use App\Models\UserMoneyLog;
+use App\Services\I18n;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
@@ -26,6 +27,7 @@ final class MoneyController extends BaseController
 
         foreach ($moneylogs as $moneylog) {
             $moneylog->create_time = Tools::toDateTime($moneylog->create_time);
+            $moneylog->remark = UserMoneyLog::localizeRemark($moneylog->remark);
         }
 
         $moneylog_count = $moneylogs->count();
@@ -46,7 +48,7 @@ final class MoneyController extends BaseController
         if ($giftcard === null || $giftcard->status !== 0) {
             return $response->withJson([
                 'ret' => 0,
-                'msg' => '礼品卡无效',
+                'msg' => I18n::trans('user.giftcard_invalid'),
             ]);
         }
 
@@ -55,7 +57,7 @@ final class MoneyController extends BaseController
         if ($user->is_shadow_banned) {
             return $response->withJson([
                 'ret' => 0,
-                'msg' => '礼品卡无效',
+                'msg' => I18n::trans('user.giftcard_invalid'),
             ]);
         }
 
@@ -78,7 +80,7 @@ final class MoneyController extends BaseController
 
         return $response->withHeader('HX-Refresh', 'true')->withJson([
             'ret' => 1,
-            'msg' => '充值成功',
+            'msg' => I18n::trans('user.topup_success'),
         ]);
     }
 }

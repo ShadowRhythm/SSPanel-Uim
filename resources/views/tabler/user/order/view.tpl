@@ -61,14 +61,14 @@
                         </div>
                         {if $order->product_type === 'tabp' || $order->product_type === 'time'}
                             <div class="datagrid-item">
-                                <div class="datagrid-title">自动续费</div>
+                                <div class="datagrid-title">{trans key='user.auto_renew'}</div>
                                 <div class="datagrid-content">
                                     <span id="auto-renew-badge" class="badge {if $order->auto_renew === 1}bg-green text-green-fg{elseif $order->auto_renew === 2}bg-danger text-danger-fg{else}bg-secondary text-secondary-fg{/if} me-2">{$order->auto_renew_text}</span>
                                     {if $order->raw_status === 'activated' || ($order->raw_status === 'expired' && ($order->auto_renew === 1 || $order->auto_renew === 2))}
                                         <button id="toggle-renew-btn" class="btn btn-sm btn-outline-primary ms-1"
                                                 hx-post="/user/order/{$order->id}/toggle-renew"
                                                 hx-swap="none">
-                                            {if $order->auto_renew === 1 || $order->auto_renew === 2}关闭自动续费{else}开启自动续费{/if}
+                                            {if $order->auto_renew === 1 || $order->auto_renew === 2}{trans key='user.disable_auto_renew'}{else}{trans key='user.enable_auto_renew'}{/if}
                                         </button>
                                     {/if}
                                 </div>

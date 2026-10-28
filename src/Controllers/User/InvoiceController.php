@@ -11,30 +11,35 @@ use App\Models\User;
 use App\Models\UserMoneyLog;
 use App\Services\DB;
 use App\Services\DataTable;
+use App\Services\I18n;
 use App\Services\Payment;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
+use function is_array;
 use function json_decode;
 use function json_encode;
 use function time;
 
 final class InvoiceController extends BaseController
 {
-    private static array $details = [
-        'field' => [
-            'op' => '操作',
-            'id' => '账单ID',
-            'order_id' => '订单ID',
-            'price' => '账单金额',
-            'status' => '账单状态',
-            'create_time' => '创建时间',
-            'update_time' => '更新时间',
-            'pay_time' => '支付时间',
-        ],
-    ];
+    private static function getDetails(): array
+    {
+        return [
+            'field' => [
+                'op' => I18n::trans('common.action'),
+                'id' => I18n::trans('user.invoice_id'),
+                'order_id' => I18n::trans('user.order_id'),
+                'price' => I18n::trans('user.invoice_amount'),
+                'status' => I18n::trans('user.invoice_status'),
+                'create_time' => I18n::trans('user.create_time'),
+                'update_time' => I18n::trans('user.update_time'),
+                'pay_time' => I18n::trans('user.payment_time'),
+            ],
+        ];
+    }
 
     /**
      * @throws Exception
@@ -43,7 +48,7 @@ final class InvoiceController extends BaseController
     {
         return $response->write(
             $this->view()
-                ->assign('details', self::$details)
+                ->assign('details', self::getDetails())
                 ->fetch('user/invoice/index.tpl')
         );
     }
@@ -72,6 +77,17 @@ final class InvoiceController extends BaseController
         $invoice->update_time = Tools::toDateTime($invoice->update_time);
         $invoice->pay_time = Tools::toDateTime($invoice->pay_time);
         $invoice_content = json_decode($invoice->content);
+        if (is_array($invoice_content)) {
+            foreach ($invoice_content as $item) {
+                if (isset($item->name)) {
+                    if ($item->name === '余额充值') {
+                        $item->name = I18n::trans('user.topup');
+                    } elseif ($item->name === '退款至账户余额') {
+                        $item->name = I18n::trans('user.refund_to_balance');
+                    }
+                }
+            }
+        }
 
         return $response->write(
             $this->view()
@@ -93,7 +109,7 @@ final class InvoiceController extends BaseController
             if ($invoice === null) {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '账单不存在',
+                    'msg' => I18n::trans('user.invoice_not_found'),
                 ]);
             }
 
@@ -102,7 +118,7 @@ final class InvoiceController extends BaseController
             if ($user === null || $user->is_shadow_banned) {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '支付失败，请稍后再试',
+                    'msg' => I18n::trans('user.payment_failed_try_again'),
                 ]);
             }
 
@@ -110,21 +126,21 @@ final class InvoiceController extends BaseController
             if ($invoice->type === 'topup') {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '该账单不支持使用余额支付',
+                    'msg' => I18n::trans('user.invoice_topup_no_balance_pay'),
                 ]);
             }
 
             if ($invoice->status !== 'unpaid' && $invoice->status !== 'partially_paid') {
                 return $response->withHeader('HX-Redirect', '/user/invoice')->withJson([
                     'ret' => 2,
-                    'msg' => '已支付成功，无需重复支付',
+                    'msg' => I18n::trans('user.invoice_already_paid'),
                 ]);
             }
 
             if ($user->money < $invoice->price) {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '余额不足',
+                    'msg' => I18n::trans('user.insufficient_balance'),
                 ]);
             }
 
@@ -159,7 +175,7 @@ final class InvoiceController extends BaseController
         );
 
         foreach ($invoices['data'] as $invoice) {
-            $invoice->op = '<a class="btn btn-primary" href="/user/invoice/' . $invoice->id . '/view">查看</a>';
+            $invoice->op = '<a class="btn btn-primary" href="/user/invoice/' . $invoice->id . '/view">' . I18n::trans('user.view') . '</a>';
             $invoice->status = $invoice->status();
             $invoice->create_time = Tools::toDateTime($invoice->create_time);
             $invoice->update_time = Tools::toDateTime($invoice->update_time);

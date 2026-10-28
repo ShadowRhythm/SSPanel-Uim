@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\UserCoupon;
 use App\Services\DB;
 use App\Services\DataTable;
+use App\Services\I18n;
 use App\Utils\Cookie;
 use App\Utils\ResponseHelper;
 use App\Utils\Tools;
@@ -30,20 +31,23 @@ use function time;
 
 final class OrderController extends BaseController
 {
-    private static array $details = [
-        'field' => [
-            'op' => '操作',
-            'id' => '订单ID',
-            'product_id' => '商品ID',
-            'product_type' => '商品类型',
-            'product_name' => '商品名称',
-            'coupon' => '优惠码',
-            'price' => '金额',
-            'status' => '状态',
-            'create_time' => '创建时间',
-            'update_time' => '更新时间',
-        ],
-    ];
+    private static function getDetails(): array
+    {
+        return [
+            'field' => [
+                'op' => I18n::trans('common.action'),
+                'id' => I18n::trans('user.order_id'),
+                'product_id' => I18n::trans('user.product_id'),
+                'product_type' => I18n::trans('user.product_type'),
+                'product_name' => I18n::trans('user.product_name'),
+                'coupon' => I18n::trans('user.coupon'),
+                'price' => I18n::trans('user.order_amount'),
+                'status' => I18n::trans('common.status'),
+                'create_time' => I18n::trans('user.create_time'),
+                'update_time' => I18n::trans('user.update_time'),
+            ],
+        ];
+    }
 
     /**
      * @throws Exception
@@ -52,7 +56,7 @@ final class OrderController extends BaseController
     {
         return $response->write(
             $this->view()
-                ->assign('details', self::$details)
+                ->assign('details', self::getDetails())
                 ->fetch('user/order/index.tpl')
         );
     }
@@ -105,12 +109,29 @@ final class OrderController extends BaseController
         $order->update_time = Tools::toDateTime($order->update_time);
         $order->content = json_decode($order->product_content);
 
+        if ($order->product_id === 0 || $order->product_type === 'topup' || $order->product_name === '余额充值') {
+            $order->product_name = I18n::trans('user.topup');
+        }
+
         $invoice = (new Invoice())->where('order_id', $id)->first();
-        $invoice->status = $invoice->status();
-        $invoice->create_time = Tools::toDateTime($invoice->create_time);
-        $invoice->update_time = Tools::toDateTime($invoice->update_time);
-        $invoice->pay_time = Tools::toDateTime($invoice->pay_time);
-        $invoice->content = json_decode($invoice->content);
+        if ($invoice !== null) {
+            $invoice->status = $invoice->status();
+            $invoice->create_time = Tools::toDateTime($invoice->create_time);
+            $invoice->update_time = Tools::toDateTime($invoice->update_time);
+            $invoice->pay_time = Tools::toDateTime($invoice->pay_time);
+            $invoice->content = json_decode($invoice->content);
+            if (is_array($invoice->content)) {
+                foreach ($invoice->content as $item) {
+                    if (isset($item->name)) {
+                        if ($item->name === '余额充值') {
+                            $item->name = I18n::trans('user.topup');
+                        } elseif ($item->name === '退款至账户余额') {
+                            $item->name = I18n::trans('user.refund_to_balance');
+                        }
+                    }
+                }
+            }
+        }
 
         return $response->write(
             $this->view()
@@ -125,14 +146,14 @@ final class OrderController extends BaseController
         $id = (int) $this->antiXss->xss_clean($args['id']);
         $requested = $request->getParam('auto_renew');
         if ($requested !== null && $requested !== '' && ! in_array($requested, [0, 1, '0', '1', false, true], true)) {
-            return ResponseHelper::error($response, '自动续费状态无效');
+            return ResponseHelper::error($response, I18n::trans('user.invalid_auto_renew_status'));
         }
 
         return DB::transaction(function () use ($response, $id, $requested): ResponseInterface {
             $order = Order::where('user_id', $this->user->id)->where('id', $id)->lockForUpdate()->first();
 
             if ($order === null || ! in_array($order->product_type, ['tabp', 'time'], true)) {
-                return ResponseHelper::error($response, '订单不存在或不支持自动续费');
+                return ResponseHelper::error($response, I18n::trans('user.order_not_found_or_not_supported'));
             }
 
             $enabled = ($requested !== null && $requested !== '')
@@ -141,18 +162,18 @@ final class OrderController extends BaseController
 
             if ($enabled) {
                 if ($order->status !== 'activated') {
-                    return ResponseHelper::error($response, '只有已激活的订单可开启自动续费');
+                    return ResponseHelper::error($response, I18n::trans('user.only_activated_order_can_enable_auto_renew'));
                 }
                 $hasPending = Order::where('user_id', $this->user->id)
                     ->where('product_type', $order->product_type)
                     ->where('status', 'pending_activation')
                     ->exists();
                 if ($hasPending) {
-                    return ResponseHelper::error($response, '当前已有待激活的续期订单，无需在此开启自动续费');
+                    return ResponseHelper::error($response, I18n::trans('user.pending_activation_order_exists'));
                 }
             } else {
                 if (! in_array($order->status, ['activated', 'expired'], true)) {
-                    return ResponseHelper::error($response, '此订单当前不能关闭自动续费');
+                    return ResponseHelper::error($response, I18n::trans('user.order_cannot_disable_auto_renew'));
                 }
             }
 
@@ -170,9 +191,9 @@ final class OrderController extends BaseController
             }
 
             $statusText = $order->autoRenew();
-            $btnText = $enabled ? '关闭自动续费' : '开启自动续费';
+            $btnText = $enabled ? I18n::trans('user.disable_auto_renew') : I18n::trans('user.enable_auto_renew');
 
-            return ResponseHelper::successWithData($response, $enabled ? '已开启自动续费' : '已关闭自动续费', [
+            return ResponseHelper::successWithData($response, $enabled ? I18n::trans('user.auto_renew_enabled_msg') : I18n::trans('user.auto_renew_disabled_msg'), [
                 'auto-renew-badge' => $statusText,
                 'toggle-renew-btn' => $btnText,
             ]);
@@ -465,12 +486,16 @@ final class OrderController extends BaseController
             ->pluck('id', 'order_id');
 
         foreach ($orders['data'] as $order) {
-            $order->op = '<a class="btn btn-primary" href="/user/order/' . $order->id . '/view">查看</a>';
+            $order->op = '<a class="btn btn-primary" href="/user/order/' . $order->id . '/view">' . I18n::trans('user.view') . '</a>';
 
             if ($order->status === 'pending_payment') {
                 $invoice_id = $invoiceIds[$order->id] ?? 0;
                 $order->op .= '
-                <a class="btn btn-red" href="/user/invoice/' . $invoice_id . '/view">支付</a>';
+                <a class="btn btn-red" href="/user/invoice/' . $invoice_id . '/view">' . I18n::trans('user.pay') . '</a>';
+            }
+
+            if ($order->product_id === 0 || $order->product_type === 'topup' || $order->product_name === '余额充值') {
+                $order->product_name = I18n::trans('user.topup');
             }
 
             $order->product_type = $order->productType();
