@@ -33,6 +33,13 @@ final class View
         $smarty->assign('user', $user);
         $smarty->assign('current_locale', $currentLocale);
 
+        self::registerSmartyI18n($smarty, $currentLocale);
+
+        return $smarty;
+    }
+
+    public static function registerSmartyI18n(Smarty $smarty, string $currentLocale): void
+    {
         // Smarty 5 i18n function plugin: {trans key='auth.login_title' escape='js'}
         $smarty->registerPlugin('function', 'trans', static function (array $params) use ($currentLocale): string {
             $key = $params['key'] ?? '';
@@ -77,8 +84,6 @@ final class View
 
             return $result;
         });
-
-        return $smarty;
     }
 
     public static function getTwig(): Environment

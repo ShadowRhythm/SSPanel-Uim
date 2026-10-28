@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Config;
+use App\Models\User;
 use App\Services\Mail\AlibabaCloud;
 use App\Services\Mail\Mailchimp;
 use App\Services\Mail\Mailgun;
@@ -44,13 +45,29 @@ final class Mail
     /**
      * @throws Exception
      */
-    public static function genHtml($template, $ary): false|string
+    public static function genHtml($template, $ary, ?string $locale = null): false|string
     {
         $smarty = new Smarty();
         $smarty->setTemplateDir(BASE_PATH . '/resources/email/');
         $smarty->setCompileDir(BASE_PATH . '/storage/framework/smarty/compile/');
         $smarty->setCacheDir(BASE_PATH . '/storage/framework/smarty/cache/');
         $smarty->assign('config', View::getConfig());
+
+        $currentLocale = $locale;
+        if ($currentLocale === null && is_array($ary)) {
+            $currentLocale = $ary['locale'] ?? null;
+            if ($currentLocale === null && isset($ary['user']) && $ary['user'] instanceof User) {
+                $currentLocale = $ary['user']->locale;
+            }
+        } elseif ($currentLocale === null && is_object($ary)) {
+            $currentLocale = $ary->locale ?? null;
+            if ($currentLocale === null && isset($ary->user) && $ary->user instanceof User) {
+                $currentLocale = $ary->user->locale;
+            }
+        }
+        $currentLocale = $currentLocale ?: I18n::getCurrentLocale();
+
+        View::registerSmartyI18n($smarty, $currentLocale);
 
         foreach ($ary as $key => $value) {
             $smarty->assign($key, $value);
@@ -64,9 +81,9 @@ final class Mail
      * @throws ClientExceptionInterface
      * @throws TypeException
      */
-    public static function send($to, $subject, $template, $array = []): void
+    public static function send($to, $subject, $template, $array = [], ?string $locale = null): void
     {
-        $body = self::genHtml($template, $array);
+        $body = self::genHtml($template, $array, $locale);
 
         self::getClient()->send($to, $subject, $body);
     }

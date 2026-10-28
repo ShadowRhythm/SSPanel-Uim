@@ -69,17 +69,22 @@
             return;
         }
 
-        let res = JSON.parse(evt.detail.xhr.response);
+        try {
+            let res = JSON.parse(evt.detail.xhr.response);
 
-        if (evt.detail.elt.id === 'send-verify-email') {
-            document.getElementById('send-verify-email').disabled = true;
-        }
+            if (evt.detail.elt.id === 'send-verify-email') {
+                document.getElementById('send-verify-email').disabled = true;
+            }
 
-        if (res.ret === 1) {
-            document.getElementById("success-message").innerHTML = res.msg;
-            successDialog.show();
-        } else {
-            document.getElementById("fail-message").innerHTML = res.msg;
+            if (res.ret === 1) {
+                document.getElementById("success-message").innerHTML = res.msg;
+                successDialog.show();
+            } else {
+                document.getElementById("fail-message").innerHTML = res.msg;
+                failDialog.show();
+            }
+        } catch (e) {
+            document.getElementById("fail-message").innerHTML = "{trans key='common.unexpected_error' escape='js'}";
             failDialog.show();
         }
     });

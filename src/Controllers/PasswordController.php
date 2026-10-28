@@ -19,6 +19,7 @@ use RedisException;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
 use Smarty\Exception;
+use Throwable;
 use function strlen;
 use function strtolower;
 
@@ -72,8 +73,8 @@ final class PasswordController extends BaseController
         if ($user !== null) {
             try {
                 Password::sendResetEmail($email);
-            } catch (ClientExceptionInterface|RedisException) {
-                $msg = I18n::trans('user.email_send_failed', $locale);
+            } catch (Throwable) {
+                return ResponseHelper::error($response, I18n::trans('user.email_send_failed', $locale));
             }
         }
 
