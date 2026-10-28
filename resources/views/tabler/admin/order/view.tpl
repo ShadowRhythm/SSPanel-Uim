@@ -23,7 +23,7 @@
                             查看关联账单
                         </a>
                         {if $order->product_type === 'tabp' || $order->product_type === 'time'}
-                            <button id="admin-toggle-renew-btn" class="btn {if $order->auto_renew === 1}btn-outline-danger{else}btn-outline-primary{/if}"
+                            <button id="admin-toggle-renew-btn" class="btn {if $order->auto_renew === 1}btn-red{else}btn-primary{/if}"
                                     hx-post="/admin/order/{$order->id}/toggle-renew"
                                     hx-swap="none">
                                 <i class="icon ti ti-refresh"></i>
@@ -250,6 +250,19 @@
                     }
                 }
             })
+        });
+
+        htmx.on("htmx:afterRequest", function (evt) {
+            let btn = document.getElementById('admin-toggle-renew-btn');
+            if (btn && evt.detail.successful) {
+                if (btn.innerText.includes('关闭自动续费')) {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-red');
+                } else if (btn.innerText.includes('开启自动续费')) {
+                    btn.classList.remove('btn-red');
+                    btn.classList.add('btn-primary');
+                }
+            }
         });
     </script>
 
