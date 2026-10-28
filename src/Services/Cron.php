@@ -354,12 +354,21 @@ final class Cron
                     return;
                 }
                 $content = json_decode($order->product_content);
-                if ($user->class !== (int) $content->class && $user->class > 0) {
-                    return;
+
+                $days = max((int) ($content->class_time ?? 0), (int) ($content->time ?? 0));
+                if ($days <= 0) {
+                    $days = 30;
                 }
-                $user->class = $content->class;
-                $user->class_expire = (new DateTime($user->class_expire))
-                    ->modify('+' . $content->class_time . ' days')->format('Y-m-d H:i:s');
+
+                $currentExpireTimestamp = strtotime($user->class_expire ?? '');
+                if ($user->class === (int) $content->class && $currentExpireTimestamp > time()) {
+                    $base = new DateTime($user->class_expire);
+                } else {
+                    $base = new DateTime();
+                }
+
+                $user->class = (int) $content->class;
+                $user->class_expire = $base->modify('+' . $days . ' days')->format('Y-m-d H:i:s');
                 $user->node_group = $content->node_group;
                 $user->node_speedlimit = $content->speed_limit;
                 $user->node_iplimit = $content->ip_limit;
