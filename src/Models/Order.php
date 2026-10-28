@@ -28,10 +28,6 @@ final class Order extends Model
     protected $connection = 'default';
     protected $table = 'order';
 
-    protected $casts = [
-        'auto_renew' => 'int',
-    ];
-
     /**
      * 自动续费状态文本
      */
