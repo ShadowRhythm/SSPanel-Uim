@@ -12,6 +12,7 @@ use App\Models\UserCoupon;
 use App\Services\DB;
 use App\Services\DataTable;
 use App\Utils\Cookie;
+use App\Utils\ResponseHelper;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
@@ -95,7 +96,9 @@ final class OrderController extends BaseController
         }
 
         $order->product_type_text = $order->productType();
+        $order->raw_status = $order->status;
         $order->status = $order->status();
+        $order->auto_renew_text = $order->autoRenew();
         $order->create_time = Tools::toDateTime($order->create_time);
         $order->update_time = Tools::toDateTime($order->update_time);
         $order->content = json_decode($order->product_content);
@@ -115,6 +118,31 @@ final class OrderController extends BaseController
         );
     }
 
+    public function toggleRenew(ServerRequest $request, Response $response, array $args): ResponseInterface
+    {
+        $id = (int) $this->antiXss->xss_clean($args['id']);
+        $order = Order::where('user_id', $this->user->id)->where('id', $id)->first();
+
+        if ($order === null || ! in_array($order->product_type, ['tabp', 'time'], true)) {
+            return ResponseHelper::error($response, '订单不存在或不支持自动续费');
+        }
+
+        if ($order->status !== 'activated') {
+            return ResponseHelper::error($response, '只有已激活的订单可开启或关闭自动续费');
+        }
+
+        $order->auto_renew = $order->auto_renew === 1 ? 0 : 1;
+        $order->save();
+
+        $statusText = $order->autoRenew();
+        $btnText = $order->auto_renew === 1 ? '关闭自动续费' : '开启自动续费';
+
+        return ResponseHelper::successWithData($response, $order->auto_renew === 1 ? '已开启自动续费' : '已关闭自动续费', [
+            'auto-renew-badge' => $statusText,
+            'toggle-renew-btn' => $btnText,
+        ]);
+    }
+
     public function process(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
         return match ($request->getParam('type')) {
@@ -131,6 +159,8 @@ final class OrderController extends BaseController
     {
         $coupon_raw = $this->antiXss->xss_clean($request->getParam('coupon'));
         $product_id = $this->antiXss->xss_clean($request->getParam('product_id'));
+        $auto_renew = $request->getParam('auto_renew');
+        $auto_renew = ($auto_renew === 'true' || $auto_renew === '1' || $auto_renew === 1 || $auto_renew === true) ? 1 : 0;
 
         $product = (new Product())->find($product_id);
 
@@ -250,7 +280,8 @@ final class OrderController extends BaseController
                 $coupon_raw,
                 $buy_price,
                 $discount,
-                $coupon
+                $coupon,
+                $auto_renew
             ): Invoice {
                 if ($product->stock > 0) {
                     $affected = Product::where('id', $product->id)->where('stock', '>', 0)->decrement('stock', 1);
@@ -291,6 +322,7 @@ final class OrderController extends BaseController
                 $order->coupon = $coupon_raw;
                 $order->price = $buy_price;
                 $order->status = $buy_price === 0 ? 'pending_activation' : 'pending_payment';
+                $order->auto_renew = in_array($product->type, ['tabp', 'time'], true) ? $auto_renew : 0;
                 $order->create_time = time();
                 $order->update_time = time();
                 $order->save();

@@ -49,6 +49,7 @@ EOL;
         $jobs = new CronService();
 
         // Run new shop related jobs
+        $this->runJob('auto-renew-orders', static fn () => $jobs->processAutoRenew());
         $this->runJob('pending-orders', static fn () => $jobs->processPendingOrder());
         $this->runJob('activate-tabp-orders', static fn () => $jobs->processTabpOrderActivation());
         $this->runJob('activate-bandwidth-orders', static fn () => $jobs->processBandwidthOrderActivation());

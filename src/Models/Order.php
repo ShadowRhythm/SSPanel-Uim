@@ -16,6 +16,7 @@ use Illuminate\Database\Query\Builder;
  * @property string $coupon          订单优惠码
  * @property float  $price           订单金额
  * @property string $status          订单状态
+ * @property int    $auto_renew      自动续费状态 0:未开启 1:已开启 2:扣款失败
  * @property int    $create_time     创建时间
  * @property int    $update_time     更新时间
  *
@@ -25,6 +26,22 @@ final class Order extends Model
 {
     protected $connection = 'default';
     protected $table = 'order';
+
+    protected $casts = [
+        'auto_renew' => 'int',
+    ];
+
+    /**
+     * 自动续费状态文本
+     */
+    public function autoRenew(): string
+    {
+        return match ($this->auto_renew) {
+            1 => '已开启',
+            2 => '扣款失败',
+            default => '未开启',
+        };
+    }
 
     /**
      * 订单状态

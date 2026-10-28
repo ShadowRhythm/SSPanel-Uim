@@ -128,12 +128,21 @@
                     </div>
                     <div class="card my-3">
                         <div class="card-body">
+                            {if $product->type === 'tabp' || $product->type === 'time'}
+                                <div class="mb-3">
+                                    <label class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="auto-renew" checked>
+                                        <span class="form-check-label">到期前自动续费（从账户余额扣款）</span>
+                                    </label>
+                                </div>
+                            {/if}
                             <button class="btn btn-primary w-100 my-3"
                                      hx-post="/user/order/create" hx-swap="none"
                                      hx-vals='js:{
                                          type: "product",
                                          coupon: document.getElementById("coupon").value,
                                          product_id: {$product->id},
+                                         auto_renew: document.getElementById("auto-renew") ? (document.getElementById("auto-renew").checked ? 1 : 0) : 0,
                                      }'>
                                 {trans key='user.create_order'}
                             </button>
