@@ -16,17 +16,17 @@
                         <div border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF" width="100%">
                             <div align="center" valign="top" style="padding-bottom:60px;padding-left:20px;padding-right:20px;">
                                 <p class="midText">
-                                    {trans key='email.username_label' '%username%'=$user->user_name}
+                                    {trans key='email.username_label' username=$user->user_name}
                                     <br>
                                     Email: {$user->email}
                                     <br><br>
-                                    {trans key='email.total_traffic' '%traffic%'=$enable_traffic}
+                                    {trans key='email.total_traffic' traffic=$enable_traffic}
                                     <br>
-                                    {trans key='email.used_traffic' '%traffic%'=$used_traffic}
+                                    {trans key='email.used_traffic' traffic=$used_traffic}
                                     <br>
-                                    {trans key='email.remaining_traffic' '%traffic%'=$unused_traffic}
+                                    {trans key='email.remaining_traffic' traffic=$unused_traffic}
                                     <br>
-                                    {trans key='email.today_traffic' '%traffic%'=$lastday_traffic}
+                                    {trans key='email.today_traffic' traffic=$lastday_traffic}
                                     <br><br>
                                 </p>
                                 <p class="midText">

@@ -73,8 +73,12 @@ final class PasswordController extends BaseController
         if ($user !== null) {
             try {
                 Password::sendResetEmail($email);
-            } catch (Throwable) {
-                return ResponseHelper::error($response, I18n::trans('user.email_send_failed', $locale));
+            } catch (Throwable $e) {
+                $errorMsg = I18n::trans('user.email_send_failed', $locale);
+                if (! empty($_ENV['debug'])) {
+                    $errorMsg .= ': ' . $e->getMessage();
+                }
+                return ResponseHelper::error($response, $errorMsg);
             }
         }
 

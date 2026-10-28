@@ -19,7 +19,9 @@ final class DB extends Manager
         $db->bootEloquent();
 
         View::$connection = $db->getDatabaseManager();
-        $db->getDatabaseManager()->connection('default')->enableQueryLog();
+        if ($_ENV['debug']) {
+            $db->getDatabaseManager()->connection('default')->enableQueryLog();
+        }
     }
 
     public static function getConfig(): array

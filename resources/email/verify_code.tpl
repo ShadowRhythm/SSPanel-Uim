@@ -16,8 +16,8 @@
                         <div border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF" width="100%">
                             <div align="center" valign="top" style="padding-bottom:60px;padding-left:20px;padding-right:20px;">
                                 <p class="midText">
-                                    {trans key='email.verify_code_text' '%code%'=$code}<br>
-                                    {trans key='email.verify_code_expire' '%expire%'=$expire}<br>
+                                    {trans key='email.verify_code_text' code=$code}<br>
+                                    {trans key='email.verify_code_expire' expire=$expire}<br>
                                     {trans key='email.verify_code_ignore'}<br>
                                 </p>
                             </div>

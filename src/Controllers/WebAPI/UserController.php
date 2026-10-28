@@ -186,15 +186,12 @@ final class UserController extends BaseController
                 $billed_u = $u * $rate;
                 $billed_d = $d * $rate;
 
-                $user = (new User())->find($user_id);
-
-                $user->update([
-                    'last_use_time' => time(),
-                    'u' => $user->u + $billed_u,
-                    'd' => $user->d + $billed_d,
-                    'transfer_total' => $user->transfer_total + $u + $d,
-                    'transfer_today' => $user->transfer_today + $billed_u + $billed_d,
-                ]);
+                User::where('id', $user_id)->incrementEach([
+                    'u' => $billed_u,
+                    'd' => $billed_d,
+                    'transfer_total' => $u + $d,
+                    'transfer_today' => $billed_u + $billed_d,
+                ], ['last_use_time' => time()]);
             }
 
             if ($is_traffic_log) {

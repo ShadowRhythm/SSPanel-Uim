@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\Paylist;
 use App\Models\User;
 use App\Models\UserMoneyLog;
+use App\Services\DB;
 use App\Services\Reward;
 use App\Utils\Tools;
 use Psr\Http\Message\ResponseInterface;
@@ -52,42 +53,48 @@ abstract class Base
 
     public function postPayment(string $trade_no): void
     {
-        $paylist = (new Paylist())->where('tradeno', $trade_no)->first();
+        DB::transaction(function () use ($trade_no): void {
+            $paylist = (new Paylist())->where('tradeno', $trade_no)->first();
 
-        if ($paylist?->status === 0) {
+            if ($paylist === null || $paylist->status !== 0) {
+                return;
+            }
+
             $paylist->datetime = time();
             $paylist->status = 1;
             $paylist->save();
-        }
 
-        $invoice = (new Invoice())->where('id', $paylist?->invoice_id)->first();
+            $invoice = (new Invoice())->where('id', $paylist->invoice_id)->first();
 
-        if (($invoice?->status === 'unpaid' || $invoice?->status === 'partially_paid') &&
-            (int) $paylist?->total >= (int) $invoice?->price) {
-            $invoice->status = 'paid_gateway';
-            $invoice->update_time = time();
-            $invoice->pay_time = time();
-            $invoice->save();
-        }
+            if ($invoice !== null &&
+                ($invoice->status === 'unpaid' || $invoice->status === 'partially_paid') &&
+                (float) $paylist->total >= (float) $invoice->price
+            ) {
+                $invoice->status = 'paid_gateway';
+                $invoice->update_time = time();
+                $invoice->pay_time = time();
+                $invoice->save();
+            }
 
-        $user = (new User())->find($paylist?->userid);
+            $user = (new User())->find($paylist->userid);
 
-        if ($paylist?->total > $invoice?->price) {
-            $money_before = $user->money;
-            $user->money += $paylist?->total - $invoice?->price;
-            $user->save();
-            (new UserMoneyLog())->add(
-                $user->id,
-                $money_before,
-                $user->money,
-                $paylist?->total - $invoice?->price,
-                '超额支付账单 #' . $invoice?->id
-            );
-        }
+            if ($user !== null && $invoice !== null && (float) $paylist->total > (float) $invoice->price) {
+                $money_before = $user->money;
+                $user->money += (float) $paylist->total - (float) $invoice->price;
+                $user->save();
+                (new UserMoneyLog())->add(
+                    $user->id,
+                    $money_before,
+                    $user->money,
+                    (float) $paylist->total - (float) $invoice->price,
+                    '超额支付账单 #' . $invoice->id
+                );
+            }
 
-        if ($user !== null && $user->ref_by > 0 && Config::obtain('invite_mode') === 'reward') {
-            Reward::issuePaybackReward($user->id, $user->ref_by, $invoice?->price, $paylist?->invoice_id);
-        }
+            if ($user !== null && $user->ref_by > 0 && Config::obtain('invite_mode') === 'reward') {
+                Reward::issuePaybackReward($user->id, $user->ref_by, $invoice?->price, $paylist->invoice_id);
+            }
+        });
     }
 
     public static function generateGuid(): string

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
+use function array_key_exists;
 use function is_array;
 use function json_decode;
 use function json_encode;
@@ -27,20 +28,30 @@ final class Config extends Model
     protected $connection = 'default';
     protected $table = 'config';
 
+    private static array $cache = [];
+
     public static function obtain($item): bool|int|array|string
     {
+        if (array_key_exists($item, self::$cache)) {
+            return self::$cache[$item];
+        }
+
         $config = (new Config())->where('item', $item)->first();
 
         if ($config === null) {
             return '';
         }
 
-        return match ($config->type) {
+        $val = match ($config->type) {
             'bool' => (bool) $config->value,
             'int' => (int) $config->value,
             'array' => json_decode($config->value),
             default => (string) $config->value,
         };
+
+        self::$cache[$item] = $val;
+
+        return $val;
     }
 
     public static function getClass($class): array
@@ -95,10 +106,16 @@ final class Config extends Model
 
         try {
             (new Config())->where('item', $item)->update(['value' => $value]);
+            unset(self::$cache[$item]);
         } catch (QueryException $e) {
             return false;
         }
 
         return true;
+    }
+
+    public static function clearCache(): void
+    {
+        self::$cache = [];
     }
 }

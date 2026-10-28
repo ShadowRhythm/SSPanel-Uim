@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\UserCoupon;
+use App\Services\DB;
 use App\Utils\Cookie;
 use App\Utils\Tools;
 use Exception;
@@ -149,6 +150,7 @@ final class OrderController extends BaseController
         }
 
         $coupon = null;
+        $discount = 0;
 
         if ($coupon_raw !== '') {
             $coupon = (new UserCoupon())->where('code', $coupon_raw)->first();
@@ -239,56 +241,75 @@ final class OrderController extends BaseController
             }
         }
 
-        $order = new Order();
-        $order->user_id = $user->id;
-        $order->product_id = $product->id;
-        $order->product_type = $product->type;
-        $order->product_name = $product->name;
-        $order->product_content = $product->content;
-        $order->coupon = $coupon_raw;
-        $order->price = $buy_price;
-        $order->status = $buy_price === 0 ? 'pending_activation' : 'pending_payment';
-        $order->create_time = time();
-        $order->update_time = time();
-        $order->save();
+        try {
+            $invoice = DB::transaction(function () use (
+                $user,
+                $product,
+                $coupon_raw,
+                $buy_price,
+                $discount,
+                $coupon
+            ): Invoice {
+                if ($product->stock > 0) {
+                    $affected = Product::where('id', $product->id)->where('stock', '>', 0)->decrement('stock', 1);
+                    if ($affected === 0) {
+                        throw new Exception('商品库存不足');
+                    }
+                }
 
-        $invoice_content = [];
-        $invoice_content[] = [
-            'content_id' => 0,
-            'name' => $product->name,
-            'price' => $product->price,
-        ];
+                Product::where('id', $product->id)->increment('sale_count', 1);
 
-        if ($coupon_raw !== '') {
-            $invoice_content[] = [
-                'content_id' => 1,
-                'name' => '优惠码 ' . $coupon_raw,
-                'price' => '-' . $discount,
-            ];
-        }
+                $order = new Order();
+                $order->user_id = $user->id;
+                $order->product_id = $product->id;
+                $order->product_type = $product->type;
+                $order->product_name = $product->name;
+                $order->product_content = $product->content;
+                $order->coupon = $coupon_raw;
+                $order->price = $buy_price;
+                $order->status = $buy_price === 0 ? 'pending_activation' : 'pending_payment';
+                $order->create_time = time();
+                $order->update_time = time();
+                $order->save();
 
-        $invoice = new Invoice();
-        $invoice->user_id = $user->id;
-        $invoice->order_id = $order->id;
-        $invoice->content = json_encode($invoice_content);
-        $invoice->price = $buy_price;
-        $invoice->status = $buy_price === 0 ? 'paid_gateway' : 'unpaid';
-        $invoice->create_time = time();
-        $invoice->update_time = time();
-        $invoice->pay_time = 0;
-        $invoice->type = 'product';
-        $invoice->save();
+                $invoice_content = [];
+                $invoice_content[] = [
+                    'content_id' => 0,
+                    'name' => $product->name,
+                    'price' => $product->price,
+                ];
 
-        if ($product->stock > 0) {
-            $product->stock -= 1;
-        }
+                if ($coupon_raw !== '') {
+                    $invoice_content[] = [
+                        'content_id' => 1,
+                        'name' => '优惠码 ' . $coupon_raw,
+                        'price' => '-' . $discount,
+                    ];
+                }
 
-        $product->sale_count += 1;
-        $product->save();
+                $invoice = new Invoice();
+                $invoice->user_id = $user->id;
+                $invoice->order_id = $order->id;
+                $invoice->content = json_encode($invoice_content);
+                $invoice->price = $buy_price;
+                $invoice->status = $buy_price === 0 ? 'paid_gateway' : 'unpaid';
+                $invoice->create_time = time();
+                $invoice->update_time = time();
+                $invoice->pay_time = 0;
+                $invoice->type = 'product';
+                $invoice->save();
 
-        if ($coupon_raw !== '') {
-            $coupon->use_count += 1;
-            $coupon->save();
+                if ($coupon_raw !== '' && $coupon !== null) {
+                    UserCoupon::where('id', $coupon->id)->increment('use_count', 1);
+                }
+
+                return $invoice;
+            });
+        } catch (Exception $e) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => $e->getMessage(),
+            ]);
         }
 
         return $response->withHeader('HX-Redirect', '/user/invoice/' . $invoice->id . '/view');
