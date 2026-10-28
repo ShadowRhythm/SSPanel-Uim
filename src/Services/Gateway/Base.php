@@ -91,8 +91,9 @@ abstract class Base
                 );
             }
 
-            if ($user !== null && $user->ref_by > 0 && Config::obtain('invite_mode') === 'reward') {
-                Reward::issuePaybackReward($user->id, $user->ref_by, $invoice?->price, $paylist->invoice_id);
+            if ($invoice !== null && $invoice->status === 'paid_gateway' &&
+                $user !== null && $user->ref_by > 0 && Config::obtain('invite_mode') === 'reward') {
+                Reward::issuePaybackReward($user->id, $user->ref_by, $invoice->price, $paylist->invoice_id);
             }
         });
     }

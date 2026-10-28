@@ -20,6 +20,7 @@ use function explode;
 use function in_array;
 use function json_decode;
 use function json_encode;
+use function max;
 use function property_exists;
 use function time;
 
@@ -211,7 +212,7 @@ final class OrderController extends BaseController
                 $discount = $content->value;
             }
 
-            $buy_price = $product->price - $discount;
+            $buy_price = max(0.0, (float) ($product->price - $discount));
         }
 
         $product_limit = json_decode($product->limit);

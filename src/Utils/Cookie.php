@@ -20,8 +20,8 @@ final class Cookie
         }
     }
 
-    public static function get(string $key): string
+    public static function get(string $key): ?string
     {
-        return $_COOKIE[$key] ?? '';
+        return $_COOKIE[$key] ?? null;
     }
 }

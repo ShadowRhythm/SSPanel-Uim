@@ -209,7 +209,6 @@ final class Cron
                 }, $email_queues_raw);
                 $email_queue = $email_queues[0];
                 echo '发送邮件至 ' . $email_queue['to_email'] . PHP_EOL;
-                DB::delete('DELETE FROM email_queue WHERE id = ?', [$email_queue['id']]);
 
                 if (Tools::isEmail($email_queue['to_email'])) {
                     try {
@@ -219,11 +218,13 @@ final class Cron
                             $email_queue['template'],
                             json_decode($email_queue['array'])
                         );
+                        DB::delete('DELETE FROM email_queue WHERE id = ?', [$email_queue['id']]);
                     } catch (Exception|ClientExceptionInterface $e) {
                         echo $e->getMessage();
                     }
                 } else {
                     echo $email_queue['to_email'] . ' 邮箱格式错误，已跳过' . PHP_EOL;
+                    DB::delete('DELETE FROM email_queue WHERE id = ?', [$email_queue['id']]);
                 }
 
                 DB::commit();
@@ -595,6 +596,7 @@ final class Cron
             $unit_text = '';
 
             if ($_ENV['notify_limit_mode'] === 'per' &&
+                $user->transfer_enable > 0 &&
                 $user_traffic_left / $user->transfer_enable * 100 < $_ENV['notify_limit_value']
             ) {
                 $under_limit = true;

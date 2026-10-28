@@ -276,7 +276,7 @@ final class Tools
             || $max_port > 65535
             || $max_port <= 0
             || $min_port > $max_port
-            || count(User::all()) >= $max_port - $min_port + 1
+            || User::count() >= $max_port - $min_port + 1
         ) {
             return 0;
         }

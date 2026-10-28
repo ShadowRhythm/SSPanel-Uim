@@ -47,26 +47,20 @@ final class UserController extends BaseController
             return ResponseHelper::error($response, 'Node out of bandwidth.');
         }
 
-        $users_raw = (new User())->where(
-            'is_banned',
-            0
-/*         )->where(
-            'class_expire',
-            '>',
-            date('Y-m-d H:i:s') */
-        )->where(
-            static function ($query) use ($node): void {
-                $query->where('class', '>=', $node->node_class)
-                    ->where(static function ($query) use ($node): void {
-                        if ($node->node_group !== 0) {
-                            $query->where('node_group', $node->node_group);
-                        }
-                    });
-            }
-        )->orWhere(
-            'is_admin',
-            1
-        )->get([
+        $users_raw = (new User())->where(static function ($query) use ($node): void {
+            $query->where('is_banned', 0)
+                ->where(static function ($query) use ($node): void {
+                    $query->where('class', '>=', $node->node_class)
+                        ->where(static function ($query) use ($node): void {
+                            if ($node->node_group !== 0) {
+                                $query->where('node_group', $node->node_group);
+                            }
+                        });
+                })
+                ->orWhere(static function ($query): void {
+                    $query->where('is_admin', 1)->where('is_banned', 0);
+                });
+        })->get([
             'id',
             'u',
             'd',

@@ -33,6 +33,7 @@ use Slim\Http\ServerRequest;
 use function array_rand;
 use function date;
 use function explode;
+use function str_starts_with;
 use function strlen;
 use function strtolower;
 use function time;
@@ -71,7 +72,12 @@ final class AuthController extends BaseController
         $password = $request->getParam('password');
         $rememberMe = $request->getParam('remember_me') === 'true' ? 1 : 0;
         $email = strtolower(trim($this->antiXss->xss_clean($request->getParam('email'))));
-        $redir = $this->antiXss->xss_clean(Cookie::get('redir')) ?? '/user';
+        $redir_cookie = Cookie::get('redir');
+        $redir = ($redir_cookie !== null && $redir_cookie !== '') ? $this->antiXss->xss_clean($redir_cookie) : '/user';
+
+        if (! str_starts_with($redir, '/') || str_starts_with($redir, '//')) {
+            $redir = '/user';
+        }
         $user = (new User())->where('email', $email)->first();
         $loginIp = new LoginIp();
 
@@ -231,7 +237,12 @@ final class AuthController extends BaseController
         $money,
         $is_admin_reg
     ): ResponseInterface {
-        $redir = $this->antiXss->xss_clean(Cookie::get('redir')) ?? '/user';
+        $redir_cookie = Cookie::get('redir');
+        $redir = ($redir_cookie !== null && $redir_cookie !== '') ? $this->antiXss->xss_clean($redir_cookie) : '/user';
+
+        if (! str_starts_with($redir, '/') || str_starts_with($redir, '//')) {
+            $redir = '/user';
+        }
         $configs = Config::getClass('reg');
         // do reg user
         $user = new User();
@@ -283,7 +294,8 @@ final class AuthController extends BaseController
         if ($random_group === '') {
             $user->node_group = 0;
         } else {
-            $user->node_group = $random_group[array_rand(explode(',', $random_group))];
+            $groups = explode(',', $random_group);
+            $user->node_group = (int) trim($groups[array_rand($groups)]);
         }
 
         $user->last_login_time = time();
@@ -378,7 +390,7 @@ final class AuthController extends BaseController
             $email_verify_code = trim($this->antiXss->xss_clean($request->getParam('emailcode')));
             $email_verify = $redis->get('email_verify:' . $email_verify_code);
 
-            if (! $email_verify) {
+            if (! $email_verify || $email_verify !== $email) {
                 return ResponseHelper::error($response, I18n::trans('user.email_verify_code_incorrect', $locale));
             }
 
@@ -404,7 +416,12 @@ final class AuthController extends BaseController
     {
         $locale = I18n::getCurrentLocale();
         $data = $this->antiXss->xss_clean((array) $request->getParsedBody());
-        $redir = $this->antiXss->xss_clean(Cookie::get('redir')) ?? '/user';
+        $redir_cookie = Cookie::get('redir');
+        $redir = ($redir_cookie !== null && $redir_cookie !== '') ? $this->antiXss->xss_clean($redir_cookie) : '/user';
+
+        if (! str_starts_with($redir, '/') || str_starts_with($redir, '//')) {
+            $redir = '/user';
+        }
         $result = WebAuthn::assertHandle($data);
         if ($result['ret'] === 1) {
             $user = $result['user'];

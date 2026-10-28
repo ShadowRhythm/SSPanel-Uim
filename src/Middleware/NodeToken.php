@@ -53,10 +53,13 @@ final class NodeToken implements MiddlewareInterface
         }
 
         if ($_ENV['checkNodeIp']) {
+            $node_id = $request->getQueryParam('node_id');
             $ip = $request->getServerParam('REMOTE_ADDR');
 
             if ($ip !== '127.0.0.1' && $ip !== '::1' && $ip !== '0:0:0:0:0:0:0:1' &&
-                ! (new Node())->where('ipv4', $ip)->orWhere('ipv6', $ip)->exists()
+                ! (new Node())->where('id', $node_id)->where(static function ($query) use ($ip): void {
+                    $query->where('ipv4', $ip)->orWhere('ipv6', $ip);
+                })->exists()
             ) {
                 return AppFactory::determineResponseFactory()->createResponse(401)->withJson([
                     'ret' => 0,
