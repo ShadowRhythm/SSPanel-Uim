@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\UserCoupon;
+use App\Services\Cron;
 use App\Services\DB;
 use App\Services\DataTable;
 use App\Services\I18n;
@@ -158,7 +159,7 @@ final class OrderController extends BaseController
 
             $enabled = ($requested !== null && $requested !== '')
                 ? in_array($requested, [1, '1', true], true)
-                : ($order->auto_renew === 0);
+                : ((int) $order->auto_renew === 0);
 
             if ($enabled) {
                 if ($order->status !== 'activated') {
@@ -413,6 +414,10 @@ final class OrderController extends BaseController
 
                 if ($coupon_raw !== '' && $coupon !== null) {
                     UserCoupon::where('id', $coupon->id)->increment('use_count', 1);
+                }
+
+                if ($buy_price === 0) {
+                    Cron::activateOrder($order);
                 }
 
                 return $invoice;

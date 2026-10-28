@@ -6,9 +6,11 @@ namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
 use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\Paylist;
 use App\Models\User;
 use App\Models\UserMoneyLog;
+use App\Services\Cron;
 use App\Services\DB;
 use App\Services\DataTable;
 use App\Services\I18n;
@@ -160,6 +162,14 @@ final class InvoiceController extends BaseController
             $invoice->update_time = time();
             $invoice->pay_time = time();
             $invoice->save();
+
+            $order = Order::where('id', $invoice->order_id)->lockForUpdate()->first();
+            if ($order !== null && $order->status === 'pending_payment') {
+                $order->status = 'pending_activation';
+                $order->update_time = time();
+                $order->save();
+                Cron::activateOrder($order);
+            }
 
             return $response->withHeader('HX-Redirect', '/user/invoice');
         });

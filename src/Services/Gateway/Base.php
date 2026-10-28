@@ -6,9 +6,11 @@ namespace App\Services\Gateway;
 
 use App\Models\Config;
 use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\Paylist;
 use App\Models\User;
 use App\Models\UserMoneyLog;
+use App\Services\Cron;
 use App\Services\DB;
 use App\Services\Reward;
 use App\Utils\Tools;
@@ -74,6 +76,14 @@ abstract class Base
                 $invoice->update_time = time();
                 $invoice->pay_time = time();
                 $invoice->save();
+
+                $order = Order::where('id', $invoice->order_id)->lockForUpdate()->first();
+                if ($order !== null && $order->status === 'pending_payment') {
+                    $order->status = 'pending_activation';
+                    $order->update_time = time();
+                    $order->save();
+                    Cron::activateOrder($order);
+                }
             }
 
             $user = (new User())->where('id', $paylist->userid)->lockForUpdate()->first();

@@ -11,6 +11,7 @@ use App\Services\Detect;
 use Exception;
 use Telegram\Bot\Exceptions\TelegramSDKException;
 use Throwable;
+use function date;
 use function mktime;
 use function time;
 
@@ -68,10 +69,16 @@ EOL;
         }
 
         // Run daily job
-        if ($hour === Config::obtain('daily_job_hour') &&
-            $minute === Config::obtain('daily_job_minute') &&
-            time() - Config::obtain('last_daily_job_time') > 86399
-        ) {
+        $targetDailyTime = mktime(
+            Config::obtain('daily_job_hour'),
+            Config::obtain('daily_job_minute'),
+            0,
+            (int) date('m'),
+            (int) date('d'),
+            (int) date('Y')
+        );
+
+        if (time() >= $targetDailyTime && Config::obtain('last_daily_job_time') < $targetDailyTime) {
             $dailySucceeded = true;
             $dailySucceeded = $this->runJob('clean-db', static fn () => $jobs->cleanDb()) && $dailySucceeded;
             $dailySucceeded = $this->runJob('reset-node-bandwidth', static fn () => $jobs->resetNodeBandwidth()) && $dailySucceeded;
@@ -98,14 +105,7 @@ EOL;
 
             if ($dailySucceeded) {
                 (new Config())->where('item', 'last_daily_job_time')->update([
-                    'value' => mktime(
-                        Config::obtain('daily_job_hour'),
-                        Config::obtain('daily_job_minute'),
-                        0,
-                        (int) date('m'),
-                        (int) date('d'),
-                        (int) date('Y')
-                    ),
+                    'value' => time(),
                 ]);
             }
         }

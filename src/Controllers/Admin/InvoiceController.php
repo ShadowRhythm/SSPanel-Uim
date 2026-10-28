@@ -6,9 +6,10 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Models\Invoice;
-use App\Services\DataTable;
 use App\Models\Order;
 use App\Models\Paylist;
+use App\Services\Cron;
+use App\Services\DataTable;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
@@ -98,6 +99,7 @@ final class InvoiceController extends BaseController
         $order->update_time = time();
         $order->status = 'pending_activation';
         $order->save();
+        Cron::activateOrder($order);
 
         $invoice->update_time = time();
         $invoice->pay_time = time();

@@ -37,7 +37,7 @@ final class Order extends Model
      */
     public function autoRenew(): string
     {
-        return match ($this->auto_renew) {
+        return match ((int) $this->auto_renew) {
             1 => I18n::trans('user.auto_renew_enabled'),
             2 => I18n::trans('user.auto_renew_failed'),
             default => I18n::trans('user.auto_renew_disabled'),

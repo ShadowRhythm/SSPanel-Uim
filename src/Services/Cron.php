@@ -20,6 +20,7 @@ use App\Models\SubscribeLog;
 use App\Models\User;
 use App\Models\UserCoupon;
 use App\Models\UserMoneyLog;
+use App\Services\DB;
 use App\Utils\Tools;
 use DateTime;
 use Exception;
@@ -31,6 +32,7 @@ use function date;
 use function in_array;
 use function json_decode;
 use function json_encode;
+use function max;
 use function str_replace;
 use function strtotime;
 use function time;
@@ -40,20 +42,37 @@ final class Cron
 {
     public static function cleanDb(): void
     {
-        (new SubscribeLog())->where(
-            'request_time',
-            '<',
-            time() - 86400 * Config::obtain('subscribe_log_retention_days')
-        )->delete();
-        (new HourlyUsage())->where(
-            'date',
-            '<',
-            date('Y-m-d', time() - 86400 * Config::obtain('traffic_log_retention_days'))
-        )->delete();
-        (new DetectLog())->where('datetime', '<', time() - 86400 * 3)->delete();
-        (new EmailQueue())->where('time', '<', time() - 86400 * 30)->delete();
-        (new OnlineLog())->where('last_time', '<', time() - 86400)->delete();
-        (new StreamMedia())->where('created_at', '<', \time() - 86400 * 3)->delete();
+        do {
+            $deleted = (new SubscribeLog())->where(
+                'request_time',
+                '<',
+                time() - 86400 * Config::obtain('subscribe_log_retention_days')
+            )->limit(2000)->delete();
+        } while ($deleted > 0);
+
+        do {
+            $deleted = (new HourlyUsage())->where(
+                'date',
+                '<',
+                date('Y-m-d', time() - 86400 * Config::obtain('traffic_log_retention_days'))
+            )->limit(2000)->delete();
+        } while ($deleted > 0);
+
+        do {
+            $deleted = (new DetectLog())->where('datetime', '<', time() - 86400 * 3)->limit(2000)->delete();
+        } while ($deleted > 0);
+
+        do {
+            $deleted = (new EmailQueue())->where('time', '<', time() - 86400 * 30)->limit(2000)->delete();
+        } while ($deleted > 0);
+
+        do {
+            $deleted = (new OnlineLog())->where('last_time', '<', time() - 86400)->limit(2000)->delete();
+        } while ($deleted > 0);
+
+        do {
+            $deleted = (new StreamMedia())->where('created_at', '<', time() - 86400 * 3)->limit(2000)->delete();
+        } while ($deleted > 0);
 
         echo Tools::toDateTime(time()) . ' 数据库清理完成' . PHP_EOL;
     }
@@ -184,8 +203,7 @@ final class Cron
             Order::where('user_id', $user->id)
                 ->where('product_type', 'time')
                 ->where('status', 'activated')
-                ->where('auto_renew', 0)
-                ->update(['status' => 'expired', 'update_time' => time()]);
+                ->update(['status' => 'expired', 'auto_renew' => 0, 'update_time' => time()]);
         }
 
         echo Tools::toDateTime(time()) . ' 付费用户过期检测完成' . PHP_EOL;
@@ -248,24 +266,136 @@ final class Cron
         }
     }
 
+    public static function activateOrder(int|Order $order): bool
+    {
+        $orderId = $order instanceof Order ? $order->id : $order;
+
+        return (bool) DB::transaction(static function () use ($orderId): bool {
+            $order = Order::where('id', $orderId)->lockForUpdate()->first();
+            if ($order === null || $order->status !== 'pending_activation') {
+                return false;
+            }
+
+            $user = User::where('id', $order->user_id)->lockForUpdate()->first();
+            if ($user === null) {
+                return false;
+            }
+
+            $content = json_decode($order->product_content);
+
+            switch ($order->product_type) {
+                case 'topup':
+                    $money_before = (float) $user->money;
+                    $user->money += $content->amount;
+                    $user->save();
+                    $order->status = 'activated';
+                    $order->update_time = time();
+                    $order->save();
+                    (new UserMoneyLog())->add(
+                        $user->id,
+                        $money_before,
+                        (float) $user->money,
+                        $content->amount,
+                        "充值订单 #{$order->id}"
+                    );
+                    echo "充值订单 #{$order->id} 已激活。\n";
+                    return true;
+
+                case 'bandwidth':
+                    $user->transfer_enable += Tools::gbToB($content->bandwidth);
+                    $user->save();
+                    $order->status = 'activated';
+                    $order->update_time = time();
+                    $order->save();
+                    echo "流量包订单 #{$order->id} 已激活。\n";
+                    return true;
+
+                case 'time':
+                    $days = max((int) ($content->class_time ?? 0), (int) ($content->time ?? 0));
+                    if ($days <= 0) {
+                        $days = 30;
+                    }
+                    $currentExpireTimestamp = strtotime($user->class_expire ?? '');
+                    if ($user->class === (int) $content->class && $currentExpireTimestamp > time()) {
+                        $base = new DateTime($user->class_expire);
+                    } else {
+                        $base = new DateTime();
+                    }
+                    $user->class = (int) $content->class;
+                    $user->class_expire = $base->modify('+' . $days . ' days')->format('Y-m-d H:i:s');
+                    $user->node_group = $content->node_group;
+                    $user->node_speedlimit = $content->speed_limit;
+                    $user->node_iplimit = $content->ip_limit;
+                    $user->save();
+                    $order->status = 'activated';
+                    $order->update_time = time();
+                    $order->save();
+
+                    Order::where('user_id', $user->id)
+                        ->where('product_type', 'time')
+                        ->where('status', 'activated')
+                        ->where('id', '!=', $order->id)
+                        ->update(['status' => 'expired', 'update_time' => time()]);
+
+                    echo "时间包订单 #{$order->id} 已激活。\n";
+                    return true;
+
+                case 'tabp':
+                    // Check if user already has an active TABP order that has not expired
+                    $activeTabpOrder = Order::where('user_id', $user->id)
+                        ->where('product_type', 'tabp')
+                        ->where('status', 'activated')
+                        ->where('id', '!=', $order->id)
+                        ->first();
+                    if ($activeTabpOrder !== null) {
+                        $activeContent = json_decode($activeTabpOrder->product_content);
+                        $expireTime = $activeTabpOrder->update_time + ((int) ($activeContent->time ?? 0)) * 86400;
+                        if ($expireTime > time()) {
+                            // Current active TABP is still running, keep this order in pending_activation queue
+                            return false;
+                        }
+                        // Current TABP expired, mark it expired
+                        $activeTabpOrder->status = 'expired';
+                        $activeTabpOrder->update_time = time();
+                        $activeTabpOrder->save();
+                    }
+
+                    $user->u = 0;
+                    $user->d = 0;
+                    $user->transfer_today = 0;
+                    $user->transfer_enable = Tools::gbToB($content->bandwidth);
+                    $user->class = $content->class;
+                    $user->class_expire = (new DateTime())->modify('+' . $content->class_time . ' days')->format('Y-m-d H:i:s');
+                    $user->node_group = $content->node_group;
+                    $user->node_speedlimit = $content->speed_limit;
+                    $user->node_iplimit = $content->ip_limit;
+                    $user->save();
+                    $order->status = 'activated';
+                    $order->update_time = time();
+                    $order->save();
+                    echo "TABP订单 #{$order->id} 已激活。\n";
+                    return true;
+
+                default:
+                    return false;
+            }
+        });
+    }
+
     public static function processTabpOrderActivation(): void
     {
         $activated_orders = Order::where('status', 'activated')
             ->where('product_type', 'tabp')
             ->get();
 
-        $still_active_user_ids = [];
-
         foreach ($activated_orders as $order) {
             $content = json_decode($order->product_content);
 
-            if ($order->update_time + $content->time * 86400 < time()) {
+            if ($order->update_time + ((int) ($content->time ?? 0)) * 86400 < time()) {
                 $order->status = 'expired';
                 $order->update_time = time();
                 $order->save();
                 echo "TABP订单 #{$order->id} 已过期。\n";
-            } else {
-                $still_active_user_ids[$order->user_id] = true;
             }
         }
 
@@ -275,38 +405,7 @@ final class Cron
             ->pluck('id');
 
         foreach ($pending_order_ids as $orderId) {
-            DB::transaction(static function () use ($orderId, &$still_active_user_ids): void {
-                $order = (new Order())->where('id', $orderId)->lockForUpdate()->first();
-                if ($order === null || $order->status !== 'pending_activation') {
-                    return;
-                }
-                $user_id = $order->user_id;
-                $active = Order::where('user_id', $user_id)->where('product_type', 'tabp')
-                    ->where('status', 'activated')->exists();
-                if ($active || isset($still_active_user_ids[$user_id])) {
-                    return;
-                }
-                $user = (new User())->where('id', $user_id)->lockForUpdate()->first();
-                if ($user === null) {
-                    return;
-                }
-                $content = json_decode($order->product_content);
-                $user->u = 0;
-                $user->d = 0;
-                $user->transfer_today = 0;
-                $user->transfer_enable = Tools::gbToB($content->bandwidth);
-                $user->class = $content->class;
-                $user->class_expire = (new DateTime())->modify('+' . $content->class_time . ' days')->format('Y-m-d H:i:s');
-                $user->node_group = $content->node_group;
-                $user->node_speedlimit = $content->speed_limit;
-                $user->node_iplimit = $content->ip_limit;
-                $user->save();
-                $order->status = 'activated';
-                $order->update_time = time();
-                $order->save();
-                $still_active_user_ids[$user_id] = true;
-                echo "TABP订单 #{$order->id} 已激活。\n";
-            });
+            self::activateOrder($orderId);
         }
 
         echo Tools::toDateTime(time()) . ' TABP订单激活处理完成' . PHP_EOL;
@@ -320,23 +419,7 @@ final class Cron
             ->pluck('id');
 
         foreach ($orderIds as $orderId) {
-            DB::transaction(static function () use ($orderId): void {
-                $order = Order::where('id', $orderId)->lockForUpdate()->first();
-                if ($order === null || $order->status !== 'pending_activation') {
-                    return;
-                }
-                $user = User::where('id', $order->user_id)->lockForUpdate()->first();
-                if ($user === null) {
-                    return;
-                }
-                $content = json_decode($order->product_content);
-                $user->transfer_enable += Tools::gbToB($content->bandwidth);
-                $user->save();
-                $order->status = 'activated';
-                $order->update_time = time();
-                $order->save();
-                echo "流量包订单 #{$order->id} 已激活。\n";
-            });
+            self::activateOrder($orderId);
         }
 
         echo Tools::toDateTime(time()) . ' 流量包订单激活处理完成' . PHP_EOL;
@@ -366,47 +449,7 @@ final class Cron
             ->pluck('id');
 
         foreach ($orderIds as $orderId) {
-            DB::transaction(static function () use ($orderId): void {
-                $order = Order::where('id', $orderId)->lockForUpdate()->first();
-                if ($order === null || $order->status !== 'pending_activation') {
-                    return;
-                }
-                $user = User::where('id', $order->user_id)->lockForUpdate()->first();
-                if ($user === null) {
-                    return;
-                }
-                $content = json_decode($order->product_content);
-
-                $days = max((int) ($content->class_time ?? 0), (int) ($content->time ?? 0));
-                if ($days <= 0) {
-                    $days = 30;
-                }
-
-                $currentExpireTimestamp = strtotime($user->class_expire ?? '');
-                if ($user->class === (int) $content->class && $currentExpireTimestamp > time()) {
-                    $base = new DateTime($user->class_expire);
-                } else {
-                    $base = new DateTime();
-                }
-
-                $user->class = (int) $content->class;
-                $user->class_expire = $base->modify('+' . $days . ' days')->format('Y-m-d H:i:s');
-                $user->node_group = $content->node_group;
-                $user->node_speedlimit = $content->speed_limit;
-                $user->node_iplimit = $content->ip_limit;
-                $user->save();
-                $order->status = 'activated';
-                $order->update_time = time();
-                $order->save();
-
-                Order::where('user_id', $user->id)
-                    ->where('product_type', 'time')
-                    ->where('status', 'activated')
-                    ->where('id', '!=', $order->id)
-                    ->update(['status' => 'expired', 'update_time' => time()]);
-
-                echo "时间包订单 #{$order->id} 已激活。\n";
-            });
+            self::activateOrder($orderId);
         }
 
         echo Tools::toDateTime(time()) . ' 时间包订单激活处理完成' . PHP_EOL;
@@ -424,32 +467,7 @@ final class Cron
             ->pluck('id');
 
         foreach ($orderIds as $orderId) {
-            DB::transaction(static function () use ($orderId): void {
-                $order = Order::where('id', $orderId)->lockForUpdate()->first();
-                if ($order === null || $order->status !== 'pending_activation') {
-                    return;
-                }
-                $user_id = $order->user_id;
-                $user = User::where('id', $user_id)->lockForUpdate()->first();
-                if ($user === null) {
-                    return;
-                }
-                $content = json_decode($order->product_content);
-                $money_before = (float) $user->money;
-                $user->money += $content->amount;
-                $user->save();
-                $order->status = 'activated';
-                $order->update_time = time();
-                $order->save();
-                (new UserMoneyLog())->add(
-                    $user_id,
-                    $money_before,
-                    (float) $user->money,
-                    $content->amount,
-                    "充值订单 #{$order->id}"
-                );
-                echo "充值订单 #{$order->id} 已激活。\n";
-            });
+            self::activateOrder($orderId);
         }
 
         echo Tools::toDateTime(time()) . ' 充值订单激活处理完成' . PHP_EOL;

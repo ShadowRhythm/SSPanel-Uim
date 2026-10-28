@@ -229,12 +229,13 @@ final class OrderController extends BaseController
             <a class="btn btn-primary" href="/admin/order/' . $order->id . '/view">查看</a>';
 
             if (in_array($order->product_type, ['tabp', 'time'], true)) {
-                $badgeClass = match ($order->auto_renew) {
+                $badgeClass = match ((int) $order->auto_renew) {
                     1 => 'bg-green text-green-fg',
                     2 => 'bg-danger text-danger-fg',
                     default => 'bg-secondary text-secondary-fg',
                 };
-                $order->auto_renew = '<span class="badge ' . $badgeClass . '">' . $order->autoRenew() . '</span>';
+                $badgeText = $order->autoRenew();
+                $order->auto_renew = '<span class="badge ' . $badgeClass . '">' . $badgeText . '</span>';
             } else {
                 $order->auto_renew = '-';
             }
@@ -272,22 +273,22 @@ final class OrderController extends BaseController
 
         $enabled = ($requested !== null && $requested !== '')
             ? in_array($requested, [1, '1', true], true)
-            : ($order->auto_renew === 0);
+            : ((int) $order->auto_renew === 0);
 
         $order->auto_renew = $enabled ? 1 : 0;
         $order->save();
 
-        $badgeClass = match ($order->auto_renew) {
+        $badgeClass = match ((int) $order->auto_renew) {
             1 => 'bg-green text-green-fg',
             2 => 'bg-danger text-danger-fg',
             default => 'bg-secondary text-secondary-fg',
         };
         $badgeHtml = '<span id="auto-renew-badge" class="badge ' . $badgeClass . '">' . $order->autoRenew() . '</span>';
-        $btnText = '<i class="icon ti ti-refresh"></i> ' . ($order->auto_renew === 1 ? '关闭自动续费' : '开启自动续费');
+        $btnText = '<i class="icon ti ti-refresh"></i> ' . ((int) $order->auto_renew === 1 ? '关闭自动续费' : '开启自动续费');
 
         return $response->withJson([
             'ret' => 1,
-            'msg' => $order->auto_renew === 1 ? '已为该订单开启自动续费' : '已为该订单关闭自动续费',
+            'msg' => (int) $order->auto_renew === 1 ? '已为该订单开启自动续费' : '已为该订单关闭自动续费',
             'data' => [
                 'auto-renew-badge-container' => $badgeHtml,
                 'admin-toggle-renew-btn' => $btnText,
