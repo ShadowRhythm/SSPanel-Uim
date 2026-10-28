@@ -38,7 +38,14 @@ final class DataTable
         $columnName = $columns[$columnIndex]['data'] ?? '';
         $columnName = is_string($columnName) ? $columnName : '';
         $direction = strtolower((string) ($order['dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
-        if (in_array($columnName, $orderable, true)) {
+        if (isset($orderable[$columnName])) {
+            $orderTarget = $orderable[$columnName];
+            if (str_contains((string) $orderTarget, '+') || str_contains((string) $orderTarget, '(')) {
+                $query->orderByRaw("{$orderTarget} {$direction}");
+            } else {
+                $query->orderBy($orderTarget, $direction);
+            }
+        } elseif (in_array($columnName, $orderable, true)) {
             $query->orderBy($columnName, $direction);
         } else {
             $query->orderBy('id', 'desc');

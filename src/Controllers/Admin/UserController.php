@@ -256,7 +256,23 @@ final class UserController extends BaseController
             (new User())->newQuery(),
             $request,
             ['id', 'user_name', 'email'],
-            ['id', 'user_name', 'email', 'money', 'class', 'class_expire']
+            [
+                'id',
+                'user_name',
+                'email',
+                'money',
+                'ref_by',
+                'transfer_enable',
+                'transfer_used' => '(u + d)',
+                'transfer_today',
+                'class',
+                'last_use_time',
+                'is_inactive',
+                'reg_date',
+                'class_expire',
+                'last_check_in_time',
+                'last_login_time',
+            ]
         );
 
         foreach ($users['data'] as $user) {

@@ -110,7 +110,7 @@
         ];
         tableConfig.columnDefs = [
             {
-                targets: [0, 6, 7],
+                targets: [0],
                 orderable: false
             },
         ];
