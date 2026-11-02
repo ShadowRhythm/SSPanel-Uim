@@ -7,6 +7,7 @@ namespace App\Controllers\User;
 use App\Controllers\BaseController;
 use App\Models\Config;
 use App\Models\Ticket;
+use App\Services\I18n;
 use App\Services\Notification;
 use App\Services\RateLimit;
 use App\Utils\ResponseHelper;
@@ -58,6 +59,7 @@ final class TicketController extends BaseController
      */
     public function add(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $title = $request->getParam('title') ?? '';
         $comment = $request->getParam('comment') ?? '';
         $type = $request->getParam('type') ?? '';
@@ -69,7 +71,7 @@ final class TicketController extends BaseController
             $comment === '' ||
             $type === ''
         ) {
-            return ResponseHelper::error($response, '工单创建失败');
+            return ResponseHelper::error($response, I18n::trans('user.ticket_create_failed', $locale));
         }
 
         $content = [
@@ -108,6 +110,7 @@ final class TicketController extends BaseController
      */
     public function reply(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $id = $args['id'];
         $comment = $request->getParam('comment') ?? '';
 
@@ -115,13 +118,13 @@ final class TicketController extends BaseController
             $this->user->is_shadow_banned ||
             $comment === ''
         ) {
-            return ResponseHelper::error($response, '工单回复失败');
+            return ResponseHelper::error($response, I18n::trans('user.ticket_reply_failed', $locale));
         }
 
         $ticket = (new Ticket())->where('id', $id)->where('userid', $this->user->id)->first();
 
         if ($ticket === null) {
-            return ResponseHelper::error($response, '工单不存在');
+            return ResponseHelper::error($response, I18n::trans('user.ticket_not_found', $locale));
         }
 
         $content_old = json_decode($ticket->content, true);
@@ -153,15 +156,16 @@ final class TicketController extends BaseController
 
     public function close(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $id = $args['id'];
         $ticket = (new Ticket())->where('id', '=', $id)->where('userid', $this->user->id)->first();
 
         if ($ticket === null) {
-            return ResponseHelper::error($response, '工单不存在');
+            return ResponseHelper::error($response, I18n::trans('user.ticket_not_found', $locale));
         }
 
         if ($ticket->status === 'closed') {
-            return ResponseHelper::error($response, '工单已关闭，无需重复操作');
+            return ResponseHelper::error($response, I18n::trans('user.ticket_already_closed', $locale));
         }
 
         $ticket->status = 'closed';
@@ -169,7 +173,7 @@ final class TicketController extends BaseController
 
         return $response->withHeader('HX-Refresh', 'true')->withJson([
             'ret' => 1,
-            'msg' => '工单关闭成功',
+            'msg' => I18n::trans('user.ticket_close_success', $locale),
         ]);
     }
 

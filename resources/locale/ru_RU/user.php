@@ -247,6 +247,11 @@ return [
     'reply' => 'Ответить',
     'close_ticket' => 'Закрыть тикет',
     'confirm_close_ticket' => 'Вы уверены, что хотите закрыть этот тикет?',
+    'ticket_create_failed' => 'Не удалось создать тикет',
+    'ticket_reply_failed' => 'Не удалось ответить на тикет',
+    'ticket_not_found' => 'Тикет не найден',
+    'ticket_already_closed' => 'Тикет уже закрыт',
+    'ticket_close_success' => 'Тикет успешно закрыт',
 
     // Order (order/index.tpl & order/view.tpl)
     'order_title' => 'Список заказов',

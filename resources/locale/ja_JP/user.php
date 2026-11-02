@@ -247,6 +247,11 @@ return [
     'reply' => '返信',
     'close_ticket' => 'チケットを閉じる',
     'confirm_close_ticket' => 'このチケットを閉じてもよろしいですか？',
+    'ticket_create_failed' => 'チケットの作成に失敗しました',
+    'ticket_reply_failed' => 'チケットへの返信に失敗しました',
+    'ticket_not_found' => 'チケットが見つかりません',
+    'ticket_already_closed' => 'チケットは既にクローズされています',
+    'ticket_close_success' => 'チケットを正常にクローズしました',
 
     // Order (order/index.tpl & order/view.tpl)
     'order_title' => '注文一覧',

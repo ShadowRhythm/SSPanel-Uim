@@ -247,6 +247,11 @@ return [
     'reply' => 'Responder',
     'close_ticket' => 'Fechar Ticket',
     'confirm_close_ticket' => 'Tem certeza de que deseja fechar este ticket?',
+    'ticket_create_failed' => 'Falha ao criar o ticket',
+    'ticket_reply_failed' => 'Falha ao responder ao ticket',
+    'ticket_not_found' => 'Ticket não encontrado',
+    'ticket_already_closed' => 'O ticket já está fechado',
+    'ticket_close_success' => 'Ticket fechado com sucesso',
 
     // Order (order/index.tpl & order/view.tpl)
     'order_title' => 'Lista de Pedidos',

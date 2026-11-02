@@ -247,6 +247,11 @@ return [
     'reply' => 'Reply',
     'close_ticket' => 'Close Ticket',
     'confirm_close_ticket' => 'Are you sure you want to close this ticket?',
+    'ticket_create_failed' => 'Failed to create ticket',
+    'ticket_reply_failed' => 'Failed to reply to ticket',
+    'ticket_not_found' => 'Ticket not found',
+    'ticket_already_closed' => 'Ticket is already closed',
+    'ticket_close_success' => 'Ticket closed successfully',
 
     // Order (order/index.tpl & order/view.tpl)
     'order_title' => 'Order List',

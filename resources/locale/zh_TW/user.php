@@ -247,6 +247,11 @@ return [
     'reply' => '回覆',
     'close_ticket' => '關閉工單',
     'confirm_close_ticket' => '確認關閉此工單？',
+    'ticket_create_failed' => '工單建立失敗',
+    'ticket_reply_failed' => '工單回覆失敗',
+    'ticket_not_found' => '工單不存在',
+    'ticket_already_closed' => '工單已關閉，無需重複操作',
+    'ticket_close_success' => '工單關閉成功',
 
     // Order (order/index.tpl & order/view.tpl)
     'order_title' => '訂單清單',
