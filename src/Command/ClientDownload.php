@@ -39,7 +39,11 @@ final class ClientDownload extends Command
      */
     public function boot(): void
     {
-        $this->client = new Client();
+        $this->client = new Client([
+            'headers' => [
+                'User-Agent' => 'SSPanel-UIM-ClientDownloader',
+            ],
+        ]);
         $this->version = $this->getLocalVersions();
         $clientsPath = BASE_PATH . '/config/clients.json';
 
@@ -219,16 +223,31 @@ final class ClientDownload extends Command
             default => $this->getLatestReleaseTagName($task['gitRepo']),
         };
 
+        $isVersionSame = isset($this->version[$task['name']]) && $tagName === $this->version[$task['name']];
+        $hasMissingFiles = false;
+
+        if ($isVersionSame) {
+            foreach ($task['downloads'] as $download) {
+                $fileName = $download['saveName'] !== '' ? $download['saveName'] : $download['sourceName'];
+                $fileName = self::getNames($fileName, $task['name'], $tagName);
+                if (! file_exists($savePath . $fileName)) {
+                    $hasMissingFiles = true;
+                    break;
+                }
+            }
+        }
+
         if (! isset($this->version[$task['name']])) {
             echo '- 本地不存在 ' . $task['name'] . '，检测到当前最新版本为 ' . $tagName . PHP_EOL;
-        } else {
-            if ($tagName === $this->version[$task['name']]) {
-                echo '- 检测到当前 ' . $task['name'] . ' 最新版本与本地版本一致，跳过此任务。' . PHP_EOL;
-                echo '====== ' . $task['name'] . ' 结束 ======' . PHP_EOL;
-                return;
-            }
+        } elseif (! $isVersionSame) {
             echo '- 检测到当前 ' . $task['name'] . ' 最新版本为 ' .
                 $tagName . '，本地最新版本为 ' . $this->version[$task['name']] . PHP_EOL;
+        } elseif ($hasMissingFiles) {
+            echo '- 检测到当前 ' . $task['name'] . ' 版本与本地一致，但存在未下载的客户端文件，开始补齐下载。' . PHP_EOL;
+        } else {
+            echo '- 检测到当前 ' . $task['name'] . ' 最新版本与本地版本一致且文件完整，跳过此任务。' . PHP_EOL;
+            echo '====== ' . $task['name'] . ' 结束 ======' . PHP_EOL;
+            return;
         }
 
         $this->version[$task['name']] = $tagName;
@@ -238,6 +257,11 @@ final class ClientDownload extends Command
             $fileName = self::getNames($fileName, $task['name'], $tagName);
             $sourceName = self::getNames($download['sourceName'], $task['name'], $tagName);
             $filePath = $savePath . $fileName;
+
+            if ($isVersionSame && file_exists($filePath)) {
+                echo '- 文件 ' . $fileName . ' 已存在，跳过。' . PHP_EOL;
+                continue;
+            }
 
             echo '- 正在删除旧版本文件...' . PHP_EOL;
 
