@@ -62,6 +62,15 @@ final class AuthController extends BaseController
     {
         $locale = I18n::getCurrentLocale();
 
+        if (($_ENV['enable_rate_limit'] ?? false) &&
+            ! (new RateLimit())->checkRateLimit('login_ip', $request->getServerParam('REMOTE_ADDR') ?? '')
+        ) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => I18n::trans('user.request_too_frequent', $locale),
+            ]);
+        }
+
         if (Config::obtain('enable_login_captcha') && ! Captcha::verify($request->getParams())) {
             return $response->withJson([
                 'ret' => 0,

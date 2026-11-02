@@ -34,6 +34,7 @@ final class RateLimit
             'node_api_key' => $this->getNodeApiKeyLimiter(),
             'email_request_ip' => $this->getEmailIpLimiter(),
             'email_request_address' => $this->getEmailAddressLimiter(),
+            'login_ip' => $this->getLoginIpLimiter(),
             'ticket' => $this->getTicketLimiter(),
             default => null,
         };
@@ -165,6 +166,15 @@ final class RateLimit
             Rate::custom(Config::obtain('ticket_limit'), 2592000),
             $this->redis,
             'sspanel_ticket:'
+        );
+    }
+
+    public function getLoginIpLimiter(): RedisRateLimiter
+    {
+        return new RedisRateLimiter(
+            Rate::perMinute((int) ($_ENV['rate_limit_login_ip'] ?? 15)),
+            $this->redis,
+            'sspanel_login_ip:'
         );
     }
 }
