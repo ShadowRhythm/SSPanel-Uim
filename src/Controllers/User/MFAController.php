@@ -27,8 +27,9 @@ final class MFAController extends BaseController
     public function webauthnRegisterHandle(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
         try {
-            return $response->withJson(WebAuthn::registerHandle($this->user, $this->antiXss->xss_clean($request)));
-        } catch (Exception $e) {
+            $data = $this->antiXss->xss_clean((array) $request->getParsedBody());
+            return $response->withJson(WebAuthn::registerHandle($this->user, $data));
+        } catch (\Throwable $e) {
             return $response->withJson(['ret' => 0, 'msg' => '请求失败: ' . $e->getMessage()]);
         }
     }

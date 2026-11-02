@@ -150,15 +150,20 @@ final class Epay extends Base
 
     public function notify($request, $response, $args): ResponseInterface
     {
+        $params = (array) ($request->getParsedBody() ?: $request->getQueryParams());
+        if (empty($params)) {
+            $params = ! empty($_POST) ? $_POST : $_GET;
+        }
+
         $epayNotify = new EpayNotify($this->epay);
-        $verify_result = $epayNotify->verifyNotify();
+        $verify_result = $epayNotify->verifyNotify($params);
 
         if ($verify_result) {
-            if ($_GET['trade_status'] === 'TRADE_SUCCESS') {
-                $this->postPayment($_GET['out_trade_no']);
-                // EPay just fucking copied from Alipay's method of determining whether the payment is successful
-                // which is retarded
-                // https://pay.v8jisu.cn/doc.html
+            $trade_status = $params['trade_status'] ?? '';
+            $out_trade_no = $params['out_trade_no'] ?? '';
+
+            if ($trade_status === 'TRADE_SUCCESS' && $out_trade_no !== '') {
+                $this->postPayment($out_trade_no);
                 return $response->write('success');
             }
         }

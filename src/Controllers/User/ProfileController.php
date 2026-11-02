@@ -39,10 +39,13 @@ final class ProfileController extends BaseController
             $subs = (new SubscribeLog())->where('user_id', $this->user->id)->orderBy('id', 'desc')->take(10)->get();
         }
 
+        $nodeIds = $ips->pluck('node_id')->unique()->filter();
+        $nodes = ! $nodeIds->isEmpty() ? Node::whereIn('id', $nodeIds)->pluck('name', 'id') : collect();
+
         foreach ($ips as $ip) {
             $ip->ip = str_replace('::ffff:', '', $ip->ip);
             $ip->location = Tools::getIpLocation($ip->ip);
-            $ip->node_name = (new Node())->where('id', $ip->node_id)->first()->name;
+            $ip->node_name = $nodes[$ip->node_id] ?? '未知节点';
             $ip->last_time = Tools::toDateTime((int) $ip->last_time);
         }
 

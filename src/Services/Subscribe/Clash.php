@@ -185,6 +185,12 @@ final class Clash extends Base
             'proxies' => $nodes,
         ];
 
+        foreach ($clash_group_indexes as $index) {
+            if (isset($clash_group_config['proxy-groups'][$index]) && empty($clash_group_config['proxy-groups'][$index]['proxies'])) {
+                $clash_group_config['proxy-groups'][$index]['proxies'] = ['DIRECT'];
+            }
+        }
+
         return yaml_emit(
             array_merge($clash_config, $clash_nodes, $clash_group_config),
             YAML_UTF8_ENCODING

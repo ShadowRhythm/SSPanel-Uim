@@ -15,17 +15,14 @@ final class EpayNotify
         $this->epay_config = $epay_config;
     }
 
-    public function verifyNotify(): bool
+    public function verifyNotify(?array $params = null): bool
     {
-        if (is_null($_GET)) {//判断POST来的数组是否为空
+        $params ??= (! empty($_POST) ? $_POST : $_GET);
+        if (empty($params) || ! isset($params['sign'])) {
             return false;
         }
 
-        if ($this->getSignVeryfy($_GET, $_GET['sign'])) {
-            return true;
-        }
-
-        return false;
+        return $this->getSignVeryfy($params, (string) $params['sign']);
     }
 
     public function getSignVeryfy($para_temp, $sign): bool

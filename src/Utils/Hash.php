@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Utils;
 
 use function hash;
+use function hash_equals;
 use function in_array;
 use function password_hash;
 use function password_verify;
@@ -36,7 +37,7 @@ final class Hash
             return password_verify($password, $hashedPassword);
         }
 
-        return $hashedPassword === self::passwordHash($password);
+        return hash_equals((string) $hashedPassword, (string) self::passwordHash($password));
     }
 
     public static function passwordHash($pass): string

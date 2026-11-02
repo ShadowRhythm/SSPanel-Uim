@@ -18,9 +18,11 @@ final class Link extends Model
     protected $connection = 'default';
     protected $table = 'link';
 
+    private ?User $cachedUser = null;
+
     public function user(): ?User
     {
-        return (new User())->find($this->attributes['userid']);
+        return $this->cachedUser ??= (new User())->find($this->attributes['userid']);
     }
 
     public function isValid(): bool

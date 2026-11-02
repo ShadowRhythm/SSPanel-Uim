@@ -10,8 +10,8 @@
             d.getElementsByTagName("head")[0].appendChild(s);
         })();
         $crisp.push(["safe", true])
-        $crisp.push(["set", "user:nickname", "{$user->user_name}"],
-            ["set", "user:email", "{$user->email}"],
+        $crisp.push(["set", "user:nickname", "{$user->user_name|escape:'javascript'}"],
+            ["set", "user:email", "{$user->email|escape:'javascript'}"],
             ["set", "session:data",
                 [[
                     ["user_id", "{$user->id}"],

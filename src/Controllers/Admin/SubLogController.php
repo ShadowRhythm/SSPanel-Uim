@@ -81,7 +81,7 @@ final class SubLogController extends BaseController
 
         foreach ($subscribes as $subscribe) {
             $subscribe->request_time = Tools::toDateTime($subscribe->request_time);
-            $subscribe->location = $subscribe->getAttributes();
+            $subscribe->location = Tools::getIpLocation($subscribe->request_ip);
         }
 
         return $response->withJson([
