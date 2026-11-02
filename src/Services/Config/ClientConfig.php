@@ -42,7 +42,7 @@ final class ClientConfig
                         $data['importUrl'] ?? $client['importUrl'] ?? ''
                     ),
                     'downloadUrl' => $data['storeUrl'] ??
-                        (isset($data['ext']) ? ($r2 ? '/user' : '') . '/clients/' . ($data['file'] ?? str_replace(' ', '.', $client['name'])) . ".{$data['ext']}" : ''),
+                        (isset($data['ext']) ? ($r2 ? '/user' : '') . '/clients/' . ($data['file'] ?? str_replace(' ', '.', $client['name'])) . ".{$data['ext']}" : ($data['url'] ?? '')),
                     'isAppStore' => isset($data['storeUrl']),
                 ];
             }

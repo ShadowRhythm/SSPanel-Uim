@@ -154,7 +154,8 @@
           "storeUrl": "https://apps.apple.com/us/app/clash-mi/id6744321968"
         },
         "macOS": {
-          "storeUrl": "https://apps.apple.com/us/app/clash-mi/id6744321968"
+          "ext": "dmg",
+          "file": "clashmi"
         }
       }
     },

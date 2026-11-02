@@ -153,6 +153,10 @@
                 {
                     "sourceName": "clashmi_%tagName1%_android_arm64-v8a.apk",
                     "saveName": "clashmi_arm64.apk"
+                },
+                {
+                    "sourceName": "clashmi_%tagName1%_macos_universal.dmg",
+                    "saveName": "clashmi.dmg"
                 }
             ]
         }

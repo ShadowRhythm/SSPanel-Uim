@@ -46,6 +46,7 @@ final class ClientController extends BaseController
             'v2rayN-windows-64-desktop.zip',
             'clashmi.exe',
             'clashmi_arm64.apk',
+            'clashmi.dmg',
         ];
 
         if (! in_array($clientName, $clients)) {
