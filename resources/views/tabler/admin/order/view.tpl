@@ -30,7 +30,7 @@
                                 {if $order->auto_renew === 1}关闭自动续费{else}开启自动续费{/if}
                             </button>
                         {/if}
-                        {if $order->status === 'pending_payment'}
+                        {if $order->status === 'pending_payment' || $order->status === 'pending_activation'}
                             <button href="#" class="btn btn-red" data-bs-toggle="modal"
                                     data-bs-target="#cancel_order_confirm_dialog">
                                 <i class="icon ti ti-x"></i>
@@ -185,10 +185,21 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="datagrid-item">
-                            <div class="datagrid-title">账单金额</div>
-                            <div class="datagrid-content">{$invoice->price}</div>
-                        </div>
+                        {if $invoice->raw_status === 'partially_paid'}
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">已收金额</div>
+                                <div class="datagrid-content">{$invoice->already_collected}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">待付金额</div>
+                                <div class="datagrid-content">{$invoice->price}</div>
+                            </div>
+                        {else}
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">账单金额</div>
+                                <div class="datagrid-content">{$invoice->price}</div>
+                            </div>
+                        {/if}
                         <div class="datagrid-item">
                             <div class="datagrid-title">账单状态</div>
                             <div class="datagrid-content">{$invoice->status}</div>

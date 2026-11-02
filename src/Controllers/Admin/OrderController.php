@@ -9,15 +9,22 @@ use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Paylist;
 use App\Models\Product;
+use App\Models\User;
 use App\Models\UserCoupon;
+use App\Models\UserMoneyLog;
+use App\Services\DB;
 use App\Services\DataTable;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
+use function count;
 use function in_array;
 use function json_decode;
+use function json_encode;
+use function max;
+use function round;
 use function time;
 
 final class OrderController extends BaseController
@@ -83,6 +90,7 @@ final class OrderController extends BaseController
             return $response->withStatus(301)->withHeader('Location', '/admin/order');
         }
 
+        $order->raw_status = $order->status;
         $order->product_type_text = $order->productType();
         $order->status_text = $order->status();
         $order->auto_renew_text = $order->autoRenew();
@@ -91,6 +99,13 @@ final class OrderController extends BaseController
         $order->content = json_decode($order->product_content);
 
         $invoice = (new Invoice())->where('order_id', $id)->first();
+        $invoice->raw_status = $invoice->status;
+        $invoice->already_collected = 0.0;
+
+        if ($invoice->raw_status === 'partially_paid') {
+            $invoice->already_collected = max(0.0, round((float) $order->price - (float) $invoice->price, 2));
+        }
+
         $invoice->status = $invoice->status();
         $invoice->create_time = Tools::toDateTime($invoice->create_time);
         $invoice->update_time = Tools::toDateTime($invoice->update_time);
@@ -108,75 +123,108 @@ final class OrderController extends BaseController
     public function cancel(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
         $order_id = $args['id'];
-        $order = (new Order())->find($order_id);
 
-        if ($order === null) {
-            return $response->withJson([
-                'ret' => 0,
-                'msg' => '订单不存在',
-            ]);
-        }
+        $result = DB::transaction(static function () use ($order_id): array {
+            $order = Order::where('id', $order_id)->lockForUpdate()->first();
 
-        if (in_array($order->status, ['activated', 'expired', 'cancelled'])) {
-            return $response->withJson([
-                'ret' => 0,
-                'msg' => '无法取消 ' . $order->status() . ' 状态的产品',
-            ]);
-        }
+            if ($order === null) {
+                return [
+                    'ret' => 0,
+                    'msg' => '订单不存在',
+                ];
+            }
 
-        $invoice = (new Invoice())->where('order_id', $order_id)->first();
+            if (in_array($order->status, ['activated', 'expired', 'superseded', 'cancelled'], true)) {
+                return [
+                    'ret' => 0,
+                    'msg' => '无法取消 ' . $order->status() . ' 状态的订单',
+                ];
+            }
 
-        if ($invoice === null) {
-            return $response->withJson([
-                'ret' => 0,
-                'msg' => '关联账单不存在',
-            ]);
-        }
+            $invoice = Invoice::where('order_id', $order->id)->lockForUpdate()->first();
 
-        if ($invoice->status === 'partially_paid') {
-            return $response->withJson([
-                'ret' => 0,
-                'msg' => '无法取消账单已部分支付的订单',
-            ]);
-        }
+            if ($invoice === null) {
+                return [
+                    'ret' => 0,
+                    'msg' => '关联账单不存在',
+                ];
+            }
 
-        $isUnpaid = $order->status === 'pending_payment' || ! in_array($invoice->status, ['paid_gateway', 'paid_balance', 'paid_admin'], true);
+            $isFullyPaid = in_array($invoice->status, ['paid_gateway', 'paid_balance', 'paid_admin'], true);
+            $isPartiallyPaid = $invoice->status === 'partially_paid';
+            $isUnpaidOrPartial = in_array($invoice->status, ['unpaid', 'partially_paid'], true);
 
-        $order->update_time = time();
-        $order->status = 'cancelled';
-        $order->save();
+            if ($isPartiallyPaid) {
+                $refundAmount = max(0.0, round((float) $order->price - (float) $invoice->price, 2));
+            } elseif ($isFullyPaid) {
+                $refundAmount = (float) $order->price;
+            } else {
+                $refundAmount = 0.0;
+            }
 
-        if (in_array($invoice->status, ['paid_gateway', 'paid_balance', 'paid_admin'])) {
-            $invoice->refundToBalance();
+            if ($refundAmount > 0.0) {
+                $user = User::where('id', $order->user_id)->lockForUpdate()->first();
 
-            return $response->withJson([
-                'ret' => 1,
-                'msg' => '订单取消成功，关联账单已退款至余额',
-            ]);
-        }
+                if ($user !== null) {
+                    $oldMoney = (float) $user->money;
+                    $newMoney = round($oldMoney + $refundAmount, 2);
+                    $user->money = $newMoney;
+                    $user->save();
 
-        // If order was pending_payment or not yet paid, roll back stock and coupon
-        if ($isUnpaid || ! in_array($invoice->status, ['paid_gateway', 'paid_balance', 'paid_admin'], true)) {
-            $product = Product::find($order->product_id);
-            if ($product !== null) {
-                if ($product->stock >= 0) {
-                    Product::where('id', $product->id)->increment('stock', 1);
+                    (new UserMoneyLog())->add(
+                        $user->id,
+                        $oldMoney,
+                        $newMoney,
+                        $refundAmount,
+                        '订单 #' . $order->id . ' 取消退款至账户余额'
+                    );
+
+                    $content = json_decode($invoice->content, true) ?: [];
+                    $content[] = [
+                        'content_id' => count($content),
+                        'name' => '退款至账户余额',
+                        'price' => '-' . $refundAmount,
+                    ];
+                    $invoice->content = json_encode($content);
                 }
-                Product::where('id', $product->id)->where('sale_count', '>', 0)->decrement('sale_count', 1);
             }
-            if ($order->coupon !== '') {
-                UserCoupon::where('code', $order->coupon)->where('use_count', '>', 0)->decrement('use_count', 1);
+
+            if ($isUnpaidOrPartial) {
+                $product = Product::find($order->product_id);
+                if ($product !== null) {
+                    if ($product->stock >= 0) {
+                        Product::where('id', $product->id)->increment('stock', 1);
+                    }
+                    Product::where('id', $product->id)->where('sale_count', '>', 0)->decrement('sale_count', 1);
+                }
+
+                if ($order->coupon !== '') {
+                    UserCoupon::where('code', $order->coupon)->where('use_count', '>', 0)->decrement('use_count', 1);
+                }
             }
-        }
 
-        $invoice->update_time = time();
-        $invoice->status = 'cancelled';
-        $invoice->save();
+            $order->status = 'cancelled';
+            $order->update_time = time();
+            $order->save();
 
-        return $response->withJson([
-            'ret' => 1,
-            'msg' => '订单取消成功',
-        ]);
+            $invoice->status = $isFullyPaid ? 'refunded_balance' : 'cancelled';
+            $invoice->update_time = time();
+            $invoice->save();
+
+            if ($refundAmount > 0.0) {
+                return [
+                    'ret' => 1,
+                    'msg' => '订单取消成功，已退款 ¥' . $refundAmount . ' 至用户余额',
+                ];
+            }
+
+            return [
+                'ret' => 1,
+                'msg' => '订单取消成功',
+            ];
+        });
+
+        return $response->withJson($result);
     }
 
     public function delete(ServerRequest $request, Response $response, array $args): ResponseInterface
