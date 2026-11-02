@@ -41,7 +41,10 @@ return [
     'client_download' => '下載',
     'client_app_store' => 'App Store',
     'client_copy_sub' => '複製訂閱',
+    'client_copy_conf' => '複製配置',
     'client_import' => '一鍵匯入',
+    'client_qx_usage_title' => 'Quantumult X 配置匯入說明',
+    'client_qx_conf_tip' => '點擊上方「複製配置」複製連結後，開啟 Quantumult X ➔ 點擊右下角小風車 ➔ 在「設定檔」欄目下點擊「下載」➔ 貼上此配置連結並儲存，即可套用完整分流規則與策略組。',
 
     // Server page (server.tpl)
     'server_title' => '節點列表',

@@ -41,7 +41,10 @@ return [
     'client_download' => 'Скачать',
     'client_app_store' => 'App Store',
     'client_copy_sub' => 'Скопировать подписку',
+    'client_copy_conf' => 'Скопировать конфигурацию',
     'client_import' => 'Импорт в один клик',
+    'client_qx_usage_title' => 'Инструкция для Quantumult X',
+    'client_qx_conf_tip' => 'Нажмите «Скопировать конфигурацию», откройте Quantumult X ➔ нажмите значок ветряка внизу справа ➔ в разделе «Конфигурация» нажмите «Скачать» ➔ вставьте ссылку и сохраните.',
 
     // Server page (server.tpl)
     'server_title' => 'Список серверов',

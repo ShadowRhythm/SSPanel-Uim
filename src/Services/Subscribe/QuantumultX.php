@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Subscribe;
 
+use App\Models\Link;
 use App\Services\Subscribe;
 use App\Utils\Tools;
 use function base64_encode;
@@ -27,6 +28,12 @@ final class QuantumultX extends Base
 {
     public function getContent($user): string
     {
+        if (isset($_GET['type']) && ($_GET['type'] === 'conf' || $_GET['type'] === 'profile') ||
+            isset($_GET['profile']) && $_GET['profile'] === '1'
+        ) {
+            return $this->getProfileContent($user);
+        }
+
         $lines = [];
         $nodes_raw = Subscribe::getUserNodes($user);
 
@@ -267,5 +274,107 @@ final class QuantumultX extends Base
         $parts[] = "tag={$name}";
 
         return implode(', ', $parts);
+    }
+
+    /**
+     * 构建 Quantumult X 完整配置文件（包含 policy 策略组、分流规则集与节点订阅）
+     */
+    public function getProfileContent($user): string
+    {
+        $qx_config = $_ENV['QuantumultX_Config'] ?? [];
+        $sections = [];
+
+        // [general]
+        $general = ['[general]'];
+        if (isset($qx_config['general'])) {
+            foreach ($qx_config['general'] as $k => $v) {
+                $general[] = "{$k}={$v}";
+            }
+        }
+        $sections[] = implode(PHP_EOL, $general);
+
+        // [dns]
+        $dns = ['[dns]'];
+        if (isset($qx_config['dns']['servers'])) {
+            foreach ($qx_config['dns']['servers'] as $server) {
+                $dns[] = "server={$server}";
+            }
+        }
+        $sections[] = implode(PHP_EOL, $dns);
+
+        // [policy]
+        $policy = ['[policy]'];
+        if (isset($qx_config['policy'])) {
+            foreach ($qx_config['policy'] as $p) {
+                $policy[] = $p;
+            }
+        }
+        $sections[] = implode(PHP_EOL, $policy);
+
+        // [server_remote]
+        $server_remote = ['[server_remote]'];
+        $link = (new Link())->where('userid', $user->id)->first();
+        $token = $link?->token ?? '';
+        if ($token !== '') {
+            $sub_url = $_ENV['subUrl'] . '/sub/' . $token . '/qx';
+            $server_remote[] = "{$sub_url}, tag=" . ($_ENV['appName'] ?? 'SSPanel') . ', update-interval=86400, opt-parser=false, enabled=true';
+        }
+        $sections[] = implode(PHP_EOL, $server_remote);
+
+        // [server_local]
+        $server_local = ['[server_local]'];
+        if (isset($qx_config['server_local'])) {
+            foreach ($qx_config['server_local'] as $sl) {
+                $server_local[] = $sl;
+            }
+        }
+        $sections[] = implode(PHP_EOL, $server_local);
+
+        // [filter_remote]
+        $filter_remote = ['[filter_remote]'];
+        if (isset($qx_config['filter_remote'])) {
+            foreach ($qx_config['filter_remote'] as $fr) {
+                $filter_remote[] = $fr;
+            }
+        }
+        $sections[] = implode(PHP_EOL, $filter_remote);
+
+        // [filter_local]
+        $filter_local = ['[filter_local]'];
+        if (isset($qx_config['filter_local'])) {
+            foreach ($qx_config['filter_local'] as $fl) {
+                $filter_local[] = $fl;
+            }
+        }
+        $sections[] = implode(PHP_EOL, $filter_local);
+
+        // [rewrite_remote]
+        $rewrite_remote = ['[rewrite_remote]'];
+        if (isset($qx_config['rewrite_remote'])) {
+            foreach ($qx_config['rewrite_remote'] as $rr) {
+                $rewrite_remote[] = $rr;
+            }
+        }
+        $sections[] = implode(PHP_EOL, $rewrite_remote);
+
+        // [rewrite_local]
+        $rewrite_local = ['[rewrite_local]'];
+        if (isset($qx_config['rewrite_local'])) {
+            foreach ($qx_config['rewrite_local'] as $rl) {
+                $rewrite_local[] = $rl;
+            }
+        }
+        $sections[] = implode(PHP_EOL, $rewrite_local);
+
+        // [mitm]
+        $mitm = ['[mitm]'];
+        if (isset($qx_config['mitm'])) {
+            foreach ($qx_config['mitm'] as $k => $v) {
+                $mitm[] = "{$k}={$v}";
+            }
+        }
+        $sections[] = implode(PHP_EOL, $mitm);
+
+        return implode(PHP_EOL . PHP_EOL, $sections);
     }
 }

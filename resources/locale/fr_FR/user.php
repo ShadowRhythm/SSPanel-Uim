@@ -41,7 +41,10 @@ return [
     'client_download' => 'Télécharger',
     'client_app_store' => 'App Store',
     'client_copy_sub' => 'Copier l\'abonnement',
+    'client_copy_conf' => 'Copier la configuration',
     'client_import' => 'Importation en un clic',
+    'client_qx_usage_title' => 'Instructions de configuration Quantumult X',
+    'client_qx_conf_tip' => 'Cliquez sur « Copier la configuration » ci-dessus, ouvrez Quantumult X ➔ appuyez sur le moulin en bas à droite ➔ sous « Configuration » appuyez sur « Télécharger » ➔ collez ce lien et enregistrez.',
 
     // Server page (server.tpl)
     'server_title' => 'Liste des nœuds',

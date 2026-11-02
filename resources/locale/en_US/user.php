@@ -41,7 +41,10 @@ return [
     'client_download' => 'Download',
     'client_app_store' => 'App Store',
     'client_copy_sub' => 'Copy Subscription',
+    'client_copy_conf' => 'Copy Config',
     'client_import' => 'One-click Import',
+    'client_qx_usage_title' => 'Quantumult X Config Instructions',
+    'client_qx_conf_tip' => 'Tap "Copy Config" above, open Quantumult X ➔ tap the windmill icon at bottom right ➔ under "Configuration" tap "Download" ➔ paste this link and save to apply full rules and policy groups.',
 
     // Server page (server.tpl)
     'server_title' => 'Node List',

@@ -565,10 +565,13 @@
         FEEDBACK_TIMEOUT: 2000,         // Feedback timeout (ms)
         CLIPBOARD_SUCCESS_TEXT: '{/literal}{trans key="common.copied" escape="js"}{literal}',
         CLIPBOARD_ERROR_TEXT: '{/literal}{trans key="common.copy_manual_prompt" escape="js"}{literal}',
+        QX_USAGE_TITLE: '{/literal}{trans key="user.client_qx_usage_title" escape="js"}{literal}',
+        QX_CONF_TIP: '{/literal}{trans key="user.client_qx_conf_tip" escape="js"}{literal}',
         BUTTONS: {
             download: { icon: 'ti-download', text: '{/literal}{trans key="user.client_download" escape="js"}{literal}', class: 'btn-primary' },
             downloadAppStore: { icon: 'ti-brand-appstore', text: '{/literal}{trans key="user.client_app_store" escape="js"}{literal}', class: 'btn-primary' },
             copy: { icon: 'ti-copy', text: '{/literal}{trans key="user.client_copy_sub" escape="js"}{literal}', class: 'btn-info copy' },
+            copyConf: { icon: 'ti-file-text', text: '{/literal}{trans key="user.client_copy_conf" escape="js"}{literal}', class: 'btn-azure copy' },
             import: { icon: 'ti-link', text: '{/literal}{trans key="user.client_import" escape="js"}{literal}', class: 'btn-success' },
             importRecommended: { icon: 'ti-rocket', text: '{/literal}{trans key="user.client_import" escape="js"}{literal}', class: 'btn-success' }
         }
@@ -593,6 +596,24 @@
         const icon = createElement('i', 'ti ' + iconClass);
         return icon;
     }
+
+    function createQxTipElement() {
+        const tipDiv = createElement('div', 'alert alert-info py-2 px-3 mt-2 mb-0 small');
+        const flex = createElement('div', 'd-flex align-items-start');
+        const icon = createElement('i', 'ti ti-info-circle me-2 mt-1 fs-3');
+        const content = createElement('div');
+        const title = createElement('strong', '', CONFIG.QX_USAGE_TITLE);
+        const br = document.createElement('br');
+        const text = document.createTextNode(CONFIG.QX_CONF_TIP);
+        
+        content.appendChild(title);
+        content.appendChild(br);
+        content.appendChild(text);
+        flex.appendChild(icon);
+        flex.appendChild(content);
+        tipDiv.appendChild(flex);
+        return tipDiv;
+    }
     
     function createButton(type, options = {}) {
         const { client, url, isRecommended } = options;
@@ -605,9 +626,10 @@
             config = CONFIG.BUTTONS.importRecommended;
         }
         
-        const btn = createElement(type === 'copy' ? 'button' : 'a', 'btn btn-sm flex-fill client-action-btn ' + config.class);
+        const isCopy = type === 'copy' || type === 'copyConf';
+        const btn = createElement(isCopy ? 'button' : 'a', 'btn btn-sm flex-fill client-action-btn ' + config.class);
         
-        if (type === 'copy') {
+        if (isCopy) {
             btn.setAttribute('data-clipboard-text', url);
             btn.type = 'button';
         } else {
@@ -624,17 +646,22 @@
     }
     
     function createActionButtons(client, urls, isRecommended = false) {
-        const { downloadUrl, subUrl, importUrl } = urls;
+        const { downloadUrl, subUrl, confUrl, importUrl } = urls;
         const container = createElement('div', 'd-flex flex-wrap gap-2 w-100 mt-2');
         
         const buttonConfigs = [
             { type: 'download', url: downloadUrl, needsClient: true },
-            { type: 'copy', url: subUrl },
-            { type: 'import', url: importUrl }
+            { type: 'copy', url: subUrl }
         ];
+
+        if (client?.format === 'qx' && confUrl) {
+            buttonConfigs.push({ type: 'copyConf', url: confUrl });
+        }
+
+        buttonConfigs.push({ type: 'import', url: importUrl });
         
         buttonConfigs.forEach(btnConfig => {
-            if (btnConfig.type !== 'copy' && !btnConfig.url) {
+            if (btnConfig.type !== 'copy' && btnConfig.type !== 'copyConf' && !btnConfig.url) {
                 return;
             }
             const options = {
@@ -657,8 +684,9 @@
         }
         
         const subUrl = config.universalSubUrl + '/' + client.format;
+        const confUrl = client.format === 'qx' ? config.universalSubUrl + '/' + client.format + '?type=conf' : null;
         const importUrl = client.importUrl;
-        const urls = { downloadUrl, subUrl, importUrl };
+        const urls = { downloadUrl, subUrl, confUrl, importUrl };
         
         const container = createElement('div', 'col-12');
         
@@ -680,6 +708,11 @@
             cardBody.appendChild(headerDiv);
             cardBody.appendChild(desc);
             cardBody.appendChild(buttons);
+
+            if (client.format === 'qx') {
+                cardBody.appendChild(createQxTipElement());
+            }
+
             card.appendChild(cardBody);
             container.appendChild(card);
         } else {
@@ -699,6 +732,11 @@
             item.appendChild(headerDiv);
             item.appendChild(desc);
             item.appendChild(buttons);
+
+            if (client.format === 'qx') {
+                item.appendChild(createQxTipElement());
+            }
+
             container.appendChild(item);
         }
         

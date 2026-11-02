@@ -175,7 +175,9 @@ final class Clash extends Base
             $nodes[] = $node;
 
             foreach ($clash_group_indexes as $index) {
-                $clash_group_config['proxy-groups'][$index]['proxies'][] = $node_raw->name;
+                if (isset($clash_group_config['proxy-groups'][$index])) {
+                    $clash_group_config['proxy-groups'][$index]['proxies'][] = $node_raw->name;
+                }
             }
         }
 

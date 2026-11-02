@@ -19,6 +19,7 @@ final class SingBox extends Base
     {
         $nodes = [];
         $singbox_config = $_ENV['SingBox_Config'];
+        $singbox_group_indexes = $_ENV['SingBox_Group_Indexes'] ?? [0, 1];
         $nodes_raw = Subscribe::getUserNodes($user);
 
         foreach ($nodes_raw as $node_raw) {
@@ -248,14 +249,23 @@ final class SingBox extends Base
             }
 
             $nodes[] = $node;
-            $singbox_config['outbounds'][0]['outbounds'][] = $node_raw->name;
-            $singbox_config['outbounds'][1]['outbounds'][] = $node_raw->name;
+
+            foreach ($singbox_group_indexes as $index) {
+                if (isset($singbox_config['outbounds'][$index])) {
+                    $singbox_config['outbounds'][$index]['outbounds'][] = $node_raw->name;
+                }
+            }
         }
 
         if ($nodes === []) {
-            unset($singbox_config['outbounds'][1]);
+            foreach ($singbox_config['outbounds'] as $key => $outbound) {
+                if (($outbound['type'] ?? '') === 'urltest') {
+                    unset($singbox_config['outbounds'][$key]);
+                } elseif (($outbound['type'] ?? '') === 'selector' && empty($outbound['outbounds'])) {
+                    $singbox_config['outbounds'][$key]['outbounds'] = ['🎯 Direct'];
+                }
+            }
             $singbox_config['outbounds'] = array_values($singbox_config['outbounds']);
-            $singbox_config['outbounds'][0]['outbounds'] = ['direct'];
         } else {
             $singbox_config['outbounds'] = array_merge($singbox_config['outbounds'], $nodes);
         }
