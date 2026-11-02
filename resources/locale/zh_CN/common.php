@@ -50,6 +50,7 @@ return [
     'prev' => '上一步',
     'ok' => '好',
     'download' => '下载',
+    'qrcode' => '二维码',
 
     // Statuses
     'normal' => '正常',

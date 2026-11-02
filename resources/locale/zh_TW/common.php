@@ -50,6 +50,7 @@ return [
     'prev' => '上一步',
     'ok' => '好',
     'download' => '下載',
+    'qrcode' => 'QR Code',
 
     // Statuses
     'normal' => '正常',

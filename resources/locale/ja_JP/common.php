@@ -50,6 +50,7 @@ return [
     'prev' => '前へ',
     'ok' => 'OK',
     'download' => 'ダウンロード',
+    'qrcode' => 'QRコード',
 
     // Statuses
     'normal' => '正常',

@@ -59,6 +59,20 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
+.btn-group.client-action-group {
+    transition: all 0.2s ease;
+}
+
+.btn-group.client-action-group:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.btn-group.client-action-group > .client-action-btn:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 @media (max-width: 576px) {
     .recommended-section h4 {
         font-size: 1rem;
@@ -184,6 +198,9 @@
                                     <button class="btn btn-primary copy" data-clipboard-text="{$UniversalSub}">
                                         <i class="ti ti-copy"></i> {trans key='common.copy'}
                                     </button>
+                                    <button class="btn btn-primary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}" data-title="{trans key='user.exclusive_sub_url'}" title="{trans key='user.scan_qrcode'}">
+                                        <i class="ti ti-qrcode"></i> <span class="d-none d-sm-inline">{trans key='common.qrcode'}</span>
+                                    </button>
                                 </div>
                                 <p class="text-muted mb-0">
                                     <small>{trans key='user.sub_url_tip'}</small>
@@ -215,30 +232,60 @@
                                 <div class="mt-3 p-3 bg-secondary-lt rounded">
                                     <h5 class="mb-2">{trans key='user.advanced_sub_formats'}</h5>
                                     <div class="small text-muted mb-2">{trans key='user.advanced_sub_desc'}</div>
-                                    <div class="btn-group btn-group-sm flex-wrap">
-                                        <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/json">
-                                            {trans key='user.json_format'}
-                                        </button>
-                                        <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/v2rayjson">
-                                            V2Ray JSON
-                                        </button>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/json">
+                                                {trans key='user.json_format'}
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/json" data-title="{trans key='user.json_format'}" title="{trans key='user.scan_qrcode'}">
+                                                <i class="ti ti-qrcode"></i>
+                                            </button>
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/v2rayjson">
+                                                V2Ray JSON
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/v2rayjson" data-title="V2Ray JSON" title="{trans key='user.scan_qrcode'}">
+                                                <i class="ti ti-qrcode"></i>
+                                            </button>
+                                        </div>
                                         {if $public_setting['enable_ss_sub']}
-                                        <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/sip008">
-                                            SIP008
-                                        </button>
-                                        <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/ss">
-                                            Shadowsocks
-                                        </button>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/sip008">
+                                                SIP008
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/sip008" data-title="SIP008" title="{trans key='user.scan_qrcode'}">
+                                                <i class="ti ti-qrcode"></i>
+                                            </button>
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/ss">
+                                                Shadowsocks
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/ss" data-title="Shadowsocks" title="{trans key='user.scan_qrcode'}">
+                                                <i class="ti ti-qrcode"></i>
+                                            </button>
+                                        </div>
                                         {/if}
                                         {if $public_setting['enable_v2_sub']}
-                                        <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/v2ray">
-                                            V2Ray
-                                        </button>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/v2ray">
+                                                V2Ray
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/v2ray" data-title="V2Ray" title="{trans key='user.scan_qrcode'}">
+                                                <i class="ti ti-qrcode"></i>
+                                            </button>
+                                        </div>
                                         {/if}
                                         {if $public_setting['enable_trojan_sub']}
-                                        <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/trojan">
-                                            Trojan
-                                        </button>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/trojan">
+                                                Trojan
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/trojan" data-title="Trojan" title="{trans key='user.scan_qrcode'}">
+                                                <i class="ti ti-qrcode"></i>
+                                            </button>
+                                        </div>
                                         {/if}
                                     </div>
                                 </div>
@@ -567,6 +614,9 @@
         CLIPBOARD_ERROR_TEXT: '{/literal}{trans key="common.copy_manual_prompt" escape="js"}{literal}',
         QX_USAGE_TITLE: '{/literal}{trans key="user.client_qx_usage_title" escape="js"}{literal}',
         QX_CONF_TIP: '{/literal}{trans key="user.client_qx_conf_tip" escape="js"}{literal}',
+        QRCODE_TITLE: '{/literal}{trans key="user.scan_qrcode" escape="js"}{literal}',
+        COPY_SUB_TEXT: '{/literal}{trans key="user.client_copy_sub" escape="js"}{literal}',
+        COPY_CONF_TEXT: '{/literal}{trans key="user.client_copy_conf" escape="js"}{literal}',
         BUTTONS: {
             download: { icon: 'ti-download', text: '{/literal}{trans key="user.client_download" escape="js"}{literal}', class: 'btn-primary' },
             downloadAppStore: { icon: 'ti-brand-appstore', text: '{/literal}{trans key="user.client_app_store" escape="js"}{literal}', class: 'btn-primary' },
@@ -669,7 +719,29 @@
                 url: btnConfig.url,
                 isRecommended
             };
-            container.appendChild(createButton(btnConfig.type, options));
+            
+            if (btnConfig.type === 'copy' || btnConfig.type === 'copyConf') {
+                const group = createElement('div', 'btn-group flex-fill client-action-group');
+                const copyBtn = createButton(btnConfig.type, options);
+                copyBtn.classList.remove('flex-fill');
+                copyBtn.classList.add('w-100');
+                
+                const qrBtn = createElement('button', 'btn btn-sm px-2 client-action-btn btn-qrcode ' + (btnConfig.type === 'copy' ? 'btn-info' : 'btn-azure'));
+                qrBtn.type = 'button';
+                qrBtn.setAttribute('data-bs-toggle', 'modal');
+                qrBtn.setAttribute('data-bs-target', '#sub-qrcode-modal');
+                qrBtn.setAttribute('data-url', btnConfig.url);
+                const titleText = (client?.name ? client.name + ' - ' : '') + (btnConfig.type === 'copyConf' ? CONFIG.COPY_CONF_TEXT : CONFIG.COPY_SUB_TEXT);
+                qrBtn.setAttribute('data-title', titleText);
+                qrBtn.setAttribute('title', CONFIG.QRCODE_TITLE);
+                qrBtn.appendChild(createIcon('ti-qrcode'));
+                
+                group.appendChild(copyBtn);
+                group.appendChild(qrBtn);
+                container.appendChild(group);
+            } else {
+                container.appendChild(createButton(btnConfig.type, options));
+            }
         });
         
         return container;
@@ -836,12 +908,103 @@
         });
     }
     
+    function initQrCodeFeature() {
+        const modalEl = document.getElementById('sub-qrcode-modal');
+        if (!modalEl) return;
+        
+        function renderQrCode(url, title) {
+            if (!url) return;
+            
+            const titleEl = document.getElementById('sub-qrcode-title');
+            if (titleEl) {
+                titleEl.textContent = title || CONFIG.QRCODE_TITLE;
+            }
+            
+            const urlInput = document.getElementById('sub-qrcode-url');
+            if (urlInput) {
+                urlInput.value = url;
+            }
+            
+            const copyBtn = document.getElementById('sub-qrcode-copy');
+            if (copyBtn) {
+                copyBtn.setAttribute('data-clipboard-text', url);
+            }
+            
+            const qrContainer = document.getElementById('sub-qrcode');
+            if (qrContainer) {
+                qrContainer.innerHTML = '';
+                if (typeof QRCode !== 'undefined') {
+                    new QRCode(qrContainer, {
+                        text: url,
+                        width: 220,
+                        height: 220,
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                }
+            }
+        }
+        
+        modalEl.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            if (button) {
+                const url = button.getAttribute('data-url');
+                const title = button.getAttribute('data-title');
+                renderQrCode(url, title);
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            const qrBtn = e.target.closest('.btn-qrcode');
+            if (!qrBtn) return;
+            
+            const url = qrBtn.getAttribute('data-url');
+            const title = qrBtn.getAttribute('data-title');
+            renderQrCode(url, title);
+            
+            setTimeout(function() {
+                if (!modalEl.classList.contains('show')) {
+                    const ModalClass = window.bootstrap?.Modal || window.tabler?.Modal || (window.tabler?.bootstrap && window.tabler.bootstrap.Modal);
+                    if (ModalClass) {
+                        const modal = ModalClass.getOrCreateInstance ? ModalClass.getOrCreateInstance(modalEl) : new ModalClass(modalEl);
+                        modal.show();
+                    }
+                }
+            }, 50);
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         safeInit(initClientSelector, 'Client selector');
         safeInit(initClipboard, 'Clipboard feature');
         safeInit(initCollapseAnimations, 'Collapse animation');
+        safeInit(initQrCodeFeature, 'QR code feature');
     });
     {/literal}
     </script>
+
+    <div class="modal modal-blur fade" id="sub-qrcode-modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sub-qrcode-title">{trans key='user.scan_qrcode'}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-3">
+                    <div class="d-flex justify-content-center mb-3">
+                        <div class="p-3 bg-white rounded shadow-sm d-inline-block">
+                            <div id="sub-qrcode"></div>
+                        </div>
+                    </div>
+                    <p class="text-secondary small mb-3">{trans key='user.scan_sub_qrcode_desc'}</p>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="sub-qrcode-url" readonly>
+                        <button class="btn btn-primary copy" id="sub-qrcode-copy" type="button" data-clipboard-text="" title="{trans key='common.copy'}">
+                            <i class="ti ti-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {include file='user/footer.tpl'}

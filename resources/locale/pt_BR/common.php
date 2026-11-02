@@ -50,6 +50,7 @@ return [
     'prev' => 'Anterior',
     'ok' => 'OK',
     'download' => 'Baixar',
+    'qrcode' => 'QR Code',
 
     // Statuses
     'normal' => 'Normal',
