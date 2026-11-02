@@ -462,4 +462,5 @@ return [
     'upgrade_credit_prefix' => 'Скидка ',
     'buy_original_price' => 'Купить по обычной цене',
     'old_package_credit' => 'Зачет старого тарифа',
+    'upgrade_credit_item' => 'Скидка на апгрейд тарифа (Заказ #%id%)',
 ];

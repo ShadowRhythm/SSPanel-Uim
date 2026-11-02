@@ -462,4 +462,5 @@ return [
     'upgrade_credit_prefix' => '割引 ',
     'buy_original_price' => '定価で購入',
     'old_package_credit' => '旧プラン割引',
+    'upgrade_credit_item' => 'パッケージアップグレード割引 (元注文 #%id%)',
 ];

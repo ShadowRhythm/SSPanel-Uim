@@ -550,7 +550,7 @@ final class OrderController extends BaseController
                         ],
                         [
                             'content_id' => 1,
-                            'name' => '套餐升级折抵 (原订单 #' . $activeTabpOrder->id . ')',
+                            'name' => I18n::trans('user.upgrade_credit_item', null, ['id' => $activeTabpOrder->id]),
                             'price' => '-' . $credit,
                         ],
                     ];

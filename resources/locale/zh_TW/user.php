@@ -462,4 +462,5 @@ return [
     'upgrade_credit_prefix' => '折抵 ',
     'buy_original_price' => '原價購買',
     'old_package_credit' => '舊套餐折抵',
+    'upgrade_credit_item' => '套餐升級折抵 (原訂單 #%id%)',
 ];

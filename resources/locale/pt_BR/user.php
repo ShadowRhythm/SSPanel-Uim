@@ -462,4 +462,5 @@ return [
     'upgrade_credit_prefix' => 'Crédito ',
     'buy_original_price' => 'Comprar pelo Preço Original',
     'old_package_credit' => 'Crédito do Pacote Antigo',
+    'upgrade_credit_item' => 'Crédito de upgrade do pacote (Pedido #%id%)',
 ];

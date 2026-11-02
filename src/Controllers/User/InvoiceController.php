@@ -86,6 +86,10 @@ final class InvoiceController extends BaseController
                         $item->name = I18n::trans('user.topup');
                     } elseif ($item->name === '退款至账户余额') {
                         $item->name = I18n::trans('user.refund_to_balance');
+                    } elseif (preg_match('/(?:套餐升[级級]折抵|Package Upgrade Credit|Crédit de mise à niveau|パッケージアップグレード割引|Crédito de upgrade|Скидка на апгрейд).*?#(\d+)/u', $item->name, $matches)) {
+                        $item->name = I18n::trans('user.upgrade_credit_item', null, ['id' => $matches[1]]);
+                    } elseif (preg_match('/^(?:优惠码|優惠碼|Coupon)\s+(.+)$/u', $item->name, $matches)) {
+                        $item->name = I18n::trans('user.coupon') . ' ' . $matches[1];
                     }
                 }
             }

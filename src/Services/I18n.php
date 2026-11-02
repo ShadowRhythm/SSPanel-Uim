@@ -38,9 +38,10 @@ final class I18n
 
         $normalizedParams = [];
         foreach ($params as $k => $v) {
-            $normalizedParams[$k] = $v;
             $strK = (string) $k;
-            if (! str_starts_with($strK, '%') && ! str_ends_with($strK, '%')) {
+            if (str_starts_with($strK, '%') && str_ends_with($strK, '%')) {
+                $normalizedParams[$strK] = $v;
+            } else {
                 $normalizedParams['%' . $strK . '%'] = $v;
             }
         }
