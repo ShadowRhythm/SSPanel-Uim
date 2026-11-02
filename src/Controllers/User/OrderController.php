@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
+use App\Models\Config;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Product;
@@ -26,7 +27,9 @@ use function in_array;
 use function json_decode;
 use function json_encode;
 use function max;
+use function min;
 use function property_exists;
+use function round;
 use function strtotime;
 use function time;
 
@@ -62,6 +65,61 @@ final class OrderController extends BaseController
         );
     }
 
+    public static function getActiveTabpUpgradeInfo(User $user): ?array
+    {
+        $activeTabpOrder = Order::where('user_id', $user->id)
+            ->where('product_type', 'tabp')
+            ->where('status', 'activated')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($activeTabpOrder === null) {
+            return null;
+        }
+
+        $activeContent = json_decode($activeTabpOrder->product_content);
+        if ($activeContent === null) {
+            return null;
+        }
+
+        $totalDuration = max(1, (int) ($activeContent->time ?? $activeContent->class_time ?? 30) * 86400);
+        $expireTime = $activeTabpOrder->update_time + $totalDuration;
+        if ($expireTime <= time()) {
+            return null;
+        }
+
+        $timeRemaining = max(0, $expireTime - time());
+        $timeRatio = min(1.0, max(0.0, $timeRemaining / $totalDuration));
+
+        $totalBandwidth = Tools::gbToB($activeContent->bandwidth ?? 0);
+        $usedTraffic = (int) ($user->u + $user->d);
+        $trafficRemaining = max(0, $totalBandwidth - $usedTraffic);
+        $trafficRatio = $totalBandwidth > 0 ? min(1.0, max(0.0, $trafficRemaining / $totalBandwidth)) : 0.0;
+
+        $ratio = min($timeRatio, $trafficRatio);
+
+        $paidPrice = (float) $activeTabpOrder->price;
+        $baseCredit = round($paidPrice * $ratio, 2);
+        $maxRatioVal = Config::obtain('tabp_upgrade_credit_max_ratio');
+        $maxRatioPercent = ($maxRatioVal !== '' && $maxRatioVal !== null) ? (float) $maxRatioVal : 100.0;
+        if ($maxRatioPercent < 0) {
+            $maxRatioPercent = 0.0;
+        } elseif ($maxRatioPercent > 100) {
+            $maxRatioPercent = 100.0;
+        }
+        $maxAllowedCredit = round($paidPrice * ($maxRatioPercent / 100.0), 2);
+        $credit = min($baseCredit, $maxAllowedCredit);
+
+        return [
+            'order' => $activeTabpOrder,
+            'credit_ratio' => $ratio,
+            'credit_amount' => $credit, // base credit before capping to a specific target product
+            'paid_price' => $paidPrice,
+            'time_ratio' => $timeRatio,
+            'traffic_ratio' => $trafficRatio,
+        ];
+    }
+
     /**
      * @throws Exception
      */
@@ -79,12 +137,44 @@ final class OrderController extends BaseController
         }
 
         $product = (new Product())->where('id', $product_id)->first();
+        if ($product === null) {
+            return $response->withRedirect('/user/product');
+        }
+
         $product->type_text = $product->type();
         $product->content = json_decode($product->content);
+
+        $is_upgrade = (int) ($request->getQueryParams()['upgrade'] ?? 0) === 1;
+        $upgrade_credit = 0.0;
+        $upgrade_payable = (float) $product->price;
+
+        if ($is_upgrade) {
+            $enableTabpUpgrade = (bool) Config::obtain('enable_tabp_upgrade');
+            $activeTabpInfo = $enableTabpUpgrade ? self::getActiveTabpUpgradeInfo($this->user) : null;
+            if (! $enableTabpUpgrade || $product->type !== 'tabp' || $activeTabpInfo === null || (float) $product->price <= (float) $activeTabpInfo['order']->price || $product->id === $activeTabpInfo['order']->product_id) {
+                return $response->withRedirect('/user/product');
+            }
+
+            $hasPendingUpgrade = Order::where('user_id', $this->user->id)
+                ->where('status', 'pending_payment')
+                ->where('product_content', 'like', '%"is_upgrade":true%')
+                ->first();
+
+            if ($hasPendingUpgrade !== null) {
+                return $response->withRedirect('/user/order/' . $hasPendingUpgrade->id . '/view');
+            }
+
+            $credit = min($activeTabpInfo['credit_amount'], (float) $product->price);
+            $upgrade_credit = $credit;
+            $upgrade_payable = max(0.0, round((float) $product->price - $credit, 2));
+        }
 
         return $response->write(
             $this->view()
                 ->assign('product', $product)
+                ->assign('is_upgrade', $is_upgrade)
+                ->assign('upgrade_credit', $upgrade_credit)
+                ->assign('upgrade_payable', $upgrade_payable)
                 ->fetch('user/order/create.tpl')
         );
     }
@@ -219,6 +309,7 @@ final class OrderController extends BaseController
         $product_id = $this->antiXss->xss_clean($request->getParam('product_id'));
         $auto_renew = $request->getParam('auto_renew');
         $auto_renew = ($auto_renew === 'true' || $auto_renew === '1' || $auto_renew === 1 || $auto_renew === true) ? 1 : 0;
+        $is_upgrade = (int) ($request->getParam('is_upgrade') ?? 0) === 1;
 
         $product = (new Product())->find($product_id);
 
@@ -241,67 +332,119 @@ final class OrderController extends BaseController
 
         $coupon = null;
         $discount = 0;
+        $activeTabpOrder = null;
+        $credit = 0.0;
 
-        if ($coupon_raw !== '') {
-            $coupon = (new UserCoupon())->where('code', $coupon_raw)->first();
-
-            if ($coupon === null || ($coupon->expire_time !== 0 && $coupon->expire_time < time())) {
+        if ($is_upgrade) {
+            if (! Config::obtain('enable_tabp_upgrade')) {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '优惠码不存在或已过期',
+                    'msg' => '当前未开启套餐升级功能',
                 ]);
             }
 
-            $coupon_limit = json_decode($coupon->limit);
-
-            if ($coupon_limit->disabled) {
+            if ($product->type !== 'tabp') {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '优惠码已被禁用',
+                    'msg' => '非 TABP 套餐不可升级',
                 ]);
             }
 
-            if ($coupon_limit->product_id !== '' && ! in_array($product_id, explode(',', $coupon_limit->product_id))) {
+            $user = User::find($user->id) ?? $user;
+            $activeTabpInfo = self::getActiveTabpUpgradeInfo($user);
+            if ($activeTabpInfo === null) {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '优惠码不适用于此商品',
+                    'msg' => '没有可供升级的有效套餐',
                 ]);
             }
 
-            $coupon_use_limit = $coupon_limit->use_time;
+            $activeTabpOrder = $activeTabpInfo['order'];
+            if ((float) $product->price <= (float) $activeTabpOrder->price || $product->id === $activeTabpOrder->product_id) {
+                return $response->withJson([
+                    'ret' => 0,
+                    'msg' => '新套餐价格必须高于当前套餐',
+                ]);
+            }
 
-            if ($coupon_use_limit > 0) {
-                $user_use_count = (new Order())->where('user_id', $user->id)->where('coupon', $coupon->code)->count();
-                if ($user_use_count >= $coupon_use_limit) {
+            $hasPendingUpgrade = Order::where('user_id', $user->id)
+                ->where('status', 'pending_payment')
+                ->where('product_content', 'like', '%"is_upgrade":true%')
+                ->exists();
+            if ($hasPendingUpgrade) {
+                return $response->withJson([
+                    'ret' => 0,
+                    'msg' => '你已有一笔待支付的升级订单，请先完成支付或等待其取消',
+                ]);
+            }
+
+            $coupon_raw = '';
+            $coupon = null;
+            $discount = 0;
+            $credit = min($activeTabpInfo['credit_amount'], (float) $product->price);
+            $buy_price = max(0.0, round((float) $product->price - $credit, 2));
+        } else {
+            if ($coupon_raw !== '') {
+                $coupon = (new UserCoupon())->where('code', $coupon_raw)->first();
+
+                if ($coupon === null || ($coupon->expire_time !== 0 && $coupon->expire_time < time())) {
+                    return $response->withJson([
+                        'ret' => 0,
+                        'msg' => '优惠码不存在或已过期',
+                    ]);
+                }
+
+                $coupon_limit = json_decode($coupon->limit);
+
+                if ($coupon_limit->disabled) {
+                    return $response->withJson([
+                        'ret' => 0,
+                        'msg' => '优惠码已被禁用',
+                    ]);
+                }
+
+                if ($coupon_limit->product_id !== '' && ! in_array($product_id, explode(',', $coupon_limit->product_id))) {
+                    return $response->withJson([
+                        'ret' => 0,
+                        'msg' => '优惠码不适用于此商品',
+                    ]);
+                }
+
+                $coupon_use_limit = $coupon_limit->use_time;
+
+                if ($coupon_use_limit > 0) {
+                    $user_use_count = (new Order())->where('user_id', $user->id)->where('coupon', $coupon->code)->count();
+                    if ($user_use_count >= $coupon_use_limit) {
+                        return $response->withJson([
+                            'ret' => 0,
+                            'msg' => '优惠码使用次数已达上限',
+                        ]);
+                    }
+                }
+
+                if (property_exists($coupon_limit, 'total_use_time')) {
+                    $coupon_total_use_limit = $coupon_limit->total_use_time;
+                } else {
+                    $coupon_total_use_limit = -1;
+                }
+
+                if ($coupon_total_use_limit > 0 && $coupon->use_count >= $coupon_total_use_limit) {
                     return $response->withJson([
                         'ret' => 0,
                         'msg' => '优惠码使用次数已达上限',
                     ]);
                 }
+
+                $content = json_decode($coupon->content);
+
+                if ($content->type === 'percentage') {
+                    $discount = $product->price * $content->value / 100;
+                } else {
+                    $discount = $content->value;
+                }
+
+                $buy_price = max(0.0, (float) ($product->price - $discount));
             }
-
-            if (property_exists($coupon_limit, 'total_use_time')) {
-                $coupon_total_use_limit = $coupon_limit->total_use_time;
-            } else {
-                $coupon_total_use_limit = -1;
-            }
-
-            if ($coupon_total_use_limit > 0 && $coupon->use_count >= $coupon_total_use_limit) {
-                return $response->withJson([
-                    'ret' => 0,
-                    'msg' => '优惠码使用次数已达上限',
-                ]);
-            }
-
-            $content = json_decode($coupon->content);
-
-            if ($content->type === 'percentage') {
-                $discount = $product->price * $content->value / 100;
-            } else {
-                $discount = $content->value;
-            }
-
-            $buy_price = max(0.0, (float) ($product->price - $discount));
         }
 
         $product_limit = json_decode($product->limit);
@@ -339,7 +482,10 @@ final class OrderController extends BaseController
                 $buy_price,
                 $discount,
                 $coupon,
-                $auto_renew
+                $auto_renew,
+                $is_upgrade,
+                $activeTabpOrder,
+                $credit
             ): Invoice {
                 if ($product->stock > 0) {
                     $affected = Product::where('id', $product->id)->where('stock', '>', 0)->decrement('stock', 1);
@@ -348,7 +494,7 @@ final class OrderController extends BaseController
                     }
                 }
 
-                if ($coupon !== null) {
+                if (! $is_upgrade && $coupon !== null) {
                     $lockedCoupon = UserCoupon::where('id', $coupon->id)->lockForUpdate()->first();
                     if ($lockedCoupon === null || $lockedCoupon->expire_time !== 0 && $lockedCoupon->expire_time < time()) {
                         throw new Exception('优惠码不存在或已过期');
@@ -376,28 +522,52 @@ final class OrderController extends BaseController
                 $order->product_id = $product->id;
                 $order->product_type = $product->type;
                 $order->product_name = $product->name;
-                $order->product_content = $product->content;
-                $order->coupon = $coupon_raw;
+                if ($is_upgrade) {
+                    $orderContent = json_decode($product->content, true) ?: [];
+                    $orderContent['is_upgrade'] = true;
+                    $orderContent['supersedes_order_id'] = $activeTabpOrder->id;
+                    $orderContent['upgrade_credit'] = $credit;
+                    $order->product_content = json_encode($orderContent);
+                    $order->coupon = '';
+                } else {
+                    $order->product_content = $product->content;
+                    $order->coupon = $coupon_raw;
+                }
                 $order->price = $buy_price;
-                $order->status = $buy_price === 0 ? 'pending_activation' : 'pending_payment';
+                $order->status = $buy_price <= 0 ? 'pending_activation' : 'pending_payment';
                 $order->auto_renew = in_array($product->type, ['tabp', 'time'], true) ? $auto_renew : 0;
                 $order->create_time = time();
                 $order->update_time = time();
                 $order->save();
 
                 $invoice_content = [];
-                $invoice_content[] = [
-                    'content_id' => 0,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                ];
-
-                if ($coupon_raw !== '') {
-                    $invoice_content[] = [
-                        'content_id' => 1,
-                        'name' => '优惠码 ' . $coupon_raw,
-                        'price' => '-' . $discount,
+                if ($is_upgrade) {
+                    $invoice_content = [
+                        [
+                            'content_id' => 0,
+                            'name' => $product->name,
+                            'price' => $product->price,
+                        ],
+                        [
+                            'content_id' => 1,
+                            'name' => '套餐升级折抵 (原订单 #' . $activeTabpOrder->id . ')',
+                            'price' => '-' . $credit,
+                        ],
                     ];
+                } else {
+                    $invoice_content[] = [
+                        'content_id' => 0,
+                        'name' => $product->name,
+                        'price' => $product->price,
+                    ];
+
+                    if ($coupon_raw !== '') {
+                        $invoice_content[] = [
+                            'content_id' => 1,
+                            'name' => '优惠码 ' . $coupon_raw,
+                            'price' => '-' . $discount,
+                        ];
+                    }
                 }
 
                 $invoice = new Invoice();
@@ -405,18 +575,18 @@ final class OrderController extends BaseController
                 $invoice->order_id = $order->id;
                 $invoice->content = json_encode($invoice_content);
                 $invoice->price = $buy_price;
-                $invoice->status = $buy_price === 0 ? 'paid_gateway' : 'unpaid';
+                $invoice->status = $buy_price <= 0 ? 'paid_gateway' : 'unpaid';
                 $invoice->create_time = time();
                 $invoice->update_time = time();
-                $invoice->pay_time = 0;
+                $invoice->pay_time = $buy_price <= 0 ? time() : 0;
                 $invoice->type = 'product';
                 $invoice->save();
 
-                if ($coupon_raw !== '' && $coupon !== null) {
+                if (! $is_upgrade && $coupon_raw !== '' && $coupon !== null) {
                     UserCoupon::where('id', $coupon->id)->increment('use_count', 1);
                 }
 
-                if ($buy_price === 0) {
+                if ($buy_price <= 0) {
                     Cron::activateOrder($order);
                 }
 

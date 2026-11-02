@@ -55,6 +55,7 @@ final class Order extends Model
             'activated' => I18n::trans('user.order_status_activated'),
             'expired' => I18n::trans('user.order_status_expired'),
             'cancelled' => I18n::trans('user.order_status_cancelled'),
+            'superseded' => I18n::trans('user.order_status_superseded'),
             default => I18n::trans('user.order_status_unknown'),
         };
     }

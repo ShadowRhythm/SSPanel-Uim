@@ -261,6 +261,24 @@
         "mark": "Smogate APP Secret"
     },
     {
+        "item": "enable_tabp_upgrade",
+        "value": "1",
+        "class": "billing",
+        "is_public": 1,
+        "type": "bool",
+        "default": "1",
+        "mark": "允许 TABP 套餐中途升级"
+    },
+    {
+        "item": "tabp_upgrade_credit_max_ratio",
+        "value": "100",
+        "class": "billing",
+        "is_public": 1,
+        "type": "int",
+        "default": "100",
+        "mark": "TABP 升级最高折抵比例 (1-100%)"
+    },
+    {
         "item": "email_driver",
         "value": "none",
         "class": "email",

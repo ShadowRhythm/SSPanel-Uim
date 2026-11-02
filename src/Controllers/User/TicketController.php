@@ -115,13 +115,13 @@ final class TicketController extends BaseController
             $this->user->is_shadow_banned ||
             $comment === ''
         ) {
-            ResponseHelper::error($response, '工单回复失败');
+            return ResponseHelper::error($response, '工单回复失败');
         }
 
         $ticket = (new Ticket())->where('id', $id)->where('userid', $this->user->id)->first();
 
         if ($ticket === null) {
-            ResponseHelper::error($response, '工单不存在');
+            return ResponseHelper::error($response, '工单不存在');
         }
 
         $content_old = json_decode($ticket->content, true);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
+use App\Models\Config;
 use App\Models\GiftCard;
 use App\Models\UserMoneyLog;
 use App\Services\I18n;

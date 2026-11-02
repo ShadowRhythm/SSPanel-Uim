@@ -398,6 +398,7 @@ return [
     'order_status_activated' => '已激活',
     'order_status_expired' => '已过期',
     'order_status_cancelled' => '已取消',
+    'order_status_superseded' => '已被取代',
     'order_status_unknown' => '未知',
     'product_type_tabp' => '时间流量包',
     'product_type_time' => '时间包',
@@ -452,4 +453,8 @@ return [
     'ticket_status_unknown' => '未知',
     'no_nodes' => '暂无节点',
     'node_not_found' => '节点不存在',
+    'upgrade_package' => '升级套餐',
+    'upgrade_credit_prefix' => '折抵 ',
+    'buy_original_price' => '原价购买',
+    'old_package_credit' => '旧套餐折抵',
 ];

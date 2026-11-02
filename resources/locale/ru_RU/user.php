@@ -398,6 +398,7 @@ return [
     'order_status_activated' => 'Активирован',
     'order_status_expired' => 'Истек',
     'order_status_cancelled' => 'Отменен',
+    'order_status_superseded' => 'Заменен',
     'order_status_unknown' => 'Неизвестно',
     'product_type_tabp' => 'Пакет времени и трафика',
     'product_type_time' => 'Пакет времени',
@@ -452,4 +453,8 @@ return [
     'ticket_status_unknown' => 'Неизвестно',
     'no_nodes' => 'Нет узлов',
     'node_not_found' => 'Узел не найден',
+    'upgrade_package' => 'Улучшить тариф',
+    'upgrade_credit_prefix' => 'Скидка ',
+    'buy_original_price' => 'Купить по обычной цене',
+    'old_package_credit' => 'Зачет старого тарифа',
 ];

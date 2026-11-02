@@ -314,11 +314,14 @@ final class QuantumultX extends Base
         // [server_remote]
         $server_remote = ['[server_remote]'];
         $link = (new Link())->where('userid', $user->id)->first();
-        $token = $link?->token ?? '';
-        if ($token !== '') {
-            $sub_url = $_ENV['subUrl'] . '/sub/' . $token . '/qx';
-            $server_remote[] = "{$sub_url}, tag=" . ($_ENV['appName'] ?? 'SSPanel') . ', update-interval=86400, opt-parser=false, enabled=true';
+        if ($link === null) {
+            $link = new Link();
+            $link->userid = $user->id;
+            $link->token = Tools::genSubToken();
+            $link->save();
         }
+        $sub_url = $_ENV['subUrl'] . '/sub/' . $link->token . '/qx';
+        $server_remote[] = "{$sub_url}, tag=" . ($_ENV['appName'] ?? 'SSPanel') . ', update-interval=86400, opt-parser=false, enabled=true';
         $sections[] = implode(PHP_EOL, $server_remote);
 
         // [server_local]

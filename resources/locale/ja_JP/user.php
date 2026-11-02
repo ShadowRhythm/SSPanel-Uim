@@ -398,6 +398,7 @@ return [
     'order_status_activated' => '有効',
     'order_status_expired' => '期限切れ',
     'order_status_cancelled' => 'キャンセル済み',
+    'order_status_superseded' => '代替済み',
     'order_status_unknown' => '不明',
     'product_type_tabp' => '期間・通信量プラン',
     'product_type_time' => '期間プラン',
@@ -452,4 +453,8 @@ return [
     'ticket_status_unknown' => '不明',
     'no_nodes' => 'ノードがありません',
     'node_not_found' => 'ノードが存在しません',
+    'upgrade_package' => 'アップグレード',
+    'upgrade_credit_prefix' => '割引 ',
+    'buy_original_price' => '定価で購入',
+    'old_package_credit' => '旧プラン割引',
 ];

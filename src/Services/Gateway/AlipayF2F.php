@@ -123,21 +123,28 @@ final class AlipayF2F extends Base
         ]);
     }
 
-    /**
-     * @throws ApiException
-     */
     public function notify($request, $response, $args): ResponseInterface
     {
-        $api = $this->createApi();
+        $params = (array) ($request->getParsedBody() ?: $_POST);
+        $out_trade_no = $params['out_trade_no'] ?? null;
 
-        $aliRequest = new AlipayTradeQueryModel();
-        $aliRequest->setOutTradeNo($_POST['out_trade_no']);
-        $aliResponse = $api->query($aliRequest);
+        if (! is_string($out_trade_no) || $out_trade_no === '') {
+            return $response->write('failed');
+        }
 
-        if ($aliResponse->getTradeStatus() === 'TRADE_SUCCESS') {
-            $this->postPayment($aliResponse->getOutTradeNo());
-            // https://opendocs.alipay.com/open/194/103296#%E5%BC%82%E6%AD%A5%E9%80%9A%E7%9F%A5%E7%89%B9%E6%80%A7
-            return $response->write('success');
+        try {
+            $api = $this->createApi();
+            $aliRequest = new AlipayTradeQueryModel();
+            $aliRequest->setOutTradeNo($out_trade_no);
+            $aliResponse = $api->query($aliRequest);
+
+            if ($aliResponse->getTradeStatus() === 'TRADE_SUCCESS') {
+                $this->postPayment($aliResponse->getOutTradeNo());
+                // https://opendocs.alipay.com/open/194/103296#%E5%BC%82%E6%AD%A5%E9%80%9A%E7%9F%A5%E7%89%B9%E6%80%A7
+                return $response->write('success');
+            }
+        } catch (\Throwable) {
+            return $response->write('failed');
         }
 
         return $response->write('failed');

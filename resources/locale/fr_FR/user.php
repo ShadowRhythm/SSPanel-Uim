@@ -398,6 +398,7 @@ return [
     'order_status_activated' => 'Activé',
     'order_status_expired' => 'Expiré',
     'order_status_cancelled' => 'Annulé',
+    'order_status_superseded' => 'Remplacé',
     'order_status_unknown' => 'Inconnu',
     'product_type_tabp' => 'Forfait temps et données',
     'product_type_time' => 'Forfait temps',
@@ -452,4 +453,8 @@ return [
     'ticket_status_unknown' => 'Inconnu',
     'no_nodes' => 'Aucun nœud',
     'node_not_found' => 'Nœud introuvable',
+    'upgrade_package' => 'Améliorer le forfait',
+    'upgrade_credit_prefix' => 'Crédit ',
+    'buy_original_price' => 'Acheter au prix normal',
+    'old_package_credit' => 'Crédit de l\'ancien forfait',
 ];

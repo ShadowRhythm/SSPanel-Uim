@@ -222,11 +222,11 @@ final class InfoController extends BaseController
         $method = strtolower($this->antiXss->xss_clean($request->getParam('method')));
 
         if ($method === '') {
-            ResponseHelper::error($response, I18n::trans('user.invalid_input', $locale));
+            return ResponseHelper::error($response, I18n::trans('user.invalid_input', $locale));
         }
 
         if (! Tools::isParamValidate('method', $method)) {
-            ResponseHelper::error($response, I18n::trans('user.invalid_encryption_method', $locale));
+            return ResponseHelper::error($response, I18n::trans('user.invalid_encryption_method', $locale));
         }
 
         $user->method = $method;

@@ -398,6 +398,7 @@ return [
     'order_status_activated' => 'Ativado',
     'order_status_expired' => 'Expirado',
     'order_status_cancelled' => 'Cancelado',
+    'order_status_superseded' => 'Substituído',
     'order_status_unknown' => 'Desconhecido',
     'product_type_tabp' => 'Pacote de Tempo e Dados',
     'product_type_time' => 'Pacote de Tempo',
@@ -452,4 +453,8 @@ return [
     'ticket_status_unknown' => 'Desconhecido',
     'no_nodes' => 'Nenhum nó',
     'node_not_found' => 'Nó não encontrado',
+    'upgrade_package' => 'Atualizar Pacote',
+    'upgrade_credit_prefix' => 'Crédito ',
+    'buy_original_price' => 'Comprar pelo Preço Original',
+    'old_package_credit' => 'Crédito do Pacote Antigo',
 ];

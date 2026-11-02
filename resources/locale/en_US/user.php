@@ -398,6 +398,7 @@ return [
     'order_status_activated' => 'Activated',
     'order_status_expired' => 'Expired',
     'order_status_cancelled' => 'Cancelled',
+    'order_status_superseded' => 'Superseded',
     'order_status_unknown' => 'Unknown',
     'product_type_tabp' => 'Time & Traffic Pack',
     'product_type_time' => 'Time Pack',
@@ -452,4 +453,8 @@ return [
     'ticket_status_unknown' => 'Unknown',
     'no_nodes' => 'No nodes',
     'node_not_found' => 'Node not found',
+    'upgrade_package' => 'Upgrade Package',
+    'upgrade_credit_prefix' => 'Credit ',
+    'buy_original_price' => 'Buy at Original Price',
+    'old_package_credit' => 'Old Package Credit',
 ];
