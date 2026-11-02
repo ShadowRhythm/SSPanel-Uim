@@ -127,9 +127,16 @@
                                                         </div>
                                                         <div class="row g-2">
                                                             {if $tabp->stock === -1 || $tabp->stock > 0}
-                                                                <div class="col">
-                                                                    <a href="/user/order/create?product_id={$tabp->id}"
-                                                                       class="btn btn-primary w-100 my-3">{trans key='user.buy'}</a>
+                                                                <div class="col-12">
+                                                                    {if isset($tabp->can_upgrade) && $tabp->can_upgrade}
+                                                                        <a href="/user/order/create?product_id={$tabp->id}&upgrade=1"
+                                                                           class="btn btn-warning w-100 my-1">{trans key='user.upgrade_package'} ({trans key='user.upgrade_credit_prefix'}¥{$tabp->upgrade_credit})</a>
+                                                                        <a href="/user/order/create?product_id={$tabp->id}"
+                                                                           class="btn btn-outline-primary w-100 my-1">{trans key='user.buy_original_price'}</a>
+                                                                    {else}
+                                                                        <a href="/user/order/create?product_id={$tabp->id}"
+                                                                           class="btn btn-primary w-100 my-3">{trans key='user.buy'}</a>
+                                                                    {/if}
                                                                 </div>
                                                             {else}
                                                                 <div class="col">

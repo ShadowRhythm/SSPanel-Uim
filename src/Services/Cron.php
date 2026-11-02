@@ -341,23 +341,50 @@ final class Cron
                     return true;
 
                 case 'tabp':
-                    // Check if user already has an active TABP order that has not expired
-                    $activeTabpOrder = Order::where('user_id', $user->id)
-                        ->where('product_type', 'tabp')
-                        ->where('status', 'activated')
-                        ->where('id', '!=', $order->id)
-                        ->first();
-                    if ($activeTabpOrder !== null) {
-                        $activeContent = json_decode($activeTabpOrder->product_content);
-                        $expireTime = $activeTabpOrder->update_time + ((int) ($activeContent->time ?? 0)) * 86400;
-                        if ($expireTime > time()) {
-                            // Current active TABP is still running, keep this order in pending_activation queue
-                            return false;
+                    if ($content->is_upgrade ?? false) {
+                        $targetOldOrderId = (int) ($content->supersedes_order_id ?? 0);
+                        $activeTabpOrder = Order::where('user_id', $user->id)
+                            ->where('product_type', 'tabp')
+                            ->where('status', 'activated')
+                            ->where('id', '!=', $order->id)
+                            ->first();
+
+                        if ($activeTabpOrder !== null) {
+                            if ($activeTabpOrder->id === $targetOldOrderId) {
+                                $activeTabpOrder->status = 'superseded';
+                                $activeTabpOrder->auto_renew = 0;
+                                $activeTabpOrder->update_time = time();
+                                $activeTabpOrder->save();
+                            } else {
+                                $activeContent = json_decode($activeTabpOrder->product_content);
+                                $expireTime = $activeTabpOrder->update_time + ((int) ($activeContent->time ?? $activeContent->class_time ?? 0)) * 86400;
+                                if ($expireTime > time()) {
+                                    return false;
+                                }
+                                $activeTabpOrder->status = 'expired';
+                                $activeTabpOrder->update_time = time();
+                                $activeTabpOrder->save();
+                            }
                         }
-                        // Current TABP expired, mark it expired
-                        $activeTabpOrder->status = 'expired';
-                        $activeTabpOrder->update_time = time();
-                        $activeTabpOrder->save();
+                    } else {
+                        // Check if user already has an active TABP order that has not expired
+                        $activeTabpOrder = Order::where('user_id', $user->id)
+                            ->where('product_type', 'tabp')
+                            ->where('status', 'activated')
+                            ->where('id', '!=', $order->id)
+                            ->first();
+                        if ($activeTabpOrder !== null) {
+                            $activeContent = json_decode($activeTabpOrder->product_content);
+                            $expireTime = $activeTabpOrder->update_time + ((int) ($activeContent->time ?? 0)) * 86400;
+                            if ($expireTime > time()) {
+                                // Current active TABP is still running, keep this order in pending_activation queue
+                                return false;
+                            }
+                            // Current TABP expired, mark it expired
+                            $activeTabpOrder->status = 'expired';
+                            $activeTabpOrder->update_time = time();
+                            $activeTabpOrder->save();
+                        }
                     }
 
                     $user->u = 0;

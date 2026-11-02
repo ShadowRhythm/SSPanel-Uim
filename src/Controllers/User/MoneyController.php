@@ -32,11 +32,15 @@ final class MoneyController extends BaseController
         }
 
         $moneylog_count = $moneylogs->count();
+        $enableTabpUpgrade = (bool) Config::obtain('enable_tabp_upgrade');
+        $activeTabpInfo = $enableTabpUpgrade ? OrderController::getActiveTabpUpgradeInfo($user) : null;
+        $hasActiveTabp = $activeTabpInfo !== null;
 
         return $response->write(
             $this->view()
                 ->assign('moneylogs', $moneylogs)
                 ->assign('moneylog_count', $moneylog_count)
+                ->assign('has_active_tabp', $hasActiveTabp)
                 ->fetch('user/money.tpl')
         );
     }

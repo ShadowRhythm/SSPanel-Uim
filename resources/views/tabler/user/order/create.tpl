@@ -90,21 +90,33 @@
                                     <td>{trans key='user.product_price'}</td>
                                     <td class="text-end">{$product->price}</td>
                                 </tr>
-                                <tr>
-                                    <td>{trans key='user.coupon'}</td>
-                                    <td class="text-end" id="coupon-code"></td>
-                                </tr>
-                                <tr>
-                                    <td>{trans key='user.discount_amount'}</td>
-                                    <td class="text-end" id="product-buy-discount"></td>
-                                </tr>
-                                <tr>
-                                    <td>{trans key='user.actual_payment'}</td>
-                                    <td class="text-end" id="product-buy-total">{$product->price}</td>
-                                </tr>
+                                {if isset($is_upgrade) && $is_upgrade}
+                                    <tr>
+                                        <td>{trans key='user.old_package_credit'}</td>
+                                        <td class="text-end">-{$upgrade_credit}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>{trans key='user.actual_payment'}</td>
+                                        <td class="text-end" id="product-buy-total">{$upgrade_payable}</td>
+                                    </tr>
+                                {else}
+                                    <tr>
+                                        <td>{trans key='user.coupon'}</td>
+                                        <td class="text-end" id="coupon-code"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>{trans key='user.discount_amount'}</td>
+                                        <td class="text-end" id="product-buy-discount"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>{trans key='user.actual_payment'}</td>
+                                        <td class="text-end" id="product-buy-total">{$product->price}</td>
+                                    </tr>
+                                {/if}
                             </table>
                         </div>
                     </div>
+                    {if ! (isset($is_upgrade) && $is_upgrade)}
                     <div class="card my-3">
                         <div class="card-header">
                             <h3 class="card-title">{trans key='user.coupon'}</h3>
@@ -126,6 +138,7 @@
                             </div>
                         </div>
                     </div>
+                    {/if}
                     <div class="card my-3">
                         <div class="card-body">
                             {if $product->type === 'tabp' || $product->type === 'time'}
@@ -140,11 +153,12 @@
                                      hx-post="/user/order/create" hx-swap="none"
                                      hx-vals='js:{
                                          type: "product",
-                                         coupon: document.getElementById("coupon").value,
+                                         coupon: document.getElementById("coupon") ? document.getElementById("coupon").value : "",
                                          product_id: {$product->id},
                                          auto_renew: document.getElementById("auto-renew") ? (document.getElementById("auto-renew").checked ? 1 : 0) : 0,
+                                         is_upgrade: {if isset($is_upgrade) && $is_upgrade}1{else}0{/if},
                                      }'>
-                                {trans key='user.create_order'}
+                                {if isset($is_upgrade) && $is_upgrade}{trans key='user.upgrade_package'}{else}{trans key='user.create_order'}{/if}
                             </button>
                         </div>
                     </div>

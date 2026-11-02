@@ -14,6 +14,12 @@
                 </div>
                 <div class="col-auto">
                     <div class="btn-list">
+                        {if isset($has_active_tabp) && $has_active_tabp}
+                            <a href="/user/product#tabp" class="btn btn-warning">
+                                <i class="icon ti ti-arrow-up-circle"></i>
+                                {trans key='user.upgrade_package'}
+                            </a>
+                        {/if}
                         <a href="#" class="btn btn-primary" data-bs-toggle="modal"
                            data-bs-target="#topup">
                             <i class="icon ti ti-plus"></i>
