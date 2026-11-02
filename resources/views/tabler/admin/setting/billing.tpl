@@ -94,6 +94,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="tab-pane" id="f2f">
                                     <div class="card-body">
                                         <div class="form-group mb-3 row">
                                             <label class="form-label col-3 col-form-label">App ID</label>
