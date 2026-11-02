@@ -34,6 +34,9 @@
                                     <a href="#gateway" class="nav-link active" data-bs-toggle="tab">网关选择</a>
                                 </li>
                                 <li class="nav-item">
+                                    <a href="#tabp_upgrade" class="nav-link" data-bs-toggle="tab">套餐升级</a>
+                                </li>
+                                <li class="nav-item">
                                     <a href="#f2f" class="nav-link" data-bs-toggle="tab">支付宝当面付</a>
                                 </li>
                                 <li class="nav-item">
@@ -68,7 +71,29 @@
                                     </div>
                                     {/foreach}
                                 </div>
-                                <div class="tab-pane" id="f2f">
+                                <div class="tab-pane" id="tabp_upgrade">
+                                    <div class="card-body">
+                                        <div class="form-group mb-3 row">
+                                            <label class="form-label col-3 col-form-label">允许 TABP 套餐中途升级</label>
+                                            <div class="col">
+                                                <select id="enable_tabp_upgrade" class="col form-select"
+                                                        value="{$settings['enable_tabp_upgrade']}">
+                                                    <option value="0" {if ! $settings['enable_tabp_upgrade']}selected{/if}>关闭</option>
+                                                    <option value="1" {if $settings['enable_tabp_upgrade']}selected{/if}>开启</option>
+                                                </select>
+                                                <small class="form-hint">开启后，正在使用 TABP 套餐的用户可以在商店中按时间与流量剩余比例折旧抵扣，升级换购更高价格的 TABP 套餐</small>
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-3 row">
+                                            <label class="form-label col-3 col-form-label">TABP 升级最高折抵比例 (1-100%)</label>
+                                            <div class="col">
+                                                <input id="tabp_upgrade_credit_max_ratio" type="number" min="0" max="100" class="form-control"
+                                                       value="{$settings['tabp_upgrade_credit_max_ratio']}">
+                                                <small class="form-hint">设置旧套餐剩余价值最多可折抵的比例上限。默认为 100（即不设限制，按实际剩余全额折抵）；若设为 80 则旧套餐折抵金额最高不超过其实付价的 80%</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                     <div class="card-body">
                                         <div class="form-group mb-3 row">
                                             <label class="form-label col-3 col-form-label">App ID</label>
