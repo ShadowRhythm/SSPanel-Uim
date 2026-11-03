@@ -774,13 +774,6 @@ $_ENV['Clash_Config'] = [
     'log-level' => 'error',
     'tcp-concurrent' => $_ENV['tcp_concurrent'],
     'external-controller' => '0.0.0.0:9091',
-    'tun' => [
-        'enable' => true,
-        'stack' => 'mixed',
-        'auto-route' => true,
-        'strict-route' => true,
-        'auto-detect-interface' => true,
-    ],
     'dns' => [
         'enable' => true,
         'ipv6' => false,
@@ -797,6 +790,10 @@ $_ENV['Clash_Config'] = [
             'msftconnecttest.com',
             'msftncsi.com',
             'localhost.ptlogin2.qq.com',
+        ],
+        'default-nameserver' => [
+            '223.5.5.5',
+            '119.29.29.29',
         ],
         'nameserver' => [
             'https://1.1.1.1/dns-query',
