@@ -42,7 +42,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body">
-                            <div class="h1 my-2 mb-3">#{$ticket->id} {$ticket->title}</div>
+                            <div class="h1 my-2 mb-3">#{$ticket->id} {$ticket->title|escape}</div>
                         </div>
                     </div>
                 </div>
@@ -57,10 +57,10 @@
                                     <div class="row">
                                         <div class="col">
                                             <div>
-                                                {$comment->comment}
+                                                {$comment->comment|escape|nl2br}
                                             </div>
-                                            <div class="text-secondary my-1">{$comment->commenter_name}
-                                                回复于 {$comment->datetime}
+                                            <div class="text-secondary my-1">{$comment->commenter_name|escape}
+                                                回复于 {$comment->datetime|escape}
                                             </div>
                                         </div>
                                         <div class="col-auto">

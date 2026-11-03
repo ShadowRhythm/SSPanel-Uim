@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
+use App\Services\I18n;
 use App\Services\Subscribe;
 use App\Utils\Tools;
 use Exception;
@@ -19,6 +20,7 @@ final class ServerController extends BaseController
      */
     public function index(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $nodes = Subscribe::getUserNodes($this->user, true);
         $node_list = [];
 
@@ -35,7 +37,7 @@ final class ServerController extends BaseController
                 'traffic_rate' => $node->traffic_rate,
                 'is_dynamic_rate' => $node->is_dynamic_rate,
                 'node_bandwidth' => Tools::autoBytes($node->node_bandwidth),
-                'node_bandwidth_limit' => $node->node_bandwidth_limit === 0 ? '无限制' :
+                'node_bandwidth_limit' => $node->node_bandwidth_limit === 0 ? I18n::trans('user.unlimited', $locale) :
                     Tools::autoBytes($node->node_bandwidth_limit),
             ];
         }

@@ -411,18 +411,22 @@ final class Cron
                             ->where('product_type', 'tabp')
                             ->where('status', 'activated')
                             ->where('id', '!=', $order->id)
+                            ->orderBy('id', 'desc')
                             ->first();
                         if ($activeTabpOrder !== null) {
                             $activeContent = json_decode($activeTabpOrder->product_content);
-                            $expireTime = $activeTabpOrder->update_time + ((int) ($activeContent->time ?? 0)) * 86400;
+                            $duration = (int) ($activeContent->time ?? $activeContent->class_time ?? 0);
+                            $expireTime = $activeTabpOrder->update_time + $duration * 86400;
                             if ($expireTime > time()) {
                                 // Current active TABP is still running, keep this order in pending_activation queue
                                 return false;
                             }
-                            // Current TABP expired, mark it expired
-                            $activeTabpOrder->status = 'expired';
-                            $activeTabpOrder->update_time = time();
-                            $activeTabpOrder->save();
+                            // Expire all old activated TABP orders
+                            Order::where('user_id', $user->id)
+                                ->where('product_type', 'tabp')
+                                ->where('status', 'activated')
+                                ->where('id', '!=', $order->id)
+                                ->update(['status' => 'expired', 'update_time' => time()]);
                         }
                     }
 
@@ -457,8 +461,9 @@ final class Cron
         foreach ($activated_orders as $order) {
             try {
                 $content = json_decode($order->product_content);
+                $duration = (int) ($content->time ?? $content->class_time ?? 0);
 
-                if ($order->update_time + ((int) ($content->time ?? 0)) * 86400 < time()) {
+                if ($order->update_time + $duration * 86400 < time()) {
                     $order->status = 'expired';
                     $order->update_time = time();
                     $order->save();
@@ -583,7 +588,8 @@ final class Cron
                 $expireTime = 0;
                 if ($order->product_type === 'tabp') {
                     $content = json_decode($order->product_content);
-                    $expireTime = $order->update_time + ((int) ($content->time ?? 0)) * 86400;
+                    $duration = (int) ($content->time ?? $content->class_time ?? 0);
+                    $expireTime = $order->update_time + $duration * 86400;
                     $timeLeft = $expireTime - time();
                     if ($expireTime <= 0 || $timeLeft > 86400 || $timeLeft < 0 || $order->status === 'expired') {
                         continue;
@@ -651,7 +657,8 @@ final class Cron
 
                     if ($lockedOrder->product_type === 'tabp') {
                         $content = json_decode($lockedOrder->product_content);
-                        $expireTime = $lockedOrder->update_time + ((int) ($content->time ?? 0)) * 86400;
+                        $duration = (int) ($content->time ?? $content->class_time ?? 0);
+                        $expireTime = $lockedOrder->update_time + $duration * 86400;
                         if ($expireTime - time() < 0) {
                             return;
                         }
@@ -791,7 +798,8 @@ final class Cron
 
         foreach ($pending_payment_orders as $orderId) {
             try {
-                DB::transaction(static function () use ($orderId): void {
+                $shouldActivate = false;
+                DB::transaction(static function () use ($orderId, &$shouldActivate): void {
                     $order = (new Order())->where('id', $orderId)->lockForUpdate()->first();
                     if ($order === null || $order->status !== 'pending_payment') {
                         return;
@@ -806,6 +814,7 @@ final class Cron
                         $order->update_time = time();
                         $order->save();
                         echo "已标记订单 #{$order->id} 为等待激活。\n";
+                        $shouldActivate = true;
                         return;
                     }
                     if ($order->create_time + 86400 < time() && $invoice->status !== 'partially_paid') {
@@ -832,6 +841,10 @@ final class Cron
                         echo "已取消超时订单 #{$order->id} 和账单 #{$invoice->id}，并恢复库存及优惠码使用次数。\n";
                     }
                 });
+
+                if ($shouldActivate) {
+                    self::activateOrder($orderId);
+                }
             } catch (Throwable $e) {
                 echo 'Cron processPendingOrder failed for order #' . $orderId . ': ' . $e->getMessage() . PHP_EOL;
             }
@@ -906,13 +919,17 @@ final class Cron
             $text_html = '<table><tr><td>金额</td><td>用户ID</td><td>用户名</td><td>充值时间</td></tr>';
 
             foreach ($paylists as $paylist) {
-                $userName = $userNames[$paylist->userid] ?? '已删除用户';
-                $text_html .= '<tr>';
-                $text_html .= '<td>' . $paylist->total . '</td>';
-                $text_html .= '<td>' . $paylist->userid . '</td>';
-                $text_html .= '<td>' . $userName . '</td>';
-                $text_html .= '<td>' . Tools::toDateTime((int) $paylist->datetime) . '</td>';
-                $text_html .= '</tr>';
+                try {
+                    $userName = $userNames[$paylist->userid] ?? '已删除用户';
+                    $text_html .= '<tr>';
+                    $text_html .= '<td>' . $paylist->total . '</td>';
+                    $text_html .= '<td>' . $paylist->userid . '</td>';
+                    $text_html .= '<td>' . $userName . '</td>';
+                    $text_html .= '<td>' . Tools::toDateTime((int) $paylist->datetime) . '</td>';
+                    $text_html .= '</tr>';
+                } catch (Throwable $e) {
+                    echo 'Cron sendDailyFinanceMail failed for paylist #' . $paylist->id . ': ' . $e->getMessage() . PHP_EOL;
+                }
             }
 
             $text_html .= '</table>';

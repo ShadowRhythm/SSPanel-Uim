@@ -35,14 +35,14 @@
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">邮箱</label>
                                 <div class="col">
-                                    <input id="email" type="email" class="form-control" value="{$edit_user->email}">
+                                    <input id="email" type="email" class="form-control" value="{$edit_user->email|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">用户名</label>
                                 <div class="col">
                                     <input id="user_name" type="text" class="form-control"
-                                           value="{$edit_user->user_name}">
+                                           value="{$edit_user->user_name|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
@@ -56,25 +56,25 @@
                                 <label class="form-label col-3 col-form-label">账户余额</label>
                                 <div class="col">
                                     <input id="money" type="number" step="1" class="form-control"
-                                           value="{$edit_user->money}">
+                                           value="{$edit_user->money|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">邀请人</label>
                                 <div class="col">
-                                    <input id="ref_by" type="text" class="form-control" value="{$edit_user->ref_by}">
+                                    <input id="ref_by" type="text" class="form-control" value="{$edit_user->ref_by|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">SS端口</label>
                                 <div class="col">
-                                    <input id="port" type="text" class="form-control" value="{$edit_user->port}">
+                                    <input id="port" type="text" class="form-control" value="{$edit_user->port|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">SS加密方式</label>
                                 <div class="col">
-                                    <select id="method" class="col form-select" value="{$edit_user->method}">
+                                    <select id="method" class="col form-select" value="{$edit_user->method|escape}">
                                         {foreach $ss_methods as $method}
                                             <option value="{$method}" {if $edit_user->method === $method}selected{/if}>
                                                 {$method}
@@ -86,31 +86,31 @@
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">注册IP</label>
                                 <div class="col">
-                                    <input type="text" class="form-control" value="{$edit_user->reg_ip}" disabled/>
+                                    <input type="text" class="form-control" value="{$edit_user->reg_ip|escape}" disabled/>
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">注册日期</label>
                                 <div class="col">
-                                    <input type="text" class="form-control" value="{$edit_user->reg_date}" disabled/>
+                                    <input type="text" class="form-control" value="{$edit_user->reg_date|escape}" disabled/>
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">最后使用时间</label>
                                 <div class="col">
-                                    <input type="text" class="form-control" value="{$edit_user->last_use_time}" disabled/>
+                                    <input type="text" class="form-control" value="{$edit_user->last_use_time|escape}" disabled/>
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">最后签到时间</label>
                                 <div class="col">
-                                    <input type="text" class="form-control" value="{$edit_user->last_check_in_time}" disabled/>
+                                    <input type="text" class="form-control" value="{$edit_user->last_check_in_time|escape}" disabled/>
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">最后登录时间</label>
                                 <div class="col">
-                                    <input type="text" class="form-control" value="{$edit_user->last_login_time}" disabled/>
+                                    <input type="text" class="form-control" value="{$edit_user->last_login_time|escape}" disabled/>
                                 </div>
                             </div>
                         </div>
@@ -126,70 +126,70 @@
                                 <label class="form-label col-4 col-form-label">流量限制</label>
                                 <div class="col">
                                     <input id="transfer_enable" type="text" class="form-control"
-                                           value="{$edit_user->enableTraffic()}">
+                                           value="{$edit_user->enableTraffic()|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-4 col-form-label">当期用量</label>
                                 <div class="col">
                                     <input type="text" class="form-control"
-                                           value="{$edit_user->usedTraffic()}" disabled/>
+                                           value="{$edit_user->usedTraffic()|escape}" disabled/>
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-4 col-form-label">累计用量</label>
                                 <div class="col">
                                     <input type="text" class="form-control"
-                                           value="{$edit_user->totalTraffic()}" disabled/>
+                                           value="{$edit_user->totalTraffic()|escape}" disabled/>
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-4 col-form-label">节点群组</label>
                                 <div class="col">
                                     <input id="node_group" type="text" class="form-control"
-                                           value="{$edit_user->node_group}">
+                                           value="{$edit_user->node_group|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-4 col-form-label">账户等级</label>
                                 <div class="col">
                                     <input id="class" type="text" class="form-control"
-                                           value="{$edit_user->class}">
+                                           value="{$edit_user->class|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-4 col-form-label">等级过期时间</label>
                                 <div class="col">
                                     <input id="class_expire" type="text" class="form-control"
-                                           value="{$edit_user->class_expire}">
+                                           value="{$edit_user->class_expire|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-4 col-form-label">免费用户流量重置日</label>
                                 <div class="col">
                                     <input id="auto_reset_day" type="text" class="form-control"
-                                           value="{$edit_user->auto_reset_day}">
+                                           value="{$edit_user->auto_reset_day|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-4 col-form-label">重置的免费流量(GB)</label>
                                 <div class="col">
                                     <input id="auto_reset_bandwidth" type="text" class="form-control"
-                                           value="{$edit_user->auto_reset_bandwidth}">
+                                           value="{$edit_user->auto_reset_bandwidth|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-4 col-form-label">速度限制 (Mbps)</label>
                                 <div class="col">
                                     <input id="node_speedlimit" type="text" class="form-control"
-                                           value="{$edit_user->node_speedlimit}">
+                                           value="{$edit_user->node_speedlimit|escape}">
                                 </div>
                             </div>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-4 col-form-label">同時连接 IP 限制</label>
                                 <div class="col">
                                     <input id="node_iplimit" type="text" class="form-control"
-                                           value="{$edit_user->node_iplimit}">
+                                           value="{$edit_user->node_iplimit|escape}">
                                 </div>
                             </div>
                         </div>
@@ -204,10 +204,10 @@
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">显示语言</label>
                                 <div class="col">
-                                    <select id="locale" class="col form-select" value="{$edit_user->locale}">
+                                    <select id="locale" class="col form-select" value="{$edit_user->locale|escape}">
                                         {foreach $locales as $locale}
-                                        <option value="{$locale}" {if $edit_user->locale === $locale}selected{/if}>
-                                            {$locale}
+                                        <option value="{$locale|escape}" {if $edit_user->locale === $locale}selected{/if}>
+                                            {$locale|escape}
                                         </option>
                                         {/foreach}
                                     </select>
@@ -251,14 +251,14 @@
                                 <span class="form-label col-12 col-form-label">手动封禁理由</span>
                                 <span class="col-auto">
                                     <textarea id="banned_reason" class="form-control"
-                                              value="{$edit_user->banned_reason}"></textarea>
+                                              value="{$edit_user->banned_reason|escape}">{$edit_user->banned_reason|escape}</textarea>
                                 </span>
                             </div>
                             <div class="form-group mb-3 col-12">
                                 <label class="form-label col-12 col-form-label">账户备注</label>
                                 <div class="col">
-                                    <textarea id="remark" class="form-control" value="{$edit_user->remark}"
-                                              placeholder="仅管理员可见"></textarea>
+                                    <textarea id="remark" class="form-control" value="{$edit_user->remark|escape}"
+                                              placeholder="仅管理员可见">{$edit_user->remark|escape}</textarea>
                                 </div>
                             </div>
                         </div>

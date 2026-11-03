@@ -8,6 +8,7 @@ use App\Controllers\BaseController;
 use App\Models\Config;
 use App\Models\InviteCode;
 use App\Models\Payback;
+use App\Services\I18n;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
@@ -50,11 +51,12 @@ final class InviteController extends BaseController
         $invite_reward_rate = Config::obtain('invite_reward_rate') * 100;
 
         // 邀请限制
+        $locale = I18n::getCurrentLocale($this->user);
         if ($userRegDate > $threeMonthsAgo) {
-            $invite_url = '注册时长未满90天，所以暂无邀请权限。过段时间再来看看吧';
+            $invite_url = I18n::trans('user.invite_rule_reg_time_limit', $locale);
         }
-        if ($userclass <= 1){
-            $invite_url = '当前等级未满2，所以暂无邀请权限。';
+        if ($userclass <= 1) {
+            $invite_url = I18n::trans('user.invite_rule_class_limit', $locale);
         }
         return $response->write(
             $this->view()
@@ -74,7 +76,7 @@ final class InviteController extends BaseController
 
         return $response->withJson([
             'ret' => 1,
-            'msg' => '重置成功',
+            'msg' => I18n::trans('user.reset_success', I18n::getCurrentLocale($this->user)),
             'data' => [
                 'invite-url' => $_ENV['baseUrl'] . '/auth/register?code=' . $code,
             ],

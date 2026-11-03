@@ -57,6 +57,7 @@ $_ENV['rate_limit_admin_api_ip'] = 60; // 每分钟每个管理员的API请求�
 $_ENV['rate_limit_admin_api'] = 60;    // 每分钟每个管理员的API请求限制
 $_ENV['rate_limit_node_api_ip'] = 60;  // 每分钟每个IP的节点API请求限制
 $_ENV['rate_limit_node_api'] = 60;     // 每分钟每个节点的API请求限制
+$_ENV['rate_limit_login_ip'] = 15;     // 每分钟每个IP的登录请求限制
 
 //邮件设置----------------------------------------------------------------------------------------------------------------
 $_ENV['mail_filter'] = 0;        // 0: 关闭; 1: 白名单模式; 2; 黑名单模式;
@@ -103,7 +104,8 @@ $_ENV['locale_auto_detect'] = false;   //是否自动检测浏览器语言，tru
 $_ENV['jump_delay'] = 1000;               //跳转延时，单位ms
 $_ENV['keep_connect'] = false;            // 流量耗尽用户限速至 1Mbps
 
-//Other-----------------------------------------------------------------------------------------------------------------
+// Other-----------------------------------------------------------------------------------------------------------------
+$_ENV['enable_telemetry'] = true;          // 是否开启系统遥测
 // cdn.jsdelivr.net / fastly.jsdelivr.net / testingcf.jsdelivr.net
 $_ENV['jsdelivr_url'] = 'fastly.jsdelivr.net';
 // https://sentry.io for production debugging

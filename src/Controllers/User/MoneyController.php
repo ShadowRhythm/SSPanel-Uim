@@ -47,13 +47,14 @@ final class MoneyController extends BaseController
 
     public function applyGiftCard(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $giftcard_raw = $this->antiXss->xss_clean($request->getParam('giftcard'));
         $giftcard = (new GiftCard())->where('card', $giftcard_raw)->first();
 
         if ($giftcard === null || $giftcard->status !== 0) {
             return $response->withJson([
                 'ret' => 0,
-                'msg' => I18n::trans('user.giftcard_invalid'),
+                'msg' => I18n::trans('user.giftcard_invalid', $locale),
             ]);
         }
 
@@ -62,7 +63,7 @@ final class MoneyController extends BaseController
         if ($user->is_shadow_banned) {
             return $response->withJson([
                 'ret' => 0,
-                'msg' => I18n::trans('user.giftcard_invalid'),
+                'msg' => I18n::trans('user.giftcard_invalid', $locale),
             ]);
         }
 
@@ -80,12 +81,12 @@ final class MoneyController extends BaseController
             $money_before,
             (float) $user->money,
             $giftcard->balance,
-            '礼品卡充值 ' . $giftcard->card
+            I18n::trans('user.money_remark_gift_card', $locale, ['card' => $giftcard->card])
         );
 
         return $response->withHeader('HX-Refresh', 'true')->withJson([
             'ret' => 1,
-            'msg' => I18n::trans('user.topup_success'),
+            'msg' => I18n::trans('user.topup_success', $locale),
         ]);
     }
 }

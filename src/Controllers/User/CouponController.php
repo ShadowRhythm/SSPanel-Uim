@@ -8,6 +8,7 @@ use App\Controllers\BaseController;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\UserCoupon;
+use App\Services\I18n;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
@@ -20,9 +21,10 @@ final class CouponController extends BaseController
 {
     public function check(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $coupon_raw = $this->antiXss->xss_clean($request->getParam('coupon'));
         $product_id = $this->antiXss->xss_clean($request->getParam('product_id'));
-        $invalid_coupon_msg = '优惠码无效';
+        $invalid_coupon_msg = I18n::trans('user.coupon_invalid', $locale);
 
         if ($coupon_raw === '') {
             return $response->withJson([
@@ -99,7 +101,7 @@ final class CouponController extends BaseController
 
         return $response->withJson([
             'ret' => 1,
-            'msg' => '优惠码可用',
+            'msg' => I18n::trans('user.coupon_available', $locale),
             'data' => [
                 'coupon-code' => $coupon->code,
                 'product-buy-discount' => $discount,

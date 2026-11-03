@@ -306,215 +306,157 @@ final class OrderController extends BaseController
 
     public function product(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $coupon_raw = $this->antiXss->xss_clean($request->getParam('coupon'));
-        $product_id = $this->antiXss->xss_clean($request->getParam('product_id'));
+        $coupon_raw = (string) $this->antiXss->xss_clean($request->getParam('coupon'));
+        $product_id = (int) $this->antiXss->xss_clean($request->getParam('product_id'));
         $auto_renew = $request->getParam('auto_renew');
         $auto_renew = ($auto_renew === 'true' || $auto_renew === '1' || $auto_renew === 1 || $auto_renew === true) ? 1 : 0;
         $is_upgrade = (int) ($request->getParam('is_upgrade') ?? 0) === 1;
         $locale = I18n::getCurrentLocale($this->user);
 
-        $product = (new Product())->find($product_id);
-
-        if ($product === null || $product->stock === 0) {
+        if ($this->user->is_shadow_banned) {
             return $response->withJson([
                 'ret' => 0,
                 'msg' => I18n::trans('user.product_out_of_stock', $locale),
             ]);
-        }
-
-        $buy_price = $product->price;
-        $user = $this->user;
-
-        if ($user->is_shadow_banned) {
-            return $response->withJson([
-                'ret' => 0,
-                'msg' => I18n::trans('user.product_out_of_stock', $locale),
-            ]);
-        }
-
-        $coupon = null;
-        $discount = 0;
-        $activeTabpOrder = null;
-        $credit = 0.0;
-
-        if ($is_upgrade) {
-            if (! Config::obtain('enable_tabp_upgrade')) {
-                return $response->withJson([
-                    'ret' => 0,
-                    'msg' => I18n::trans('user.package_upgrade_disabled', $locale),
-                ]);
-            }
-
-            if ($product->type !== 'tabp') {
-                return $response->withJson([
-                    'ret' => 0,
-                    'msg' => I18n::trans('user.non_tabp_package_cannot_upgrade', $locale),
-                ]);
-            }
-
-            $user = User::find($user->id) ?? $user;
-            $activeTabpInfo = self::getActiveTabpUpgradeInfo($user);
-            if ($activeTabpInfo === null) {
-                return $response->withJson([
-                    'ret' => 0,
-                    'msg' => I18n::trans('user.no_valid_package_to_upgrade', $locale),
-                ]);
-            }
-
-            $activeTabpOrder = $activeTabpInfo['order'];
-            if ((float) $product->price <= (float) $activeTabpOrder->price || $product->id === $activeTabpOrder->product_id) {
-                return $response->withJson([
-                    'ret' => 0,
-                    'msg' => I18n::trans('user.new_package_price_must_be_higher', $locale),
-                ]);
-            }
-
-            $hasPendingUpgrade = Order::where('user_id', $user->id)
-                ->where('status', 'pending_payment')
-                ->where('product_content', 'like', '%"is_upgrade":true%')
-                ->exists();
-            if ($hasPendingUpgrade) {
-                return $response->withJson([
-                    'ret' => 0,
-                    'msg' => I18n::trans('user.pending_upgrade_order_exists', $locale),
-                ]);
-            }
-
-            $coupon_raw = '';
-            $coupon = null;
-            $discount = 0;
-            $credit = min($activeTabpInfo['credit_amount'], (float) $product->price);
-            $buy_price = max(0.0, round((float) $product->price - $credit, 2));
-        } else {
-            if ($coupon_raw !== '') {
-                $coupon = (new UserCoupon())->where('code', $coupon_raw)->first();
-
-                if ($coupon === null || ($coupon->expire_time !== 0 && $coupon->expire_time < time())) {
-                    return $response->withJson([
-                        'ret' => 0,
-                        'msg' => I18n::trans('user.coupon_not_exist_or_expired', $locale),
-                    ]);
-                }
-
-                $coupon_limit = json_decode($coupon->limit);
-
-                if ($coupon_limit->disabled) {
-                    return $response->withJson([
-                        'ret' => 0,
-                        'msg' => I18n::trans('user.coupon_disabled', $locale),
-                    ]);
-                }
-
-                if ($coupon_limit->product_id !== '' && ! in_array($product_id, explode(',', $coupon_limit->product_id))) {
-                    return $response->withJson([
-                        'ret' => 0,
-                        'msg' => I18n::trans('user.coupon_not_applicable', $locale),
-                    ]);
-                }
-
-                $coupon_use_limit = $coupon_limit->use_time;
-
-                if ($coupon_use_limit > 0) {
-                    $user_use_count = (new Order())->where('user_id', $user->id)->where('coupon', $coupon->code)->count();
-                    if ($user_use_count >= $coupon_use_limit) {
-                        return $response->withJson([
-                            'ret' => 0,
-                            'msg' => I18n::trans('user.coupon_limit_reached', $locale),
-                        ]);
-                    }
-                }
-
-                if (property_exists($coupon_limit, 'total_use_time')) {
-                    $coupon_total_use_limit = $coupon_limit->total_use_time;
-                } else {
-                    $coupon_total_use_limit = -1;
-                }
-
-                if ($coupon_total_use_limit > 0 && $coupon->use_count >= $coupon_total_use_limit) {
-                    return $response->withJson([
-                        'ret' => 0,
-                        'msg' => I18n::trans('user.coupon_limit_reached', $locale),
-                    ]);
-                }
-
-                $content = json_decode($coupon->content);
-
-                if ($content->type === 'percentage') {
-                    $discount = $product->price * $content->value / 100;
-                } else {
-                    $discount = $content->value;
-                }
-
-                $buy_price = max(0.0, (float) ($product->price - $discount));
-            }
-        }
-
-        $product_limit = json_decode($product->limit);
-
-        if ($product_limit->class_required !== '' && $user->class < (int) $product_limit->class_required) {
-            return $response->withJson([
-                'ret' => 0,
-                'msg' => I18n::trans('user.insufficient_account_class', $locale),
-            ]);
-        }
-
-        if ($product_limit->node_group_required !== ''
-            && $user->node_group !== (int) $product_limit->node_group_required) {
-            return $response->withJson([
-                'ret' => 0,
-                'msg' => I18n::trans('user.user_group_cannot_buy', $locale),
-            ]);
-        }
-
-        if ($product_limit->new_user_required !== 0) {
-            $order_count = (new Order())->where('user_id', $user->id)->count();
-            if ($order_count > 0) {
-                return $response->withJson([
-                    'ret' => 0,
-                    'msg' => I18n::trans('user.product_new_user_only', $locale),
-                ]);
-            }
         }
 
         try {
             $invoice = DB::transaction(function () use (
-                $user,
-                $product,
+                $product_id,
                 $coupon_raw,
-                $buy_price,
-                $discount,
-                $coupon,
                 $auto_renew,
                 $is_upgrade,
-                $activeTabpOrder,
-                $credit,
                 $locale
             ): Invoice {
+                $user = User::where('id', $this->user->id)->lockForUpdate()->first();
+                if ($user === null || $user->is_shadow_banned) {
+                    throw new Exception(I18n::trans('user.product_out_of_stock', $locale));
+                }
+
+                // Rapid duplicate click / order deduplication (within 5 seconds)
+                $recentPendingOrder = Order::where('user_id', $user->id)
+                    ->where('product_id', $product_id)
+                    ->where('status', 'pending_payment')
+                    ->where('create_time', '>=', time() - 5)
+                    ->orderBy('id', 'desc')
+                    ->first();
+                if ($recentPendingOrder !== null) {
+                    $recentInvoice = Invoice::where('order_id', $recentPendingOrder->id)->first();
+                    if ($recentInvoice !== null) {
+                        return $recentInvoice;
+                    }
+                }
+
+                $product = Product::where('id', $product_id)->first();
+                if ($product === null || $product->stock === 0 || (int) $product->status !== 1) {
+                    throw new Exception(I18n::trans('user.product_out_of_stock', $locale));
+                }
+
+                $buy_price = (float) $product->price;
+                $coupon = null;
+                $discount = 0.0;
+                $activeTabpOrder = null;
+                $credit = 0.0;
+
+                if ($is_upgrade) {
+                    if (! Config::obtain('enable_tabp_upgrade')) {
+                        throw new Exception(I18n::trans('user.package_upgrade_disabled', $locale));
+                    }
+
+                    if ($product->type !== 'tabp') {
+                        throw new Exception(I18n::trans('user.non_tabp_package_cannot_upgrade', $locale));
+                    }
+
+                    $activeTabpInfo = self::getActiveTabpUpgradeInfo($user);
+                    if ($activeTabpInfo === null) {
+                        throw new Exception(I18n::trans('user.no_valid_package_to_upgrade', $locale));
+                    }
+
+                    $activeTabpOrder = $activeTabpInfo['order'];
+                    if ((float) $product->price <= (float) $activeTabpOrder->price || $product->id === $activeTabpOrder->product_id) {
+                        throw new Exception(I18n::trans('user.new_package_price_must_be_higher', $locale));
+                    }
+
+                    $hasPendingUpgrade = Order::where('user_id', $user->id)
+                        ->where('status', 'pending_payment')
+                        ->where('product_content', 'like', '%"is_upgrade":true%')
+                        ->exists();
+                    if ($hasPendingUpgrade) {
+                        throw new Exception(I18n::trans('user.pending_upgrade_order_exists', $locale));
+                    }
+
+                    $coupon_raw = '';
+                    $coupon = null;
+                    $discount = 0.0;
+                    $credit = min($activeTabpInfo['credit_amount'], (float) $product->price);
+                    $buy_price = max(0.0, round((float) $product->price - $credit, 2));
+                } else {
+                    if ($coupon_raw !== '') {
+                        $coupon = UserCoupon::where('code', $coupon_raw)->lockForUpdate()->first();
+
+                        if ($coupon === null || ($coupon->expire_time !== 0 && $coupon->expire_time < time())) {
+                            throw new Exception(I18n::trans('user.coupon_not_exist_or_expired', $locale));
+                        }
+
+                        $coupon_limit = json_decode($coupon->limit);
+
+                        if ($coupon_limit->disabled) {
+                            throw new Exception(I18n::trans('user.coupon_disabled', $locale));
+                        }
+
+                        if ($coupon_limit->product_id !== '' && ! in_array((string) $product_id, explode(',', (string) $coupon_limit->product_id), true)) {
+                            throw new Exception(I18n::trans('user.coupon_not_applicable', $locale));
+                        }
+
+                        $coupon_use_limit = (int) ($coupon_limit->use_time ?? 0);
+
+                        if ($coupon_use_limit > 0) {
+                            $user_use_count = Order::where('user_id', $user->id)->where('coupon', $coupon->code)->count();
+                            if ($user_use_count >= $coupon_use_limit) {
+                                throw new Exception(I18n::trans('user.coupon_limit_reached', $locale));
+                            }
+                        }
+
+                        $coupon_total_use_limit = property_exists($coupon_limit, 'total_use_time') ? (int) $coupon_limit->total_use_time : -1;
+
+                        if ($coupon_total_use_limit > 0 && $coupon->use_count >= $coupon_total_use_limit) {
+                            throw new Exception(I18n::trans('user.coupon_limit_reached', $locale));
+                        }
+
+                        $content = json_decode($coupon->content);
+
+                        if ($content->type === 'percentage') {
+                            $discount = round((float) $product->price * (float) $content->value / 100, 2);
+                        } else {
+                            $discount = (float) $content->value;
+                        }
+
+                        $buy_price = max(0.0, round((float) $product->price - $discount, 2));
+                    }
+                }
+
+                $product_limit = json_decode($product->limit);
+
+                if (isset($product_limit->class_required) && $product_limit->class_required !== '' && $user->class < (int) $product_limit->class_required) {
+                    throw new Exception(I18n::trans('user.insufficient_account_class', $locale));
+                }
+
+                if (isset($product_limit->node_group_required) && $product_limit->node_group_required !== ''
+                    && $user->node_group !== (int) $product_limit->node_group_required) {
+                    throw new Exception(I18n::trans('user.user_group_cannot_buy', $locale));
+                }
+
+                if (isset($product_limit->new_user_required) && (int) $product_limit->new_user_required !== 0) {
+                    $order_count = Order::where('user_id', $user->id)->count();
+                    if ($order_count > 0) {
+                        throw new Exception(I18n::trans('user.product_new_user_only', $locale));
+                    }
+                }
+
                 if ($product->stock > 0) {
                     $affected = Product::where('id', $product->id)->where('stock', '>', 0)->decrement('stock', 1);
                     if ($affected === 0) {
                         throw new Exception(I18n::trans('user.product_out_of_stock', $locale));
-                    }
-                }
-
-                if (! $is_upgrade && $coupon !== null) {
-                    $lockedCoupon = UserCoupon::where('id', $coupon->id)->lockForUpdate()->first();
-                    if ($lockedCoupon === null || $lockedCoupon->expire_time !== 0 && $lockedCoupon->expire_time < time()) {
-                        throw new Exception(I18n::trans('user.coupon_not_exist_or_expired', $locale));
-                    }
-                    $lockedLimit = json_decode($lockedCoupon->limit);
-                    if ($lockedLimit->disabled) {
-                        throw new Exception(I18n::trans('user.coupon_disabled', $locale));
-                    }
-                    if ($lockedLimit->use_time > 0 &&
-                        (new Order())->where('user_id', $user->id)->where('coupon', $lockedCoupon->code)->count() >= $lockedLimit->use_time
-                    ) {
-                        throw new Exception(I18n::trans('user.coupon_limit_reached', $locale));
-                    }
-                    if (property_exists($lockedLimit, 'total_use_time') && $lockedLimit->total_use_time > 0 &&
-                        $lockedCoupon->use_count >= $lockedLimit->total_use_time
-                    ) {
-                        throw new Exception(I18n::trans('user.coupon_limit_reached', $locale));
                     }
                 }
 
@@ -611,44 +553,83 @@ final class OrderController extends BaseController
         $amount = $this->antiXss->xss_clean($request->getParam('amount'));
         $amount = is_numeric($amount) ? round((float) $amount, 2) : null;
 
-        if ($amount === null || $amount <= 0) {
+        if ($amount === null || $amount < 0.01 || $amount > 1000000) {
             return $response->withJson([
                 'ret' => 0,
                 'msg' => I18n::trans('user.invalid_topup_amount', $locale),
             ]);
         }
 
-        $order = new Order();
-        $order->user_id = $this->user->id;
-        $order->product_id = 0;
-        $order->product_type = 'topup';
-        $order->product_name = I18n::trans('user.topup', $locale);
-        $order->product_content = json_encode(['amount' => $amount]);
-        $order->coupon = '';
-        $order->price = $amount;
-        $order->status = 'pending_payment';
-        $order->create_time = time();
-        $order->update_time = time();
-        $order->save();
+        if ($this->user->is_shadow_banned) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => I18n::trans('user.payment_failed_try_again', $locale),
+            ]);
+        }
 
-        $invoice_content = [];
-        $invoice_content[] = [
-            'content_id' => 0,
-            'name' => I18n::trans('user.topup', $locale),
-            'price' => $amount,
-        ];
+        try {
+            $invoice = DB::transaction(function () use ($amount, $locale): Invoice {
+                $user = User::where('id', $this->user->id)->lockForUpdate()->first();
+                if ($user === null || $user->is_shadow_banned) {
+                    throw new Exception(I18n::trans('user.payment_failed_try_again', $locale));
+                }
 
-        $invoice = new Invoice();
-        $invoice->user_id = $this->user->id;
-        $invoice->order_id = $order->id;
-        $invoice->content = json_encode($invoice_content);
-        $invoice->price = $amount;
-        $invoice->status = 'unpaid';
-        $invoice->create_time = time();
-        $invoice->update_time = time();
-        $invoice->pay_time = 0;
-        $invoice->type = 'topup';
-        $invoice->save();
+                // Check rapid duplicate topup order (within 5 seconds)
+                $recentPendingTopup = Order::where('user_id', $user->id)
+                    ->where('product_type', 'topup')
+                    ->where('price', $amount)
+                    ->where('status', 'pending_payment')
+                    ->where('create_time', '>=', time() - 5)
+                    ->orderBy('id', 'desc')
+                    ->first();
+                if ($recentPendingTopup !== null) {
+                    $recentInvoice = Invoice::where('order_id', $recentPendingTopup->id)->first();
+                    if ($recentInvoice !== null) {
+                        return $recentInvoice;
+                    }
+                }
+
+                $order = new Order();
+                $order->user_id = $user->id;
+                $order->product_id = 0;
+                $order->product_type = 'topup';
+                $order->product_name = I18n::trans('user.topup', $locale);
+                $order->product_content = json_encode(['amount' => $amount]);
+                $order->coupon = '';
+                $order->price = $amount;
+                $order->status = 'pending_payment';
+                $order->create_time = time();
+                $order->update_time = time();
+                $order->save();
+
+                $invoice_content = [
+                    [
+                        'content_id' => 0,
+                        'name' => I18n::trans('user.topup', $locale),
+                        'price' => $amount,
+                    ],
+                ];
+
+                $invoice = new Invoice();
+                $invoice->user_id = $user->id;
+                $invoice->order_id = $order->id;
+                $invoice->content = json_encode($invoice_content);
+                $invoice->price = $amount;
+                $invoice->status = 'unpaid';
+                $invoice->create_time = time();
+                $invoice->update_time = time();
+                $invoice->pay_time = 0;
+                $invoice->type = 'topup';
+                $invoice->save();
+
+                return $invoice;
+            });
+        } catch (Exception $e) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => $e->getMessage(),
+            ]);
+        }
 
         return $response->withHeader('HX-Redirect', '/user/invoice/' . $invoice->id . '/view');
     }

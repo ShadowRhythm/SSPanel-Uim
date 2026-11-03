@@ -44,13 +44,13 @@ final class UserMoneyLog extends Model
         if (preg_match('/^被用户 #(\d+) 邀请注册奖励$/u', $remark, $m)) {
             return I18n::trans('user.money_remark_invited_reg_reward', $locale, ['id' => $m[1]]);
         }
-        if (preg_match('/^支付账单 #(\d+)$/u', $remark, $m)) {
+        if (preg_match('/^(?:支付账单|Pay invoice) #(\d+)$/u', $remark, $m)) {
             return I18n::trans('user.money_remark_pay_invoice', $locale, ['id' => $m[1]]);
         }
         if (preg_match('/^账单 #(\d+) 退款至账户余额$/u', $remark, $m)) {
             return I18n::trans('user.money_remark_invoice_refund', $locale, ['id' => $m[1]]);
         }
-        if (preg_match('/^礼品卡充值 (.+)$/u', $remark, $m)) {
+        if (preg_match('/^(?:礼品卡充值|Gift Card Top-up) (.+)$/u', $remark, $m)) {
             return I18n::trans('user.money_remark_gift_card', $locale, ['card' => $m[1]]);
         }
         if (preg_match('/^充值订单 #(\d+)$/u', $remark, $m)) {

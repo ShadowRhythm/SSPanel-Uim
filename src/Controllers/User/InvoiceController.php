@@ -159,7 +159,7 @@ final class InvoiceController extends BaseController
             if ($order === null || $order->status !== 'pending_payment') {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '关联订单已失效或已被取消',
+                    'msg' => I18n::trans('user.order_invalid_or_cancelled'),
                 ]);
             }
 
@@ -179,7 +179,7 @@ final class InvoiceController extends BaseController
                 $money_before,
                 (float) $user->money,
                 -$invoice->price,
-                '支付账单 #' . $invoice->id
+                I18n::trans('user.money_remark_pay_invoice', null, ['id' => $invoice->id])
             );
 
             $invoice->status = 'paid_balance';

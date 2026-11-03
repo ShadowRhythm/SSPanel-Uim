@@ -48,13 +48,13 @@
                                             #{$ticket->id}
                                         </h3>
                                         <p class="text-secondary text-truncate" style="height: 100px;">
-                                            {$ticket->title}
+                                            {$ticket->title|escape}
                                         </p>
                                     </div>
                                     <div class="card-footer">
                                         <div class="d-flex">
-                                            <span class="status status-grey">{$ticket->status}</span>
-                                            <span class="status status-grey">{$ticket->type}</span>
+                                            <span class="status status-grey">{$ticket->status|escape}</span>
+                                            <span class="status status-grey">{$ticket->type|escape}</span>
                                             <a href="/user/ticket/{$ticket->id}/view"
                                                class="btn btn-primary ms-auto">{trans key='user.view'}</a>
                                         </div>

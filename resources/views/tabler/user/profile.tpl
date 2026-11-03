@@ -24,7 +24,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="subheader">{trans key='user.account_email'}</div>
                             </div>
-                            <div class="h1 mb-3">{$user->email}</div>
+                            <div class="h1 mb-3">{$user->email|escape}</div>
                         </div>
                     </div>
                 </div>
@@ -34,7 +34,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="subheader">{trans key='user.account_username'}</div>
                             </div>
-                            <div class="h1 mb-3">{$user->user_name}</div>
+                            <div class="h1 mb-3">{$user->user_name|escape}</div>
                         </div>
                     </div>
                 </div>
@@ -80,11 +80,11 @@
                                 <tbody>
                                     {foreach $subs as $sub}
                                     <tr>
-                                        <td>{$sub->type}</td>
-                                        <td>{$sub->request_user_agent}</td>
-                                        <td>{$sub->request_ip}</td>
-                                        <td>{$sub->location}</td>
-                                        <td>{$sub->request_time}</td>
+                                        <td>{$sub->type|escape}</td>
+                                        <td>{$sub->request_user_agent|escape}</td>
+                                        <td>{$sub->request_ip|escape}</td>
+                                        <td>{$sub->location|escape}</td>
+                                        <td>{$sub->request_time|escape}</td>
                                     </tr>
                                     {/foreach}
                                 </tbody>
@@ -113,9 +113,9 @@
                                 <tbody>
                                     {foreach $logins as $login}
                                     <tr>
-                                        <td>{$login->ip}</td>
-                                        <td>{$login->location}</td>
-                                        <td>{$login->datetime}</td>
+                                        <td>{$login->ip|escape}</td>
+                                        <td>{$login->location|escape}</td>
+                                        <td>{$login->datetime|escape}</td>
                                     </tr>
                                     {/foreach}
                                 </tbody>
@@ -142,10 +142,10 @@
                                 <tbody>
                                     {foreach $ips as $ip}
                                     <tr>
-                                        <td>{$ip->ip}</td>
-                                        <td>{$ip->location}</td>
-                                        <td>{$ip->node_name}</td>
-                                        <td>{$ip->last_time}</td>
+                                        <td>{$ip->ip|escape}</td>
+                                        <td>{$ip->location|escape}</td>
+                                        <td>{$ip->node_name|escape}</td>
+                                        <td>{$ip->last_time|escape}</td>
                                     </tr>
                                     {/foreach}
                                 </tbody>

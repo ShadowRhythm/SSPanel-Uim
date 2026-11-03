@@ -10,6 +10,7 @@ use App\Models\LoginIp;
 use App\Models\Node;
 use App\Models\OnlineLog;
 use App\Models\SubscribeLog;
+use App\Services\I18n;
 use App\Utils\Tools;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
@@ -25,6 +26,7 @@ final class ProfileController extends BaseController
      */
     public function index(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $logins = [];
         $subs = [];
         $ips = (new OnlineLog())->where('user_id', $this->user->id)
@@ -45,7 +47,7 @@ final class ProfileController extends BaseController
         foreach ($ips as $ip) {
             $ip->ip = str_replace('::ffff:', '', $ip->ip);
             $ip->location = Tools::getIpLocation($ip->ip);
-            $ip->node_name = $nodes[$ip->node_id] ?? '未知节点';
+            $ip->node_name = $nodes[$ip->node_id] ?? I18n::trans('user.unknown_node', $locale);
             $ip->last_time = Tools::toDateTime((int) $ip->last_time);
         }
 

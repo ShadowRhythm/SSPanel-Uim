@@ -37,7 +37,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-body">
-                            <div class="h1 my-2 mb-3">#{$ticket->id} {$ticket->title}</div>
+                            <div class="h1 my-2 mb-3">#{$ticket->id} {$ticket->title|escape}</div>
                         </div>
                     </div>
                 </div>
@@ -49,7 +49,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="subheader">{trans key='user.ticket_status'}</div>
                             </div>
-                            <div class="h1 mb-3">{$ticket->status}</div>
+                            <div class="h1 mb-3">{$ticket->status|escape}</div>
                         </div>
                     </div>
                 </div>
@@ -59,7 +59,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="subheader">{trans key='user.ticket_type'}</div>
                             </div>
-                            <div class="h1 mb-3">{$ticket->type}</div>
+                            <div class="h1 mb-3">{$ticket->type|escape}</div>
                         </div>
                     </div>
                 </div>
@@ -86,9 +86,9 @@
                                     <div class="row">
                                         <div class="col">
                                             <div>
-                                                {$comment->comment}
+                                                {$comment->comment|escape|nl2br}
                                             </div>
-                                            <div class="text-secondary my-1">{trans key='user.ticket_replied_at' name=$comment->commenter_name time=$comment->datetime}</div>
+                                            <div class="text-secondary my-1">{trans key='user.ticket_replied_at' name=$comment->commenter_name|escape time=$comment->datetime}</div>
                                         </div>
                                         <div class="col-auto">
                                             <div>

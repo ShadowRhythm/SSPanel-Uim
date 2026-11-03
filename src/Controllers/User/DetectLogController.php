@@ -9,6 +9,7 @@ use App\Models\Config;
 use App\Models\DetectLog;
 use App\Models\DetectRule;
 use App\Models\Node;
+use App\Services\I18n;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
@@ -34,18 +35,19 @@ final class DetectLogController extends BaseController
         $ruleIds = $logs->pluck('list_id')->unique()->filter();
         $nodes = ! $nodeIds->isEmpty() ? Node::whereIn('id', $nodeIds)->pluck('name', 'id') : collect();
         $rules = ! $ruleIds->isEmpty() ? DetectRule::whereIn('id', $ruleIds)->get()->keyBy('id') : collect();
+        $locale = I18n::getCurrentLocale($this->user);
 
         foreach ($logs as $log) {
-            $log->node_name = $nodes[$log->node_id] ?? '节点不存在';
+            $log->node_name = $nodes[$log->node_id] ?? I18n::trans('user.node_not_found', $locale);
             $rule = $rules[$log->list_id] ?? null;
             if ($rule !== null) {
                 $rule->type = $rule->type();
                 $log->rule = $rule;
             } else {
                 $dummyRule = new \stdClass();
-                $dummyRule->name = '规则不存在';
-                $dummyRule->text = '规则已被删除';
-                $dummyRule->type = '未知';
+                $dummyRule->name = I18n::trans('user.rule_not_found', $locale);
+                $dummyRule->text = I18n::trans('user.rule_deleted', $locale);
+                $dummyRule->type = I18n::trans('common.unknown', $locale);
                 $log->rule = $dummyRule;
             }
             $log->datetime = Tools::toDateTime((int) $log->datetime);
