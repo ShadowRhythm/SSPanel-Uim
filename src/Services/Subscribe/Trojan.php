@@ -59,7 +59,8 @@ final class Trojan extends Base
                 $transport_method = (string) ($node_custom_config['transport_method'] ?? '');
                 $servicename = (string) ($node_custom_config['servicename'] ?? '');
 
-                $raw_path = $node_custom_config['header']['request']['path'] ?? null;
+                $request = is_array($node_custom_config['header']['request'] ?? null) ? $node_custom_config['header']['request'] : [];
+                $raw_path = $request['path'] ?? null;
                 $header_path = is_array($raw_path) ? (string) ($raw_path[0] ?? '') : (is_string($raw_path) ? $raw_path : '');
                 $path = $header_path !== '' ? $header_path : (string) ($node_custom_config['path'] ?? '');
 

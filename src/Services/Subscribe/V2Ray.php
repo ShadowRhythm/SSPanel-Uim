@@ -58,13 +58,13 @@ final class V2Ray extends Base
                     : ['type' => 'none'];
                 $header_type = (string) ($header['type'] ?? '');
 
-                $raw_host = $node_custom_config['header']['request']['headers']['Host']
-                    ?? $node_custom_config['header']['request']['headers']['host']
-                    ?? null;
+                $request = is_array($node_custom_config['header']['request'] ?? null) ? $node_custom_config['header']['request'] : [];
+                $request_headers = is_array($request['headers'] ?? null) ? $request['headers'] : [];
+                $raw_host = $request_headers['Host'] ?? $request_headers['host'] ?? null;
                 $header_host = is_array($raw_host) ? (string) ($raw_host[0] ?? '') : (is_string($raw_host) ? $raw_host : '');
                 $host = $header_host !== '' ? $header_host : (string) ($node_custom_config['host'] ?? '');
 
-                $raw_path = $node_custom_config['header']['request']['path'] ?? null;
+                $raw_path = $request['path'] ?? null;
                 $header_path = is_array($raw_path) ? (string) ($raw_path[0] ?? '') : (is_string($raw_path) ? $raw_path : '');
                 $path = $header_path !== '' ? $header_path : (string) ($node_custom_config['path'] ?? '/');
 

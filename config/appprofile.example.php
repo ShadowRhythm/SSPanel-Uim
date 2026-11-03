@@ -774,12 +774,21 @@ $_ENV['Clash_Config'] = [
     'log-level' => 'error',
     'tcp-concurrent' => $_ENV['tcp_concurrent'],
     'external-controller' => '0.0.0.0:9091',
+    'tun' => [
+        'enable' => true,
+        'stack' => 'mixed',
+        'auto-route' => true,
+        'strict-route' => true,
+        'auto-detect-interface' => true,
+    ],
     'dns' => [
         'enable' => true,
         'ipv6' => false,
         'listen' => '0.0.0.0:1053',
         'enhanced-mode' => 'fake-ip',
         'fake-ip-range' => '198.18.0.1/16',
+        // Keep DNS resolution on Clash's rule path so it follows the selected proxy.
+        'respect-rules' => true,
         'fake-ip-filter' => [
             '*.lan',
             '*.local',
@@ -790,19 +799,17 @@ $_ENV['Clash_Config'] = [
             'localhost.ptlogin2.qq.com',
         ],
         'nameserver' => [
+            'https://1.1.1.1/dns-query',
+            'https://8.8.8.8/dns-query',
+        ],
+        // Resolve proxy server hostnames with stable bootstrap DNS.
+        'proxy-server-nameserver' => [
             '223.5.5.5',
             '119.29.29.29',
         ],
         'fallback' => [
             'https://1.1.1.1/dns-query',
             'https://8.8.8.8/dns-query',
-        ],
-        'fallback-filter' => [
-            'geoip' => true,
-            'geoip-code' => 'CN',
-            'ipcidr' => [
-                '240.0.0.0/4',
-            ],
         ],
     ],
 ];

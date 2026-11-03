@@ -197,14 +197,14 @@ final class QuantumultX extends Base
         $ws_opts = is_array($config['ws-opts'] ?? null) ? $config['ws-opts'] : (is_array($config['ws_opts'] ?? null) ? $config['ws_opts'] : []);
         $ws_headers = is_array($ws_opts['headers'] ?? null) ? $ws_opts['headers'] : [];
 
-        $raw_host = $config['header']['request']['headers']['Host']
-            ?? $config['header']['request']['headers']['host']
-            ?? null;
+        $request = is_array($config['header']['request'] ?? null) ? $config['header']['request'] : [];
+        $request_headers = is_array($request['headers'] ?? null) ? $request['headers'] : [];
+        $raw_host = $request_headers['Host'] ?? $request_headers['host'] ?? null;
         $header_host = is_array($raw_host) ? (string) ($raw_host[0] ?? '') : (is_string($raw_host) ? $raw_host : '');
         $host = $header_host !== '' ? $header_host :
             (string) ($ws_headers['Host'] ?? ($ws_headers['host'] ?? ($config['host'] ?? ($config['sni'] ?? ''))));
 
-        $raw_path = $config['header']['request']['path'] ?? null;
+        $raw_path = $request['path'] ?? null;
         $header_path = is_array($raw_path) ? (string) ($raw_path[0] ?? '') : (is_string($raw_path) ? $raw_path : '');
         $path = $header_path !== '' ? $header_path :
             (string) ($ws_opts['path'] ?? ($config['path'] ?? ''));
@@ -274,14 +274,14 @@ final class QuantumultX extends Base
         $ws_opts = is_array($config['ws-opts'] ?? null) ? $config['ws-opts'] : (is_array($config['ws_opts'] ?? null) ? $config['ws_opts'] : []);
         $ws_headers = is_array($ws_opts['headers'] ?? null) ? $ws_opts['headers'] : [];
 
-        $raw_host = $config['header']['request']['headers']['Host']
-            ?? $config['header']['request']['headers']['host']
-            ?? null;
+        $request = is_array($config['header']['request'] ?? null) ? $config['header']['request'] : [];
+        $request_headers = is_array($request['headers'] ?? null) ? $request['headers'] : [];
+        $raw_host = $request_headers['Host'] ?? $request_headers['host'] ?? null;
         $header_host = is_array($raw_host) ? (string) ($raw_host[0] ?? '') : (is_string($raw_host) ? $raw_host : '');
         $host = $header_host !== '' ? $header_host :
             (string) ($ws_headers['Host'] ?? ($ws_headers['host'] ?? ($config['host'] ?? ($config['sni'] ?? ''))));
 
-        $raw_path = $config['header']['request']['path'] ?? null;
+        $raw_path = $request['path'] ?? null;
         $header_path = is_array($raw_path) ? (string) ($raw_path[0] ?? '') : (is_string($raw_path) ? $raw_path : '');
         $path = $header_path !== '' ? $header_path :
             (string) ($ws_opts['path'] ?? ($config['path'] ?? ''));
