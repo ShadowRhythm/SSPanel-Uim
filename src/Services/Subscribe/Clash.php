@@ -156,10 +156,10 @@ final class Clash extends Base
                         ? $node_custom_config['grpc-opts']
                         : (is_array($node_custom_config['grpc_opts'] ?? null) ? $node_custom_config['grpc_opts'] : null);
 
-                    $request_headers = is_array($node_custom_config['header']['request']['headers'] ?? null)
-                        ? $node_custom_config['header']['request']['headers'] : [];
+                    $request = is_array($node_custom_config['header']['request'] ?? null)
+                        ? $node_custom_config['header']['request'] : [];
+                    $request_headers = is_array($request['headers'] ?? null) ? $request['headers'] : [];
                     $raw_host = $request_headers['Host'] ?? $request_headers['host'] ?? null;
-                        ?? null;
                     $header_host = is_array($raw_host) ? (string) ($raw_host[0] ?? '') : (is_string($raw_host) ? $raw_host : '');
                     $host = $header_host !== '' ? $header_host : (string) ($node_custom_config['host'] ?? ($node_custom_config['sni'] ?? ''));
 
