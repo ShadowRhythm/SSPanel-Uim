@@ -53,6 +53,8 @@ final class ErrorHandler implements MiddlewareInterface
         } catch (Throwable $e) {
             $response_factory = AppFactory::determineResponseFactory();
 
+            error_log((string) $e);
+
             if ($_ENV['sentry_dsn'] !== '') {
                 captureException($e);
             }
@@ -62,7 +64,9 @@ final class ErrorHandler implements MiddlewareInterface
                 $error_handler = new SlimErrorHandler($callable_resolver, $response_factory);
                 $response = $error_handler($request, $e, true, true, false);
             } else {
-                $response = $response_factory->createResponse(500);
+                $response = $response_factory->createResponse(500)
+                    ->withHeader('X-Error-Message', rawurlencode($e->getMessage()))
+                    ->withHeader('X-Error-File', rawurlencode($e->getFile() . ':' . $e->getLine()));
                 $smarty = View::getSmarty();
                 $response->getBody()->write($smarty->fetch('500.tpl'));
             }

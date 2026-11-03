@@ -56,12 +56,16 @@ final class SubController extends BaseController
         }
 
         if ($_ENV['enable_rate_limit'] ?? false) {
-            $rateLimit = new RateLimit();
-            $remote_addr = (string) ($request->getServerParam('REMOTE_ADDR') ?? '127.0.0.1');
-            if (! $rateLimit->checkRateLimit('sub_ip', $remote_addr) ||
-                ! $rateLimit->checkRateLimit('sub_token', $token)
-            ) {
-                return ResponseHelper::error($response, $err_msg);
+            try {
+                $rateLimit = new RateLimit();
+                $remote_addr = (string) ($request->getServerParam('REMOTE_ADDR') ?? '127.0.0.1');
+                if (! $rateLimit->checkRateLimit('sub_ip', $remote_addr) ||
+                    ! $rateLimit->checkRateLimit('sub_token', $token)
+                ) {
+                    return ResponseHelper::error($response, $err_msg);
+                }
+            } catch (Throwable $e) {
+                error_log('RateLimit check failed in SubController: ' . $e->getMessage());
             }
         }
 
@@ -84,10 +88,13 @@ final class SubController extends BaseController
             try {
                 $sub_info = Subscribe::getContent($user, $subtype);
                 Cache::set($cacheKey, $sub_info, 60);
-            } catch (Throwable) {
-                return ResponseHelper::error($response, $err_msg);
+            } catch (Throwable $e) {
+                error_log('Subscribe::getContent failed for user ' . $user->id . ' type ' . $subtype . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+                return ResponseHelper::error($response, $err_msg . ' (Error: ' . $e->getMessage() . ')');
             }
         }
+
+        $sub_info = (string) $sub_info;
 
         $content_type = match ($subtype) {
             'clash' => 'application/yaml',
@@ -107,11 +114,15 @@ final class SubController extends BaseController
         $sub_profile_web_page_url = (string) ($_ENV['baseUrl'] ?? '');
 
         if (Config::obtain('subscribe_log')) {
-            (new SubscribeLog())->add(
-                $user,
-                $subtype,
-                $this->antiXss->xss_clean($request->getHeaderLine('User-Agent'))
-            );
+            try {
+                (new SubscribeLog())->add(
+                    $user,
+                    $subtype,
+                    $this->antiXss->xss_clean($request->getHeaderLine('User-Agent'))
+                );
+            } catch (Throwable $e) {
+                error_log('SubscribeLog add failed: ' . $e->getMessage());
+            }
         }
 
         if ($subtype === 'clash') {
