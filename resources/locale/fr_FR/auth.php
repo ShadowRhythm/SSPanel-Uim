@@ -55,4 +55,11 @@ return [
     'reset_email_tip' => 'Si vous n\'avez pas reçu l\'e-mail, veuillez vérifier votre dossier spam et ajouter nos e-mails à la liste blanche (déplacer vers la boîte de réception) !',
     'registration_closed' => 'Les inscriptions sont actuellement fermées. Veuillez revenir dans quelques jours.',
     'mfa_notice' => 'L\'authentification à deux facteurs est activée pour votre compte. Pour votre sécurité, veuillez effectuer une vérification d\'identité supplémentaire.',
+    'oauth_request_failed' => 'La requête OAuth a échoué',
+    'slack_already_bound' => 'Le compte Slack est déjà lié',
+    'discord_already_bound' => 'Le compte Discord est déjà lié',
+    'please_login_first' => 'Veuillez d\'abord vous connecter',
+    'telegram_already_bound_unbind_first' => 'Vous avez déjà lié Telegram. Veuillez d\'abord le délier pour changer de compte',
+    'telegram_already_bound' => 'Le compte Telegram est déjà lié',
+    'bind_success' => 'Lié avec succès',
 ];

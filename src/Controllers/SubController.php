@@ -15,8 +15,12 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use RedisException;
 use Telegram\Bot\Exceptions\TelegramSDKException;
+use Throwable;
 use function in_array;
+use function parse_url;
 use function strtotime;
+use const PHP_URL_HOST;
+use const PHP_URL_PORT;
 
 final class SubController extends BaseController
 {
@@ -29,21 +33,31 @@ final class SubController extends BaseController
     public function index($request, $response, $args): ResponseInterface
     {
         $err_msg = '订阅链接无效';
-        $subtype = $args['subtype'];
+        $subtype = (string) ($args['subtype'] ?? '');
         $subtype_list = ['json', 'clash', 'sip008', 'singbox', 'v2rayjson', 'sip002', 'ss', 'v2ray', 'trojan', 'qx'];
 
-        if (! $_ENV['Subscribe'] ||
+        $host = $request->getHeaderLine('Host');
+        $sub_url = (string) ($_ENV['subUrl'] ?? '');
+        $sub_host = (string) parse_url($sub_url, PHP_URL_HOST);
+        $sub_port = parse_url($sub_url, PHP_URL_PORT);
+        $expected_host = $sub_host . ($sub_port ? ':' . $sub_port : '');
+
+        if (! ($_ENV['Subscribe'] ?? false) ||
             ! in_array($subtype, $subtype_list) ||
-            'https://' . $request->getHeaderLine('Host') !== $_ENV['subUrl']
+            ($host !== $expected_host && 'https://' . $host !== $sub_url && 'http://' . $host !== $sub_url)
         ) {
             return ResponseHelper::error($response, $err_msg);
         }
 
-        $token = $this->antiXss->xss_clean($args['token']);
+        $token = $this->antiXss->xss_clean($args['token'] ?? '');
+        if ($token === '') {
+            return ResponseHelper::error($response, $err_msg);
+        }
 
-        if ($_ENV['enable_rate_limit']) {
+        if ($_ENV['enable_rate_limit'] ?? false) {
             $rateLimit = new RateLimit();
-            if (! $rateLimit->checkRateLimit('sub_ip', $request->getServerParam('REMOTE_ADDR')) ||
+            $remote_addr = (string) ($request->getServerParam('REMOTE_ADDR') ?? '127.0.0.1');
+            if (! $rateLimit->checkRateLimit('sub_ip', $remote_addr) ||
                 ! $rateLimit->checkRateLimit('sub_token', $token)
             ) {
                 return ResponseHelper::error($response, $err_msg);
@@ -57,7 +71,21 @@ final class SubController extends BaseController
         }
 
         $user = $link->user();
-        $sub_info = Subscribe::getContent($user, $subtype);
+        if ($user === null) {
+            return ResponseHelper::error($response, $err_msg);
+        }
+
+        $cacheKey = 'sub_content_' . $user->id . '_' . $token . '_' . $subtype;
+        $sub_info = Cache::get($cacheKey);
+
+        if ($sub_info === null || ! is_string($sub_info)) {
+            try {
+                $sub_info = Subscribe::getContent($user, $subtype);
+                Cache::set($cacheKey, $sub_info, 60);
+            } catch (Throwable) {
+                return ResponseHelper::error($response, $err_msg);
+            }
+        }
 
         $content_type = match ($subtype) {
             'clash' => 'application/yaml',
@@ -65,14 +93,16 @@ final class SubController extends BaseController
             default => 'text/plain',
         };
 
-        $sub_details = ' upload=' . $user->u
-        . '; download=' . $user->d
-        . '; total=' . $user->transfer_enable
-        . '; expire=' . strtotime($user->class_expire);
+        $expire = ! empty($user->class_expire) ? (strtotime((string) $user->class_expire) ?: 0) : 0;
+        $sub_details = ' upload=' . (int) ($user->u ?? 0)
+            . '; download=' . (int) ($user->d ?? 0)
+            . '; total=' . (int) ($user->transfer_enable ?? 0)
+            . '; expire=' . $expire;
+
         // Clash specific
-        $sub_content_disposition = 'attachment; filename=' . $_ENV['appName'];
+        $sub_content_disposition = 'attachment; filename=' . ($_ENV['appName'] ?? 'SSPanel');
         $sub_profile_update_interval = 6;
-        $sub_profile_web_page_url = $_ENV['baseUrl'];
+        $sub_profile_web_page_url = (string) ($_ENV['baseUrl'] ?? '');
 
         if (Config::obtain('subscribe_log')) {
             (new SubscribeLog())->add(

@@ -53,13 +53,22 @@ abstract class Base
 
     abstract public static function getPurchaseHTML(): string;
 
-    public function postPayment(string $trade_no): void
+    public function postPayment(string $trade_no, ?float $actual_amount = null): void
     {
-        DB::transaction(function () use ($trade_no): void {
+        DB::transaction(function () use ($trade_no, $actual_amount): void {
             $paylist = (new Paylist())->where('tradeno', $trade_no)->lockForUpdate()->first();
 
             if ($paylist === null || $paylist->status !== 0) {
                 return;
+            }
+
+            if ($actual_amount !== null) {
+                if ((float) $actual_amount < (float) $paylist->total - 0.01) {
+                    return;
+                }
+                if ((float) $actual_amount > (float) $paylist->total) {
+                    $paylist->total = (float) $actual_amount;
+                }
             }
 
             $paylist->datetime = time();
@@ -93,14 +102,29 @@ abstract class Base
 
             $user = (new User())->where('id', $paylist->userid)->lockForUpdate()->first();
 
-            if ($user !== null && $invoice !== null && (float) $paylist->total > (float) $invoice->price) {
-                $money_before = $user->money;
+            if ($user !== null && $invoice !== null && $invoice->status === 'cancelled') {
+                $money_before = (float) $user->money;
+                $user->money += (float) $paylist->total;
+                $user->save();
+                $invoice->status = 'refunded_balance';
+                $invoice->update_time = time();
+                $invoice->pay_time = time();
+                $invoice->save();
+                (new UserMoneyLog())->add(
+                    $user->id,
+                    $money_before,
+                    (float) $user->money,
+                    (float) $paylist->total,
+                    '已取消账单 #' . $invoice->id . ' 支付自动退款至余额'
+                );
+            } elseif ($user !== null && $invoice !== null && (float) $paylist->total > (float) $invoice->price) {
+                $money_before = (float) $user->money;
                 $user->money += (float) $paylist->total - (float) $invoice->price;
                 $user->save();
                 (new UserMoneyLog())->add(
                     $user->id,
                     $money_before,
-                    $user->money,
+                    (float) $user->money,
                     (float) $paylist->total - (float) $invoice->price,
                     '超额支付账单 #' . $invoice->id
                 );

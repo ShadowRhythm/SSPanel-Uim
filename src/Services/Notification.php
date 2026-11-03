@@ -45,6 +45,23 @@ final class Notification
      * @throws TelegramSDKException
      * @throws ClientExceptionInterface
      */
+    public static function notifyAdminTrans(string $titleKey, string $msgKey, array $params = [], string $template = 'warn.tpl'): void
+    {
+        $admins = (new User())->where('is_admin', 1)->get();
+
+        foreach ($admins as $admin) {
+            $locale = I18n::getCurrentLocale($admin);
+            $title = I18n::trans($titleKey, $locale, $params);
+            $msg = I18n::trans($msgKey, $locale, $params);
+            self::notifyUser($admin, $title, $msg, $template);
+        }
+    }
+
+    /**
+     * @throws GuzzleException
+     * @throws TelegramSDKException
+     * @throws ClientExceptionInterface
+     */
     public static function notifyUser($user, $title = '', $msg = '', $template = 'warn.tpl'): void
     {
         if ($user->contact_method === 1 || $user->im_type === 0) {

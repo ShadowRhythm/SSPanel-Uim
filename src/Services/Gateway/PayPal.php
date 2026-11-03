@@ -11,6 +11,7 @@ use App\Services\Auth;
 use App\Services\Exchange;
 use App\Services\View;
 use Exception;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface;
 use RedisException;
@@ -19,6 +20,15 @@ use Slim\Http\ServerRequest;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 use Throwable;
 use voku\helper\AntiXSS;
+use function http_build_query;
+use function is_array;
+use function is_string;
+use function json_decode;
+use function parse_str;
+use function str_contains;
+use function str_ends_with;
+use function str_starts_with;
+use function trim;
 
 final class PayPal extends Base
 {
@@ -66,13 +76,28 @@ final class PayPal extends Base
 
     public function purchase(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $user = Auth::getUser();
+        if ($user === null) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => 'Please login first',
+            ]);
+        }
+
         $invoice_id = $this->antiXss->xss_clean($request->getParam('invoice_id'));
         $invoice = (new Invoice())->find($invoice_id);
 
-        if ($invoice === null) {
+        if ($invoice === null || $invoice->user_id !== $user->id) {
             return $response->withJson([
                 'ret' => 0,
                 'msg' => 'Invoice not found',
+            ]);
+        }
+
+        if ($invoice->status !== 'unpaid' && $invoice->status !== 'partially_paid') {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => 'Invoice is not payable',
             ]);
         }
 
@@ -85,7 +110,6 @@ final class PayPal extends Base
             ]);
         }
 
-        $user = Auth::getUser();
         $pl = (new Paylist())->where('invoice_id', $invoice_id)->first();
 
         if ($pl === null) {
@@ -141,29 +165,109 @@ final class PayPal extends Base
 
     public function notify($request, $response, $args): ResponseInterface
     {
-        $webhook_data = json_decode($request->getBody()->getContents(), true);
+        $raw_body = (string) $request->getBody();
+        $contentType = $request->getHeaderLine('Content-Type');
 
-        try {
-            $pp = new PayPalClient($this->gateway_config);
-            $pp->getAccessToken();
-            $verify_result = $pp->verifyWebHook($webhook_data);
-        } catch (Throwable) {
-            return $response->withJson([
-                'ret' => 0,
-                'msg' => 'PayPal API Error',
-            ]);
+        // Check if incoming request is a JSON Webhook
+        if (str_contains($contentType, 'application/json') || (str_starts_with(trim($raw_body), '{') && str_ends_with(trim($raw_body), '}'))) {
+            $webhook_data = json_decode($raw_body, true);
+
+            if (! is_array($webhook_data) || ! isset($webhook_data['event_type'])) {
+                return $response->withStatus(400)->withJson(['ret' => 0, 'msg' => 'Invalid webhook payload']);
+            }
+
+            try {
+                $pp = new PayPalClient($this->gateway_config);
+                $pp->getAccessToken();
+
+                $authAlgo = $request->getHeaderLine('PAYPAL-AUTH-ALGO');
+                $certUrl = $request->getHeaderLine('PAYPAL-CERT-URL');
+                $transmissionId = $request->getHeaderLine('PAYPAL-TRANSMISSION-ID');
+                $transmissionSig = $request->getHeaderLine('PAYPAL-TRANSMISSION-SIG');
+                $transmissionTime = $request->getHeaderLine('PAYPAL-TRANSMISSION-TIME');
+                $webhookId = Config::obtain('paypal_webhook_id');
+
+                $verified = false;
+
+                if ($webhookId !== '' && $transmissionId !== '' && $transmissionSig !== '') {
+                    $verifyResult = $pp->verifyWebHook([
+                        'auth_algo' => $authAlgo,
+                        'cert_url' => $certUrl,
+                        'transmission_id' => $transmissionId,
+                        'transmission_sig' => $transmissionSig,
+                        'transmission_time' => $transmissionTime,
+                        'webhook_id' => $webhookId,
+                        'webhook_event' => $webhook_data,
+                    ]);
+                    $verified = ($verifyResult['verification_status'] ?? '') === 'SUCCESS';
+                }
+
+                if ($webhook_data['event_type'] === 'PAYMENT.CAPTURE.COMPLETED') {
+                    $resource = $webhook_data['resource'] ?? [];
+                    $captureId = $resource['id'] ?? null;
+                    $tradeNo = $resource['invoice_id'] ?? null;
+
+                    // Query PayPal API directly for capture status if webhook signature couldn't be checked locally
+                    if (! $verified && is_string($captureId) && $captureId !== '') {
+                        $captureDetails = $pp->showCapturedPaymentDetails($captureId);
+                        if (($captureDetails['status'] ?? '') === 'COMPLETED') {
+                            $verified = true;
+                            $tradeNo = $captureDetails['invoice_id'] ?? $tradeNo;
+                        }
+                    }
+
+                    if ($verified && is_string($tradeNo) && $tradeNo !== '' && ($resource['status'] ?? '') === 'COMPLETED') {
+                        $this->postPayment($tradeNo);
+                        return $response->withStatus(204);
+                    }
+                }
+
+                // Return 200 for other event types so PayPal does not continuously retry
+                return $response->withStatus(200)->withJson(['ret' => 1, 'msg' => 'Event ignored']);
+            } catch (Throwable) {
+                return $response->withStatus(400)->withJson([
+                    'ret' => 0,
+                    'msg' => 'PayPal API Error',
+                ]);
+            }
         }
 
-        if ($verify_result['verification_status'] === 'SUCCESS' &&
-            $webhook_data['event_type'] === 'PAYMENT.CAPTURE.COMPLETED' &&
-            $webhook_data['resource']['status'] === 'COMPLETED'
-        ) {
-            $this->postPayment($webhook_data['resource']['invoice_id']);
-
-            return $response->withStatus(204);
+        // Handle PayPal IPN (Instant Payment Notification)
+        $params = (array) ($request->getParsedBody() ?: $_POST);
+        if (empty($params) && ! empty($raw_body)) {
+            parse_str($raw_body, $params);
         }
 
-        return $response->withStatus(400);
+        if (! empty($params)) {
+            $paypalUrl = ($this->gateway_config['mode'] === 'sandbox')
+                ? 'https://ipnpb.sandbox.paypal.com/cgi-bin/webscr'
+                : 'https://ipnpb.paypal.com/cgi-bin/webscr';
+
+            $client = new Client();
+            try {
+                $postbackBody = 'cmd=_notify-validate&' . http_build_query($params);
+                $res = $client->request('POST', $paypalUrl, [
+                    'body' => $postbackBody,
+                    'headers' => ['User-Agent' => 'SSPanel-PayPal-IPN'],
+                    'timeout' => 15,
+                ]);
+
+                $resBody = trim($res->getBody()->__toString());
+                if ($resBody === 'VERIFIED') {
+                    $paymentStatus = $params['payment_status'] ?? '';
+                    $tradeNo = $params['invoice'] ?? $params['custom'] ?? '';
+
+                    if ($paymentStatus === 'Completed' && is_string($tradeNo) && $tradeNo !== '') {
+                        $this->postPayment($tradeNo);
+                        return $response->write('success');
+                    }
+                }
+            } catch (Throwable) {
+                return $response->write('failed');
+            }
+        }
+
+        return $response->write('failed');
     }
 
     /**

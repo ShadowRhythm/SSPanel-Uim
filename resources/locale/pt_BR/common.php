@@ -108,4 +108,6 @@ return [
     'dt_last' => 'Última',
     'dt_sort_ascending' => ': ativar para ordenar coluna de forma ascendente',
     'dt_sort_descending' => ': ativar para ordenar coluna de forma descendente',
+    'request_failed' => 'Falha na solicitação: %message%',
+    'unknown' => 'Desconhecido',
 ];

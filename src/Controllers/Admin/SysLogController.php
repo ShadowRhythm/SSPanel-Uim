@@ -11,7 +11,9 @@ use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
 use Smarty\Exception;
+use function in_array;
 use function strlen;
+use function strtolower;
 
 final class SysLogController extends BaseController
 {
@@ -87,10 +89,12 @@ final class SysLogController extends BaseController
                 ->orWhere('channel', 'LIKE', "%{$search}%");
         }
 
-        $order = $request->getParam('order')[0]['dir'];
+        $whitelist = ['id', 'user_id', 'ip', 'message', 'level', 'context', 'channel', 'datetime'];
+        $order = strtolower((string) ($request->getParam('order')[0]['dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
 
         if ($request->getParam('order')[0]['column'] !== '0') {
-            $order_by = $request->getParam('columns')[$request->getParam('order')[0]['column']]['data'];
+            $column_data = $request->getParam('columns')[$request->getParam('order')[0]['column']]['data'] ?? 'id';
+            $order_by = in_array($column_data, $whitelist, true) ? $column_data : 'id';
             $syslog->orderBy($order_by, $order)->orderBy('id', 'desc');
         } else {
             $syslog->orderBy('id', $order);

@@ -10,7 +10,11 @@ use App\Utils\Tools;
 use function base64_encode;
 use function implode;
 use function is_array;
+use function is_string;
 use function json_decode;
+use function json_last_error;
+use function trim;
+use const JSON_ERROR_NONE;
 use const PHP_EOL;
 
 /**
@@ -38,38 +42,50 @@ final class QuantumultX extends Base
         $nodes_raw = Subscribe::getUserNodes($user);
 
         foreach ($nodes_raw as $node_raw) {
-            $node_custom_config = json_decode($node_raw->custom_config, true);
-            $name = $node_raw->name;
-            $server = $node_raw->server;
+            $server = trim((string) ($node_raw->server ?? ''));
+            if ($server === '') {
+                continue;
+            }
+
+            $node_custom_config = [];
+            if (! empty($node_raw->custom_config)) {
+                $decoded = json_decode((string) $node_raw->custom_config, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $node_custom_config = $decoded;
+                }
+            }
+
+            $name = (string) ($node_raw->name ?? '');
 
             $line = match ((int) $node_raw->sort) {
                 // Shadowsocks (Legacy)
                 0 => $this->buildShadowsocks(
                     $server,
-                    (int) $user->port,
-                    $user->method,
-                    $user->passwd,
+                    (int) ($node_custom_config['offset_port_user'] ??
+                        ($node_custom_config['offset_port_node'] ?? $user->port)),
+                    (string) ($user->method ?? ''),
+                    (string) ($user->passwd ?? ''),
                     $name,
                     $node_custom_config
                 ),
                 // Shadowsocks 2022
                 1 => $this->buildShadowsocks2022(
                     $server,
-                    $user->passwd,
+                    (string) ($user->passwd ?? ''),
                     $name,
                     $node_custom_config
                 ),
                 // VMess
                 11 => $this->buildVMess(
                     $server,
-                    $user->uuid,
+                    (string) ($user->uuid ?? ''),
                     $name,
                     $node_custom_config
                 ),
                 // Trojan
                 14 => $this->buildTrojan(
                     $server,
-                    $user->uuid,
+                    (string) ($user->uuid ?? ''),
                     $name,
                     $node_custom_config
                 ),
@@ -93,12 +109,12 @@ final class QuantumultX extends Base
         string $method,
         string $password,
         string $name,
-        array $config
+        array $config = []
     ): string {
-        $plugin = $config['plugin'] ?? '';
+        if ($port <= 0 || $method === '' || $password === '') {
+            return '';
+        }
 
-        // QX 支持的混淆：tls / http / ws / wss
-        // 普通 SS 暂不添加 obfs，可按需扩展
         $parts = [
             "shadowsocks={$server}:{$port}",
             "method={$method}",
@@ -117,11 +133,19 @@ final class QuantumultX extends Base
         string $server,
         string $passwd,
         string $name,
-        array $config
+        array $config = []
     ): string {
-        $port = $config['offset_port_user'] ?? ($config['offset_port_node'] ?? 443);
-        $method = $config['method'] ?? '2022-blake3-aes-128-gcm';
-        $server_key = $config['server_key'] ?? '';
+        if ($passwd === '') {
+            return '';
+        }
+
+        $port = (int) ($config['offset_port_user'] ?? ($config['offset_port_node'] ?? 443));
+        if ($port <= 0) {
+            return '';
+        }
+
+        $method = (string) ($config['method'] ?? '2022-blake3-aes-128-gcm');
+        $server_key = (string) ($config['server_key'] ?? '');
         $user_pk = Tools::genSs2022UserPk($passwd, $method);
 
         if (! $user_pk) {
@@ -154,27 +178,36 @@ final class QuantumultX extends Base
         string $server,
         string $uuid,
         string $name,
-        array $config
+        array $config = []
     ): string {
-        $port = $config['offset_port_user'] ?? ($config['offset_port_node'] ?? 443);
-        $security = $config['security'] ?? 'none';
-        $network = $config['network'] ?? 'tcp';
+        if ($uuid === '') {
+            return '';
+        }
+
+        $port = (int) ($config['offset_port_user'] ?? ($config['offset_port_node'] ?? 443));
+        if ($port <= 0) {
+            return '';
+        }
+
+        $security = (string) ($config['security'] ?? 'none');
+        $network = (string) ($config['network'] ?? 'tcp');
         $allow_insecure = (bool) ($config['allow_insecure'] ?? false);
 
-        // 从多种来源读取 host/sni 和 path
+        // 从多种来源读取 host/sni 和 path，防止字符串单个字符切片
         $ws_opts = is_array($config['ws-opts'] ?? null) ? $config['ws-opts'] : (is_array($config['ws_opts'] ?? null) ? $config['ws_opts'] : []);
         $ws_headers = is_array($ws_opts['headers'] ?? null) ? $ws_opts['headers'] : [];
 
-        $host = $config['header']['request']['headers']['Host'][0]
-            ?? $ws_headers['Host']
-            ?? $ws_headers['host']
-            ?? $config['host']
-            ?? '';
+        $raw_host = $config['header']['request']['headers']['Host']
+            ?? $config['header']['request']['headers']['host']
+            ?? null;
+        $header_host = is_array($raw_host) ? (string) ($raw_host[0] ?? '') : (is_string($raw_host) ? $raw_host : '');
+        $host = $header_host !== '' ? $header_host :
+            (string) ($ws_headers['Host'] ?? ($ws_headers['host'] ?? ($config['host'] ?? ($config['sni'] ?? ''))));
 
-        $path = $config['header']['request']['path'][0]
-            ?? $ws_opts['path']
-            ?? $config['path']
-            ?? '';
+        $raw_path = $config['header']['request']['path'] ?? null;
+        $header_path = is_array($raw_path) ? (string) ($raw_path[0] ?? '') : (is_string($raw_path) ? $raw_path : '');
+        $path = $header_path !== '' ? $header_path :
+            (string) ($ws_opts['path'] ?? ($config['path'] ?? ''));
 
         $tls_enabled = $security === 'tls';
 
@@ -187,7 +220,7 @@ final class QuantumultX extends Base
             "password={$uuid}",
         ];
 
-        if ($network === 'ws') {
+        if ($network === 'ws' || $network === 'httpupgrade') {
             // WebSocket 模式
             $obfs = $tls_enabled ? 'wss' : 'ws';
             $parts[] = "obfs={$obfs}";
@@ -224,35 +257,42 @@ final class QuantumultX extends Base
         string $server,
         string $password,
         string $name,
-        array $config
+        array $config = []
     ): string {
-        $port = $config['offset_port_user'] ?? ($config['offset_port_node'] ?? 443);
-        $network = $config['network'] ?? 'tcp';
+        if ($password === '') {
+            return '';
+        }
+
+        $port = (int) ($config['offset_port_user'] ?? ($config['offset_port_node'] ?? 443));
+        if ($port <= 0) {
+            return '';
+        }
+
+        $network = (string) ($config['network'] ?? 'tcp');
         $allow_insecure = (bool) ($config['allow_insecure'] ?? false);
 
         $ws_opts = is_array($config['ws-opts'] ?? null) ? $config['ws-opts'] : (is_array($config['ws_opts'] ?? null) ? $config['ws_opts'] : []);
         $ws_headers = is_array($ws_opts['headers'] ?? null) ? $ws_opts['headers'] : [];
 
-        $host = $config['header']['request']['headers']['Host'][0]
-            ?? $ws_headers['Host']
-            ?? $ws_headers['host']
-            ?? $config['host']
-            ?? $config['sni']
-            ?? '';
+        $raw_host = $config['header']['request']['headers']['Host']
+            ?? $config['header']['request']['headers']['host']
+            ?? null;
+        $header_host = is_array($raw_host) ? (string) ($raw_host[0] ?? '') : (is_string($raw_host) ? $raw_host : '');
+        $host = $header_host !== '' ? $header_host :
+            (string) ($ws_headers['Host'] ?? ($ws_headers['host'] ?? ($config['host'] ?? ($config['sni'] ?? ''))));
 
-        $path = $config['header']['request']['path'][0]
-            ?? $ws_opts['path']
-            ?? $config['path']
-            ?? '';
+        $raw_path = $config['header']['request']['path'] ?? null;
+        $header_path = is_array($raw_path) ? (string) ($raw_path[0] ?? '') : (is_string($raw_path) ? $raw_path : '');
+        $path = $header_path !== '' ? $header_path :
+            (string) ($ws_opts['path'] ?? ($config['path'] ?? ''));
 
         $parts = [
             "trojan={$server}:{$port}",
             "password={$password}",
         ];
 
-        if ($network === 'ws') {
+        if ($network === 'ws' || $network === 'httpupgrade') {
             // Trojan over WebSocket + TLS (wss)
-            // QX 文档说：使用 wss 时不要设置 over-tls 和 tls-host，改用 obfs=wss 和 obfs-host
             $parts[] = 'obfs=wss';
             if ($host !== '') {
                 $parts[] = "obfs-host={$host}";
@@ -281,12 +321,12 @@ final class QuantumultX extends Base
      */
     public function getProfileContent($user): string
     {
-        $qx_config = $_ENV['QuantumultX_Config'] ?? [];
+        $qx_config = is_array($_ENV['QuantumultX_Config'] ?? null) ? $_ENV['QuantumultX_Config'] : [];
         $sections = [];
 
         // [general]
         $general = ['[general]'];
-        if (isset($qx_config['general'])) {
+        if (isset($qx_config['general']) && is_array($qx_config['general'])) {
             foreach ($qx_config['general'] as $k => $v) {
                 $general[] = "{$k}={$v}";
             }
@@ -295,7 +335,7 @@ final class QuantumultX extends Base
 
         // [dns]
         $dns = ['[dns]'];
-        if (isset($qx_config['dns']['servers'])) {
+        if (isset($qx_config['dns']['servers']) && is_array($qx_config['dns']['servers'])) {
             foreach ($qx_config['dns']['servers'] as $server) {
                 $dns[] = "server={$server}";
             }
@@ -304,7 +344,7 @@ final class QuantumultX extends Base
 
         // [policy]
         $policy = ['[policy]'];
-        if (isset($qx_config['policy'])) {
+        if (isset($qx_config['policy']) && is_array($qx_config['policy'])) {
             foreach ($qx_config['policy'] as $p) {
                 $policy[] = $p;
             }
@@ -320,13 +360,13 @@ final class QuantumultX extends Base
             $link->token = Tools::genSubToken();
             $link->save();
         }
-        $sub_url = $_ENV['subUrl'] . '/sub/' . $link->token . '/qx';
+        $sub_url = ($_ENV['subUrl'] ?? '') . '/sub/' . $link->token . '/qx';
         $server_remote[] = "{$sub_url}, tag=" . ($_ENV['appName'] ?? 'SSPanel') . ', update-interval=86400, opt-parser=false, enabled=true';
         $sections[] = implode(PHP_EOL, $server_remote);
 
         // [server_local]
         $server_local = ['[server_local]'];
-        if (isset($qx_config['server_local'])) {
+        if (isset($qx_config['server_local']) && is_array($qx_config['server_local'])) {
             foreach ($qx_config['server_local'] as $sl) {
                 $server_local[] = $sl;
             }
@@ -335,7 +375,7 @@ final class QuantumultX extends Base
 
         // [filter_remote]
         $filter_remote = ['[filter_remote]'];
-        if (isset($qx_config['filter_remote'])) {
+        if (isset($qx_config['filter_remote']) && is_array($qx_config['filter_remote'])) {
             foreach ($qx_config['filter_remote'] as $fr) {
                 $filter_remote[] = $fr;
             }
@@ -344,7 +384,7 @@ final class QuantumultX extends Base
 
         // [filter_local]
         $filter_local = ['[filter_local]'];
-        if (isset($qx_config['filter_local'])) {
+        if (isset($qx_config['filter_local']) && is_array($qx_config['filter_local'])) {
             foreach ($qx_config['filter_local'] as $fl) {
                 $filter_local[] = $fl;
             }
@@ -353,7 +393,7 @@ final class QuantumultX extends Base
 
         // [rewrite_remote]
         $rewrite_remote = ['[rewrite_remote]'];
-        if (isset($qx_config['rewrite_remote'])) {
+        if (isset($qx_config['rewrite_remote']) && is_array($qx_config['rewrite_remote'])) {
             foreach ($qx_config['rewrite_remote'] as $rr) {
                 $rewrite_remote[] = $rr;
             }
@@ -362,7 +402,7 @@ final class QuantumultX extends Base
 
         // [rewrite_local]
         $rewrite_local = ['[rewrite_local]'];
-        if (isset($qx_config['rewrite_local'])) {
+        if (isset($qx_config['rewrite_local']) && is_array($qx_config['rewrite_local'])) {
             foreach ($qx_config['rewrite_local'] as $rl) {
                 $rewrite_local[] = $rl;
             }
@@ -371,7 +411,7 @@ final class QuantumultX extends Base
 
         // [mitm]
         $mitm = ['[mitm]'];
-        if (isset($qx_config['mitm'])) {
+        if (isset($qx_config['mitm']) && is_array($qx_config['mitm'])) {
             foreach ($qx_config['mitm'] as $k => $v) {
                 $mitm[] = "{$k}={$v}";
             }

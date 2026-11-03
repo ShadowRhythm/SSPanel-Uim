@@ -6,11 +6,15 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Models\DetectLog;
+use App\Models\DetectRule;
+use App\Models\Node;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
+use function in_array;
+use function strtolower;
 
 final class DetectLogController extends BaseController
 {
@@ -55,12 +59,14 @@ final class DetectLogController extends BaseController
                 ->orWhere('node_id', '=', $search);
         }
 
-        $order = $request->getParam('order')[0]['dir'];
+        $whitelist = ['id', 'user_id', 'node_id', 'list_id', 'datetime'];
+        $order = strtolower((string) ($request->getParam('order')[0]['dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
 
         if ($request->getParam('order')[0]['column'] !== '0') {
-            $order_field = self::$details['field'][$request->getParam('order')[0]['column']];
+            $column_data = $request->getParam('columns')[$request->getParam('order')[0]['column']]['data'] ?? 'id';
+            $order_by = in_array($column_data, $whitelist, true) ? $column_data : 'id';
 
-            $detect_log->orderBy($order_field, $order)->orderBy('id', 'desc');
+            $detect_log->orderBy($order_by, $order)->orderBy('id', 'desc');
         } else {
             $detect_log->orderBy('id', $order);
         }
@@ -70,9 +76,17 @@ final class DetectLogController extends BaseController
 
         $logs = $detect_log->paginate($length, '*', '', $page);
 
+        $nodeIds = $logs->pluck('node_id')->unique()->filter()->values();
+        $ruleIds = $logs->pluck('list_id')->unique()->filter()->values();
+
+        $nodes = ! $nodeIds->isEmpty() ? Node::whereIn('id', $nodeIds)->get()->keyBy('id') : collect();
+        $rules = ! $ruleIds->isEmpty() ? DetectRule::whereIn('id', $ruleIds)->get()->keyBy('id') : collect();
+
         foreach ($logs as $log) {
-            $log->node_name = $log->nodeName();
-            $log->rule_name = $log->ruleName();
+            $node = $nodes->get($log->node_id);
+            $rule = $rules->get($log->list_id);
+            $log->node_name = $node !== null ? $node->name : '节点不存在';
+            $log->rule_name = $rule !== null ? $rule->name : '规则不存在';
             $log->datetime = Tools::toDateTime((int) $log->datetime);
         }
 

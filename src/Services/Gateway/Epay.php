@@ -60,16 +60,31 @@ final class Epay extends Base
 
     public function purchase(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $user = Auth::getUser();
+        if ($user === null) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => 'Please login first',
+            ]);
+        }
+
         $invoice_id = $this->antiXss->xss_clean($request->getParam('invoice_id'));
         // EPay 特定参数
         $type = $this->antiXss->xss_clean($request->getParam('type'));
         $redir = $this->antiXss->xss_clean($request->getParam('redir'));
         $invoice = (new Invoice())->find($invoice_id);
 
-        if ($invoice === null) {
+        if ($invoice === null || $invoice->user_id !== $user->id) {
             return $response->withJson([
                 'ret' => 0,
                 'msg' => 'Invoice not found',
+            ]);
+        }
+
+        if ($invoice->status !== 'unpaid' && $invoice->status !== 'partially_paid') {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => 'Invoice is not payable',
             ]);
         }
 
@@ -82,7 +97,6 @@ final class Epay extends Base
             ]);
         }
 
-        $user = Auth::getUser();
         $pl = (new Paylist())->where('invoice_id', $invoice_id)->first();
 
         if ($pl === null) {
@@ -155,15 +169,21 @@ final class Epay extends Base
             $params = ! empty($_POST) ? $_POST : $_GET;
         }
 
+        // Verify partner pid if present
+        if (isset($params['pid']) && (string) $params['pid'] !== (string) $this->epay['partner']) {
+            return $response->write('failed');
+        }
+
         $epayNotify = new EpayNotify($this->epay);
         $verify_result = $epayNotify->verifyNotify($params);
 
         if ($verify_result) {
             $trade_status = $params['trade_status'] ?? '';
             $out_trade_no = $params['out_trade_no'] ?? '';
+            $money = isset($params['money']) && is_numeric($params['money']) ? (float) $params['money'] : null;
 
             if ($trade_status === 'TRADE_SUCCESS' && $out_trade_no !== '') {
-                $this->postPayment($out_trade_no);
+                $this->postPayment($out_trade_no, $money);
                 return $response->write('success');
             }
         }

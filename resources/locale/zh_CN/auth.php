@@ -55,4 +55,11 @@ return [
     'reset_email_tip' => '若没收到邮件，请检查邮件‘垃圾箱”并将我们的邮件设置为白名单（移回收件箱）！',
     'registration_closed' => '还没有开放注册，过两天再来看看吧',
     'mfa_notice' => '您的账户已启用二步验证，为了您的账户安全，请您完成附加身份验证。',
+    'oauth_request_failed' => 'OAuth 请求失败',
+    'slack_already_bound' => 'Slack 账户已绑定',
+    'discord_already_bound' => 'Discord 账户已绑定',
+    'please_login_first' => '请先登录',
+    'telegram_already_bound_unbind_first' => '你已绑定 Telegram，如需换绑请先解绑',
+    'telegram_already_bound' => 'Telegram 账户已绑定',
+    'bind_success' => '绑定成功',
 ];

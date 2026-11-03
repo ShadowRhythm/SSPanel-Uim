@@ -33,6 +33,7 @@ use Slim\Http\ServerRequest;
 use function array_rand;
 use function date;
 use function explode;
+use function mb_strlen;
 use function str_starts_with;
 use function strlen;
 use function strtolower;
@@ -347,13 +348,17 @@ final class AuthController extends BaseController
 
         $tos = $request->getParam('tos') === 'true' ? 1 : 0;
         $email = strtolower(trim($this->antiXss->xss_clean($request->getParam('email'))));
-        $name = $this->antiXss->xss_clean($request->getParam('name'));
+        $name = trim($this->antiXss->xss_clean((string) $request->getParam('name')));
         $password = $request->getParam('password');
         $confirm_password = $request->getParam('confirm_password');
         $invite_code = $this->antiXss->xss_clean(trim($request->getParam('invite_code')));
 
         if (! $tos) {
             return ResponseHelper::error($response, I18n::trans('user.tos_not_agreed', $locale));
+        }
+
+        if ($name === '' || mb_strlen($name) > 32) {
+            return ResponseHelper::error($response, I18n::trans('user.invalid_input', $locale));
         }
 
         if (strlen($password) < 8) {

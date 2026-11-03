@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Link;
 use App\Models\Node;
+use App\Services\Cache;
 use App\Services\Subscribe\Clash;
 use App\Services\Subscribe\Json;
 use App\Services\Subscribe\QuantumultX;
@@ -38,6 +39,12 @@ final class Subscribe
 
     public static function getUserNodes($user, bool $show_all_nodes = false): Collection
     {
+        $cacheKey = 'user_nodes_' . $user->id . '_' . ($show_all_nodes ? '1' : '0');
+        $cached = Cache::get($cacheKey);
+        if ($cached instanceof Collection) {
+            return $cached;
+        }
+
         $query = Node::query();
         $query->where('type', 1);
 
@@ -50,10 +57,14 @@ final class Subscribe
             $query->whereIn('node_group', $group);
         }
 
-        return $query->where(static function ($query): void {
+        $nodes = $query->where(static function ($query): void {
             $query->where('node_bandwidth_limit', '=', 0)->orWhereRaw('node_bandwidth < node_bandwidth_limit');
         })->orderBy('name')
             ->get();
+
+        Cache::set($cacheKey, $nodes, 60);
+
+        return $nodes;
     }
 
     public static function getContent($user, string $type): string

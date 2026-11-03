@@ -108,4 +108,6 @@ return [
     'dt_last' => 'Dernier',
     'dt_sort_ascending' => ' : activer pour trier la colonne par ordre croissant',
     'dt_sort_descending' => ' : activer pour trier la colonne par ordre décroissant',
+    'request_failed' => 'Échec de la requête: %message%',
+    'unknown' => 'Inconnu',
 ];

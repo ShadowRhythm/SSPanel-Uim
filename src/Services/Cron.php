@@ -10,6 +10,8 @@ use App\Models\DetectLog;
 use App\Models\EmailQueue;
 use App\Models\HourlyUsage;
 use App\Models\Invoice;
+use App\Models\InviteCode;
+use App\Models\Link;
 use App\Models\Node;
 use App\Models\OnlineLog;
 use App\Models\Order;
@@ -42,37 +44,61 @@ final class Cron
 {
     public static function cleanDb(): void
     {
-        do {
-            $deleted = (new SubscribeLog())->where(
-                'request_time',
-                '<',
-                time() - 86400 * Config::obtain('subscribe_log_retention_days')
-            )->limit(2000)->delete();
-        } while ($deleted > 0);
+        try {
+            do {
+                $deleted = (new SubscribeLog())->where(
+                    'request_time',
+                    '<',
+                    time() - 86400 * Config::obtain('subscribe_log_retention_days')
+                )->limit(2000)->delete();
+            } while ($deleted > 0);
+        } catch (Throwable $e) {
+            echo 'Clean SubscribeLog failed: ' . $e->getMessage() . PHP_EOL;
+        }
 
-        do {
-            $deleted = (new HourlyUsage())->where(
-                'date',
-                '<',
-                date('Y-m-d', time() - 86400 * Config::obtain('traffic_log_retention_days'))
-            )->limit(2000)->delete();
-        } while ($deleted > 0);
+        try {
+            do {
+                $deleted = (new HourlyUsage())->where(
+                    'date',
+                    '<',
+                    date('Y-m-d', time() - 86400 * Config::obtain('traffic_log_retention_days'))
+                )->limit(2000)->delete();
+            } while ($deleted > 0);
+        } catch (Throwable $e) {
+            echo 'Clean HourlyUsage failed: ' . $e->getMessage() . PHP_EOL;
+        }
 
-        do {
-            $deleted = (new DetectLog())->where('datetime', '<', time() - 86400 * 3)->limit(2000)->delete();
-        } while ($deleted > 0);
+        try {
+            do {
+                $deleted = (new DetectLog())->where('datetime', '<', time() - 86400 * 3)->limit(2000)->delete();
+            } while ($deleted > 0);
+        } catch (Throwable $e) {
+            echo 'Clean DetectLog failed: ' . $e->getMessage() . PHP_EOL;
+        }
 
-        do {
-            $deleted = (new EmailQueue())->where('time', '<', time() - 86400 * 30)->limit(2000)->delete();
-        } while ($deleted > 0);
+        try {
+            do {
+                $deleted = (new EmailQueue())->where('time', '<', time() - 86400 * 30)->limit(2000)->delete();
+            } while ($deleted > 0);
+        } catch (Throwable $e) {
+            echo 'Clean EmailQueue failed: ' . $e->getMessage() . PHP_EOL;
+        }
 
-        do {
-            $deleted = (new OnlineLog())->where('last_time', '<', time() - 86400)->limit(2000)->delete();
-        } while ($deleted > 0);
+        try {
+            do {
+                $deleted = (new OnlineLog())->where('last_time', '<', time() - 86400)->limit(2000)->delete();
+            } while ($deleted > 0);
+        } catch (Throwable $e) {
+            echo 'Clean OnlineLog failed: ' . $e->getMessage() . PHP_EOL;
+        }
 
-        do {
-            $deleted = (new StreamMedia())->where('created_at', '<', time() - 86400 * 3)->limit(2000)->delete();
-        } while ($deleted > 0);
+        try {
+            do {
+                $deleted = (new StreamMedia())->where('created_at', '<', time() - 86400 * 3)->limit(2000)->delete();
+            } while ($deleted > 0);
+        } catch (Throwable $e) {
+            echo 'Clean StreamMedia failed: ' . $e->getMessage() . PHP_EOL;
+        }
 
         echo Tools::toDateTime(time()) . ' 数据库清理完成' . PHP_EOL;
     }
@@ -106,70 +132,74 @@ final class Cron
         $nodes = (new Node())->where('type', 1)->get();
 
         foreach ($nodes as $node) {
-            if ($node->getNodeOnlineStatus() >= 0 && $node->online === 1) {
-                continue;
-            }
-
-            if ($node->getNodeOnlineStatus() === -1 && $node->online === 1) {
-                echo 'Send Node Offline Email to admin users' . PHP_EOL;
-
-                try {
-                    Notification::notifyAdmin(
-                        $_ENV['appName'] . '-系统警告',
-                        '管理员你好，系统发现节点 ' . $node->name . ' 掉线了，请你及时处理。'
-                    );
-                } catch (GuzzleException|ClientExceptionInterface|TelegramSDKException $e) {
-                    echo $e->getMessage() . PHP_EOL;
+            try {
+                if ($node->getNodeOnlineStatus() >= 0 && $node->online === 1) {
+                    continue;
                 }
 
-                if (Config::obtain('im_bot_group_notify_node_offline')) {
+                if ($node->getNodeOnlineStatus() === -1 && $node->online === 1) {
+                    echo 'Send Node Offline Email to admin users' . PHP_EOL;
+
                     try {
-                        Notification::notifyUserGroup(
-                            str_replace(
-                                '%node_name%',
-                                $node->name,
-                                I18n::trans('bot.node_offline', $_ENV['locale'])
-                            ),
+                        Notification::notifyAdmin(
+                            $_ENV['appName'] . '-系统警告',
+                            '管理员你好，系统发现节点 ' . $node->name . ' 掉线了，请你及时处理。'
                         );
-                    } catch (TelegramSDKException | GuzzleException $e) {
+                    } catch (GuzzleException|ClientExceptionInterface|TelegramSDKException $e) {
                         echo $e->getMessage() . PHP_EOL;
                     }
+
+                    if (Config::obtain('im_bot_group_notify_node_offline')) {
+                        try {
+                            Notification::notifyUserGroup(
+                                str_replace(
+                                    '%node_name%',
+                                    $node->name,
+                                    I18n::trans('bot.node_offline', $_ENV['locale'])
+                                ),
+                            );
+                        } catch (TelegramSDKException | GuzzleException $e) {
+                            echo $e->getMessage() . PHP_EOL;
+                        }
+                    }
+
+                    $node->online = 0;
+                    $node->save();
+
+                    continue;
                 }
 
-                $node->online = 0;
-                $node->save();
+                if ($node->getNodeOnlineStatus() === 1 && $node->online === 0) {
+                    echo 'Send Node Online Email to admin user' . PHP_EOL;
 
-                continue;
-            }
-
-            if ($node->getNodeOnlineStatus() === 1 && $node->online === 0) {
-                echo 'Send Node Online Email to admin user' . PHP_EOL;
-
-                try {
-                    Notification::notifyAdmin(
-                        $_ENV['appName'] . '-系统提示',
-                        '管理员你好，系统发现节点 ' . $node->name . ' 恢复上线了。'
-                    );
-                } catch (GuzzleException|ClientExceptionInterface|TelegramSDKException $e) {
-                    echo $e->getMessage() . PHP_EOL;
-                }
-
-                if (Config::obtain('im_bot_group_notify_node_online')) {
                     try {
-                        Notification::notifyUserGroup(
-                            str_replace(
-                                '%node_name%',
-                                $node->name,
-                                I18n::trans('bot.node_online', $_ENV['locale'])
-                            ),
+                        Notification::notifyAdmin(
+                            $_ENV['appName'] . '-系统提示',
+                            '管理员你好，系统发现节点 ' . $node->name . ' 恢复上线了。'
                         );
-                    } catch (TelegramSDKException | GuzzleException $e) {
+                    } catch (GuzzleException|ClientExceptionInterface|TelegramSDKException $e) {
                         echo $e->getMessage() . PHP_EOL;
                     }
-                }
 
-                $node->online = 1;
-                $node->save();
+                    if (Config::obtain('im_bot_group_notify_node_online')) {
+                        try {
+                            Notification::notifyUserGroup(
+                                str_replace(
+                                    '%node_name%',
+                                    $node->name,
+                                    I18n::trans('bot.node_online', $_ENV['locale'])
+                                ),
+                            );
+                        } catch (TelegramSDKException | GuzzleException $e) {
+                            echo $e->getMessage() . PHP_EOL;
+                        }
+                    }
+
+                    $node->online = 1;
+                    $node->save();
+                }
+            } catch (Throwable $e) {
+                echo 'Cron detectNodeOffline failed for node #' . $node->id . ': ' . $e->getMessage() . PHP_EOL;
             }
         }
 
@@ -183,27 +213,31 @@ final class Cron
             ->get();
 
         foreach ($paidUsers as $user) {
-            $text = '你好，系统发现你的账号等级已经过期了。';
-            $reset_traffic = $_ENV['class_expire_reset_traffic'];
-
-            if ($reset_traffic >= 0) {
-                $user->transfer_enable = Tools::gbToB($reset_traffic);
-                $text .= '流量已经被重置为' . $reset_traffic . 'GB。';
-            }
-
             try {
-                Notification::notifyUser($user, $_ENV['appName'] . '-你的账号等级已经过期了', $text);
-            } catch (GuzzleException|ClientExceptionInterface|TelegramSDKException $e) {
-                echo $e->getMessage() . PHP_EOL;
+                $text = '你好，系统发现你的账号等级已经过期了。';
+                $reset_traffic = $_ENV['class_expire_reset_traffic'];
+
+                if ($reset_traffic >= 0) {
+                    $user->transfer_enable = Tools::gbToB($reset_traffic);
+                    $text .= '流量已经被重置为' . $reset_traffic . 'GB。';
+                }
+
+                try {
+                    Notification::notifyUser($user, $_ENV['appName'] . '-你的账号等级已经过期了', $text);
+                } catch (GuzzleException|ClientExceptionInterface|TelegramSDKException $e) {
+                    echo $e->getMessage() . PHP_EOL;
+                }
+
+                $user->class = 0;
+                $user->save();
+
+                Order::where('user_id', $user->id)
+                    ->where('product_type', 'time')
+                    ->where('status', 'activated')
+                    ->update(['status' => 'expired', 'auto_renew' => 0, 'update_time' => time()]);
+            } catch (Throwable $e) {
+                echo 'Cron expirePaidUserAccount failed for user #' . $user->id . ': ' . $e->getMessage() . PHP_EOL;
             }
-
-            $user->class = 0;
-            $user->save();
-
-            Order::where('user_id', $user->id)
-                ->where('product_type', 'time')
-                ->where('status', 'activated')
-                ->update(['status' => 'expired', 'auto_renew' => 0, 'update_time' => time()]);
         }
 
         echo Tools::toDateTime(time()) . ' 付费用户过期检测完成' . PHP_EOL;
@@ -416,13 +450,17 @@ final class Cron
             ->get();
 
         foreach ($activated_orders as $order) {
-            $content = json_decode($order->product_content);
+            try {
+                $content = json_decode($order->product_content);
 
-            if ($order->update_time + ((int) ($content->time ?? 0)) * 86400 < time()) {
-                $order->status = 'expired';
-                $order->update_time = time();
-                $order->save();
-                echo "TABP订单 #{$order->id} 已过期。\n";
+                if ($order->update_time + ((int) ($content->time ?? 0)) * 86400 < time()) {
+                    $order->status = 'expired';
+                    $order->update_time = time();
+                    $order->save();
+                    echo "TABP订单 #{$order->id} 已过期。\n";
+                }
+            } catch (Throwable $e) {
+                echo 'Cron processTabpOrderActivation check failed for order #' . $order->id . ': ' . $e->getMessage() . PHP_EOL;
             }
         }
 
@@ -432,7 +470,11 @@ final class Cron
             ->pluck('id');
 
         foreach ($pending_order_ids as $orderId) {
-            self::activateOrder($orderId);
+            try {
+                self::activateOrder($orderId);
+            } catch (Throwable $e) {
+                echo 'Cron processTabpOrderActivation failed for order #' . $orderId . ': ' . $e->getMessage() . PHP_EOL;
+            }
         }
 
         echo Tools::toDateTime(time()) . ' TABP订单激活处理完成' . PHP_EOL;
@@ -446,7 +488,11 @@ final class Cron
             ->pluck('id');
 
         foreach ($orderIds as $orderId) {
-            self::activateOrder($orderId);
+            try {
+                self::activateOrder($orderId);
+            } catch (Throwable $e) {
+                echo 'Cron processBandwidthOrderActivation failed for order #' . $orderId . ': ' . $e->getMessage() . PHP_EOL;
+            }
         }
 
         echo Tools::toDateTime(time()) . ' 流量包订单激活处理完成' . PHP_EOL;
@@ -460,13 +506,20 @@ final class Cron
         $activeTimeOrders = Order::where('status', 'activated')
             ->where('product_type', 'time')
             ->get();
+        $userIds = $activeTimeOrders->pluck('user_id')->unique()->filter()->values();
+        $users = User::whereIn('id', $userIds)->get()->keyBy('id');
+
         foreach ($activeTimeOrders as $activeOrder) {
-            $user = User::find($activeOrder->user_id);
-            if ($user === null || strtotime($user->class_expire ?? '') <= time()) {
-                $activeOrder->status = 'expired';
-                $activeOrder->update_time = time();
-                $activeOrder->save();
-                echo "时间包订单 #{$activeOrder->id} 已过期。\n";
+            try {
+                $user = $users->get($activeOrder->user_id);
+                if ($user === null || strtotime($user->class_expire ?? '') <= time()) {
+                    $activeOrder->status = 'expired';
+                    $activeOrder->update_time = time();
+                    $activeOrder->save();
+                    echo "时间包订单 #{$activeOrder->id} 已过期。\n";
+                }
+            } catch (Throwable $e) {
+                echo 'Cron processTimeOrderActivation check failed for order #' . $activeOrder->id . ': ' . $e->getMessage() . PHP_EOL;
             }
         }
 
@@ -476,7 +529,11 @@ final class Cron
             ->pluck('id');
 
         foreach ($orderIds as $orderId) {
-            self::activateOrder($orderId);
+            try {
+                self::activateOrder($orderId);
+            } catch (Throwable $e) {
+                echo 'Cron processTimeOrderActivation failed for order #' . $orderId . ': ' . $e->getMessage() . PHP_EOL;
+            }
         }
 
         echo Tools::toDateTime(time()) . ' 时间包订单激活处理完成' . PHP_EOL;
@@ -494,7 +551,11 @@ final class Cron
             ->pluck('id');
 
         foreach ($orderIds as $orderId) {
-            self::activateOrder($orderId);
+            try {
+                self::activateOrder($orderId);
+            } catch (Throwable $e) {
+                echo 'Cron processTopupOrderActivation failed for order #' . $orderId . ': ' . $e->getMessage() . PHP_EOL;
+            }
         }
 
         echo Tools::toDateTime(time()) . ' 充值订单激活处理完成' . PHP_EOL;
@@ -507,6 +568,11 @@ final class Cron
             ->whereIn('auto_renew', [1, 2])
             ->get();
 
+        $userIds = $orders->pluck('user_id')->unique()->filter()->values();
+        $productIds = $orders->pluck('product_id')->unique()->filter()->values();
+        $users = User::whereIn('id', $userIds)->get()->keyBy('id');
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
         foreach ($orders as $order) {
             $expireTime = 0;
             if ($order->product_type === 'tabp') {
@@ -517,7 +583,7 @@ final class Cron
                     continue;
                 }
             } elseif ($order->product_type === 'time') {
-                $user = User::find($order->user_id);
+                $user = $users->get($order->user_id);
                 if ($user === null) {
                     continue;
                 }
@@ -541,12 +607,12 @@ final class Cron
                 continue;
             }
 
-            $product = Product::find($order->product_id);
+            $product = $products->get($order->product_id);
             if ($product === null || $product->status !== 1) {
                 if ($order->auto_renew === 1) {
                     $order->auto_renew = 0;
                     $order->save();
-                    $user = User::find($order->user_id);
+                    $user = $users->get($order->user_id);
                     if ($user !== null) {
                         try {
                             Notification::notifyUser(
@@ -763,11 +829,11 @@ final class Cron
 
     public static function removeInactiveUserLinkAndInvite(): void
     {
-        $inactive_users = (new User())->where('is_inactive', 1)->get();
+        $inactive_user_ids = (new User())->where('is_inactive', 1)->pluck('id');
 
-        foreach ($inactive_users as $user) {
-            $user->removeLink();
-            $user->removeInvite();
+        if ($inactive_user_ids->isNotEmpty()) {
+            Link::whereIn('userid', $inactive_user_ids)->delete();
+            InviteCode::whereIn('user_id', $inactive_user_ids)->delete();
         }
 
         echo Tools::toDateTime(time()) . ' Successfully removed inactive user\'s Link and Invite' . PHP_EOL;

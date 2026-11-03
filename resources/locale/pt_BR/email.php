@@ -63,4 +63,7 @@ return [
     'ticket_replied_body' => 'Olá, alguém respondeu ao seu ticket. Por favor, verifique-o.',
     'new_ticket_subject' => '%app_name% - Novo Ticket Criado',
     'new_ticket_body' => 'Administrador, um usuário abriu um novo ticket, por favor atenda-o a tempo.',
+    'ticket_replied_admin_body' => 'Administrador, alguém respondeu ao ticket <a href="%ticket_url%">#%ticket_id%</a>, processe-o a tempo.',
+    'ticket_replied_user_body' => 'Olá, alguém respondeu ao seu <a href="%ticket_url%">ticket</a>, por favor verifique.',
+    'ticket_ai_replied_user_body' => 'Olá, o Assistente de IA respondeu ao seu <a href="%ticket_url%">ticket</a>, por favor verifique.',
 ];

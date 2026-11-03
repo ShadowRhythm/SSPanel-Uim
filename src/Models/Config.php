@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Cache;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
 use function array_key_exists;
@@ -36,9 +37,18 @@ final class Config extends Model
             return self::$cache[$item];
         }
 
+        $cacheKey = 'config_' . $item;
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            self::$cache[$item] = $cached;
+            return $cached;
+        }
+
         $config = (new Config())->where('item', $item)->first();
 
         if ($config === null) {
+            self::$cache[$item] = '';
+            Cache::set($cacheKey, '', 300);
             return '';
         }
 
@@ -50,6 +60,7 @@ final class Config extends Model
         };
 
         self::$cache[$item] = $val;
+        Cache::set($cacheKey, $val, 300);
 
         return $val;
     }
@@ -107,6 +118,7 @@ final class Config extends Model
         try {
             (new Config())->where('item', $item)->update(['value' => $value]);
             unset(self::$cache[$item]);
+            Cache::forget('config_' . $item);
         } catch (QueryException $e) {
             return false;
         }

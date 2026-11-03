@@ -13,6 +13,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use RedisException;
 use Slim\Factory\AppFactory;
 use voku\helper\AntiXSS;
+use function hash_equals;
 
 final class NodeToken implements MiddlewareInterface
 {
@@ -43,7 +44,8 @@ final class NodeToken implements MiddlewareInterface
         }
 
         if (! $_ENV['webAPI'] ||
-            $key !== $_ENV['muKey'] ||
+            empty($_ENV['muKey']) ||
+            ! hash_equals((string) $_ENV['muKey'], (string) $key) ||
             'https://' . $request->getHeaderLine('Host') !== $_ENV['webAPIUrl']
         ) {
             return AppFactory::determineResponseFactory()->createResponse(401)->withJson([

@@ -55,4 +55,11 @@ return [
     'reset_email_tip' => 'If you haven\'t received the email, please check your spam folder and whitelist our emails (move to inbox)!',
     'registration_closed' => 'Registration is currently closed. Please check back in a few days.',
     'mfa_notice' => 'Two-factor authentication is enabled for your account. For your security, please complete additional identity verification.',
+    'oauth_request_failed' => 'OAuth request failed',
+    'slack_already_bound' => 'Slack account is already linked',
+    'discord_already_bound' => 'Discord account is already linked',
+    'please_login_first' => 'Please sign in first',
+    'telegram_already_bound_unbind_first' => 'Telegram is already linked. Please unbind first if you want to switch accounts',
+    'telegram_already_bound' => 'Telegram account is already linked',
+    'bind_success' => 'Linked successfully',
 ];

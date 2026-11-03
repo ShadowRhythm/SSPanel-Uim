@@ -55,4 +55,11 @@ return [
     'reset_email_tip' => 'メールが届かない場合は、迷惑メールフォルダを確認して当サービスからのメールを受信トレイに移動（ホワイトリスト登録）してください！',
     'registration_closed' => '現在は新規登録を受け付けていません。後日改めてご確認ください。',
     'mfa_notice' => 'アカウントの2段階認証が有効になっています。セキュリティ保護のため、追加の本人確認を完了してください。',
+    'oauth_request_failed' => 'OAuthリクエストが失敗しました',
+    'slack_already_bound' => 'Slackアカウントは既に連携されています',
+    'discord_already_bound' => 'Discordアカウントは既に連携されています',
+    'please_login_first' => '先にログインしてください',
+    'telegram_already_bound_unbind_first' => '既にTelegramと連携されています。変更する場合は先に解除してください',
+    'telegram_already_bound' => 'Telegramアカウントは既に連携されています',
+    'bind_success' => '連携に成功しました',
 ];

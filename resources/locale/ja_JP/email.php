@@ -63,4 +63,7 @@ return [
     'ticket_replied_body' => 'こんにちは。チケットへの返信がありましたのでご確認ください。',
     'new_ticket_subject' => '%app_name% - 新しいチケットが作成されました',
     'new_ticket_body' => '管理者様：新しいチケットが作成されました。早めの対応をお願いします。',
+    'ticket_replied_admin_body' => '管理者様、チケット <a href="%ticket_url%">#%ticket_id%</a> に返信がありました。速やかに対応してください。',
+    'ticket_replied_user_body' => 'こんにちは、<a href="%ticket_url%">チケット</a>に返信がありましたのでご確認ください。',
+    'ticket_ai_replied_user_body' => 'こんにちは、AIアシスタントが<a href="%ticket_url%">チケット</a>に返信しましたのでご確認ください。',
 ];

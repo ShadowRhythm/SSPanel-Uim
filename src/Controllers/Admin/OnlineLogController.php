@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Models\Node;
 use App\Models\OnlineLog;
 use App\Utils\Tools;
 use Exception;
@@ -12,6 +13,8 @@ use MaxMind\Db\Reader\InvalidDatabaseException;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
+use function in_array;
+use function strtolower;
 use function time;
 
 final class OnlineLogController extends BaseController
@@ -65,10 +68,12 @@ final class OnlineLogController extends BaseController
                 ->orWhere('node_id', '=', $search);
         }
 
-        $order = $request->getParam('order')[0]['dir'];
+        $whitelist = ['id', 'user_id', 'ip', 'node_id', 'first_time', 'last_time'];
+        $order = strtolower((string) ($request->getParam('order')[0]['dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
 
         if ($request->getParam('order')[0]['column'] !== '7') {
-            $order_by = $request->getParam('columns')[$request->getParam('order')[0]['column']]['data'];
+            $column_data = $request->getParam('columns')[$request->getParam('order')[0]['column']]['data'] ?? 'last_time';
+            $order_by = in_array($column_data, $whitelist, true) ? $column_data : 'last_time';
 
             $online_log->orderBy($order_by, $order)->orderBy('last_time', 'desc');
         } else {
@@ -80,8 +85,11 @@ final class OnlineLogController extends BaseController
 
         $onlines = $online_log->paginate($length, '*', '', $page);
 
+        $nodeIds = $onlines->pluck('node_id')->unique()->filter()->values();
+        $nodes = ! $nodeIds->isEmpty() ? Node::whereIn('id', $nodeIds)->pluck('name', 'id') : collect();
+
         foreach ($onlines as $online) {
-            $online->node_name = $online->nodeName();
+            $online->node_name = $nodes[$online->node_id] ?? '未知节点';
             $online->ip = $online->ip();
             $online->location = Tools::getIpLocation($online->ip);
             $online->first_time = Tools::toDateTime($online->first_time);

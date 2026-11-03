@@ -94,9 +94,10 @@ final class TicketController extends BaseController
         $ticket->save();
 
         if (Config::obtain('mail_ticket')) {
-            Notification::notifyAdmin(
-                $_ENV['appName'] . '-新工单被开启',
-                '管理员，有人开启了新的工单，请你及时处理。'
+            Notification::notifyAdminTrans(
+                'email.new_ticket_subject',
+                'email.new_ticket_body',
+                ['app_name' => $_ENV['appName']]
             );
         }
 
@@ -143,11 +144,14 @@ final class TicketController extends BaseController
         $ticket->save();
 
         if (Config::obtain('mail_ticket')) {
-            Notification::notifyAdmin(
-                $_ENV['appName'] . '-工单被回复',
-                '管理员，有人回复了 <a href="' .
-                $_ENV['baseUrl'] . '/admin/ticket/' . $ticket->id . '/view">#' . $ticket->id .
-                '</a> 工单，请你及时处理。'
+            Notification::notifyAdminTrans(
+                'email.ticket_replied_subject',
+                'email.ticket_replied_admin_body',
+                [
+                    'app_name' => $_ENV['appName'],
+                    'ticket_url' => $_ENV['baseUrl'] . '/admin/ticket/' . $ticket->id . '/view',
+                    'ticket_id' => (string) $ticket->id,
+                ]
             );
         }
 

@@ -12,6 +12,8 @@ use MaxMind\Db\Reader\InvalidDatabaseException;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
+use function in_array;
+use function strtolower;
 
 final class LoginLogController extends BaseController
 {
@@ -61,10 +63,12 @@ final class LoginLogController extends BaseController
                 ->orWhere('ip', 'LIKE', "%{$search}%");
         }
 
-        $order = $request->getParam('order')[0]['dir'];
+        $whitelist = ['id', 'userid', 'ip', 'datetime', 'type'];
+        $order = strtolower((string) ($request->getParam('order')[0]['dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
 
         if ($request->getParam('order')[0]['column'] !== '0') {
-            $order_by = $request->getParam('columns')[$request->getParam('order')[0]['column']]['data'];
+            $column_data = $request->getParam('columns')[$request->getParam('order')[0]['column']]['data'] ?? 'id';
+            $order_by = in_array($column_data, $whitelist, true) ? $column_data : 'id';
 
             $login_log->orderBy($order_by, $order)->orderBy('id', 'desc');
         } else {

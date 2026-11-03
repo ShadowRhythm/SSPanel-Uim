@@ -47,7 +47,7 @@ final class Payment
     {
         $all = self::getPaymentMap();
 
-        return $all[$name];
+        return $all[$name] ?? null;
     }
 
     public static function notify($request, $response, $args): ResponseInterface

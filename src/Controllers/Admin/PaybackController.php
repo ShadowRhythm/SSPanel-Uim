@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Models\Payback;
+use App\Models\User;
 use App\Utils\Tools;
 use Exception;
 use Psr\Http\Message\ResponseInterface;
@@ -50,10 +51,15 @@ final class PaybackController extends BaseController
     {
         $paybacks = (new Payback())->orderBy('id', 'desc')->get();
 
+        $userIds = $paybacks->pluck('userid')->merge($paybacks->pluck('ref_by'))->unique()->filter()->values();
+        $users = User::whereIn('id', $userIds)->get()->keyBy('id');
+
         foreach ($paybacks as $payback) {
             $payback->datetime = Tools::toDateTime((int) $payback->datetime);
-            $payback->user_name = $payback->getAttributes();
-            $payback->ref_user_name = $payback->getAttributes();
+            $user = $users->get($payback->userid);
+            $refUser = $users->get($payback->ref_by);
+            $payback->user_name = $user !== null ? $user->user_name : '已注销';
+            $payback->ref_user_name = $refUser !== null ? $refUser->user_name : '已注销';
         }
 
         return $response->withJson([

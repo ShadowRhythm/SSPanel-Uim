@@ -63,4 +63,7 @@ return [
     'ticket_replied_body' => '您好，有人回覆了工單，請您查看。',
     'new_ticket_subject' => '%app_name% - 新工單已被建立',
     'new_ticket_body' => '管理員，有人開啟了新的工單，請您及時處理。',
+    'ticket_replied_admin_body' => '管理員，有人回覆了 <a href="%ticket_url%">#%ticket_id%</a> 工單，請你及時處理。',
+    'ticket_replied_user_body' => '你好，有人回覆了<a href="%ticket_url%">工單</a>，請你查看。',
+    'ticket_ai_replied_user_body' => '你好，AI助理回覆了<a href="%ticket_url%">工單</a>，請你查看。',
 ];

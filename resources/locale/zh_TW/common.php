@@ -108,4 +108,6 @@ return [
     'dt_last' => '末頁',
     'dt_sort_ascending' => ': 以升序排列此列',
     'dt_sort_descending' => ': 以降序排列此列',
+    'request_failed' => '請求失敗: %message%',
+    'unknown' => '未知',
 ];

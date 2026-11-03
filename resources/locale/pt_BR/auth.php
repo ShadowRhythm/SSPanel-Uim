@@ -55,4 +55,11 @@ return [
     'reset_email_tip' => 'Se não recebeu o e-mail, verifique sua caixa de spam e adicione nosso e-mail à lista de remetentes confiáveis (mova para a caixa de entrada)!',
     'registration_closed' => 'O registro está temporariamente fechado. Por favor, volte em alguns dias.',
     'mfa_notice' => 'A autenticação em duas etapas está ativada na sua conta. Para sua segurança, conclua a verificação adicional de identidade.',
+    'oauth_request_failed' => 'Falha na solicitação OAuth',
+    'slack_already_bound' => 'Conta do Slack já vinculada',
+    'discord_already_bound' => 'Conta do Discord já vinculada',
+    'please_login_first' => 'Por favor, faça login primeiro',
+    'telegram_already_bound_unbind_first' => 'Você já vinculou o Telegram. Se precisar alterar, desvincule primeiro',
+    'telegram_already_bound' => 'Conta do Telegram já vinculada',
+    'bind_success' => 'Vinculado com sucesso',
 ];

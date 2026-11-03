@@ -48,13 +48,28 @@ final class Stripe extends Base
 
     public function purchase(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $user = Auth::getUser();
+        if ($user === null) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => 'Please login first',
+            ]);
+        }
+
         $invoice_id = $this->antiXss->xss_clean($request->getParam('invoice_id'));
         $invoice = (new Invoice())->find($invoice_id);
 
-        if ($invoice === null) {
+        if ($invoice === null || $invoice->user_id !== $user->id) {
             return $response->withJson([
                 'ret' => 0,
                 'msg' => 'Invoice not found',
+            ]);
+        }
+
+        if ($invoice->status !== 'unpaid' && $invoice->status !== 'partially_paid') {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => 'Invoice is not payable',
             ]);
         }
 
@@ -69,7 +84,6 @@ final class Stripe extends Base
             ]);
         }
 
-        $user = Auth::getUser();
         $pl = (new Paylist())->where('invoice_id', $invoice_id)->first();
 
         if ($pl === null) {
@@ -110,6 +124,9 @@ final class Stripe extends Base
         try {
             $session = $stripe->checkout->sessions->create([
                 'customer_email' => $user->email,
+                'metadata' => [
+                    'trade_no' => $pl->tradeno,
+                ],
                 'line_items' => [
                     [
                         'price_data' => [
@@ -143,10 +160,13 @@ final class Stripe extends Base
 
     public function notify(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $raw_body = (string) $request->getBody();
+        $sig_header = $request->getHeaderLine('Stripe-Signature');
+
         try {
             $event = Webhook::constructEvent(
-                $request->getBody()->getContents(),
-                $request->getHeaderLine('Stripe-Signature'),
+                $raw_body,
+                $sig_header,
                 Config::obtain('stripe_endpoint_secret')
             );
         } catch (UnexpectedValueException) {
@@ -161,15 +181,31 @@ final class Stripe extends Base
             ]);
         }
 
-        $payment_intent = $event->data->object;
+        $trade_no = null;
 
-        if ($event->type === 'payment_intent.succeeded' && $payment_intent->status === 'succeeded') {
-            $this->postPayment($payment_intent->metadata->trade_no);
+        if ($event->type === 'payment_intent.succeeded') {
+            $payment_intent = $event->data->object;
+            if ($payment_intent->status === 'succeeded') {
+                $trade_no = $payment_intent->metadata->trade_no ?? null;
+            }
+        } elseif ($event->type === 'checkout.session.completed') {
+            $session = $event->data->object;
+            if ($session->payment_status === 'paid') {
+                $trade_no = $session->metadata->trade_no ?? null;
+            }
+        }
+
+        if (is_string($trade_no) && $trade_no !== '') {
+            $this->postPayment($trade_no);
 
             return $response->withStatus(204);
         }
 
-        return $response->withStatus(400);
+        // Return 200 for other event types so Stripe does not mark webhook delivery as failing
+        return $response->withStatus(200)->withJson([
+            'ret' => 1,
+            'msg' => 'Event ignored',
+        ]);
     }
 
     /**

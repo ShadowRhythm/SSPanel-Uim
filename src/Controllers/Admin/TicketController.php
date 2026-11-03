@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\I18n;
 use App\Services\LLM;
 use App\Services\Notification;
 use App\Utils\ResponseHelper;
@@ -58,13 +59,13 @@ final class TicketController extends BaseController
         $comment = $request->getParam('comment') ?? '';
 
         if ($comment === '') {
-            return ResponseHelper::error($response, '请输入评论内容');
+            return ResponseHelper::error($response, I18n::trans('user.ticket_comment_empty'));
         }
 
         $ticket = (new Ticket())->where('id', $id)->first();
 
         if ($ticket === null) {
-            return ResponseHelper::error($response, '工单不存在');
+            return ResponseHelper::error($response, I18n::trans('user.ticket_not_found'));
         }
 
         $content_old = json_decode($ticket->content, true);
@@ -82,12 +83,20 @@ final class TicketController extends BaseController
         $ticket->status = 'open_wait_user';
         $ticket->save();
 
+        $user = (new User())->find($ticket->userid);
+        $userLocale = $user !== null ? I18n::getCurrentLocale($user) : 'en_US';
+
         try {
-            Notification::notifyUser(
-                (new User())->find($ticket->userid),
-                $_ENV['appName'] . '-工单被回复',
-                '你好，有人回复了<a href="' . $_ENV['baseUrl'] . '/user/ticket/' . $ticket->id . '/view">工单</a>，请你查看。'
-            );
+            if ($user !== null) {
+                Notification::notifyUser(
+                    $user,
+                    I18n::trans('email.ticket_replied_subject', $userLocale, ['app_name' => $_ENV['appName']]),
+                    I18n::trans('email.ticket_replied_user_body', $userLocale, [
+                        'ticket_url' => $_ENV['baseUrl'] . '/user/ticket/' . $ticket->id . '/view',
+                        'ticket_id' => (string) $ticket->id,
+                    ])
+                );
+            }
         } catch (TelegramSDKException|GuzzleException|ClientExceptionInterface $e) {
             return $response->withHeader('HX-Refresh', 'true');
         }
@@ -101,7 +110,7 @@ final class TicketController extends BaseController
         $ticket = (new Ticket())->where('id', $id)->first();
 
         if ($ticket === null) {
-            return ResponseHelper::error($response, '工单不存在');
+            return ResponseHelper::error($response, I18n::trans('user.ticket_not_found'));
         }
 
         $content_old = json_decode($ticket->content, true);
@@ -149,12 +158,20 @@ final class TicketController extends BaseController
         $ticket->status = 'open_wait_user';
         $ticket->save();
 
+        $user = (new User())->find($ticket->userid);
+        $userLocale = $user !== null ? I18n::getCurrentLocale($user) : 'en_US';
+
         try {
-            Notification::notifyUser(
-                (new User())->find($ticket->userid),
-                $_ENV['appName'] . '-工单被回复',
-                '你好，AI助理回复了<a href="' . $_ENV['baseUrl'] . '/user/ticket/' . $ticket->id . '/view">工单</a>，请你查看。'
-            );
+            if ($user !== null) {
+                Notification::notifyUser(
+                    $user,
+                    I18n::trans('email.ticket_replied_subject', $userLocale, ['app_name' => $_ENV['appName']]),
+                    I18n::trans('email.ticket_ai_replied_user_body', $userLocale, [
+                        'ticket_url' => $_ENV['baseUrl'] . '/user/ticket/' . $ticket->id . '/view',
+                        'ticket_id' => (string) $ticket->id,
+                    ])
+                );
+            }
         } catch (TelegramSDKException|GuzzleException|ClientExceptionInterface $e) {
             return $response->withHeader('HX-Refresh', 'true');
         }
@@ -200,7 +217,7 @@ final class TicketController extends BaseController
         $ticket = (new Ticket())->where('id', '=', $id)->first();
 
         if ($ticket === null) {
-            return ResponseHelper::error($response, '工单不存在');
+            return ResponseHelper::error($response, I18n::trans('user.ticket_not_found'));
         }
 
         if ($ticket->status === 'closed') {

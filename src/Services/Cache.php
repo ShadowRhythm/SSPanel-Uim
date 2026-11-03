@@ -5,9 +5,81 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Redis;
+use Throwable;
 
 final class Cache
 {
+    private static ?Redis $client = null;
+
+    public static function client(): ?Redis
+    {
+        if (self::$client !== null) {
+            return self::$client;
+        }
+
+        try {
+            self::$client = (new self())->initRedis();
+            return self::$client;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    public static function get(string $key): mixed
+    {
+        try {
+            $client = self::client();
+            if ($client === null) {
+                return null;
+            }
+            $val = $client->get($key);
+            if ($val === false || $val === null) {
+                return null;
+            }
+            return unserialize($val);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    public static function set(string $key, mixed $val, int $ttl = 300): bool
+    {
+        try {
+            $client = self::client();
+            if ($client === null) {
+                return false;
+            }
+            return (bool) $client->setex($key, $ttl, serialize($val));
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    public static function forget(string $key): bool
+    {
+        try {
+            $client = self::client();
+            if ($client === null) {
+                return false;
+            }
+            return (bool) $client->del($key);
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    public static function remember(string $key, int $ttl, callable $callback): mixed
+    {
+        $cached = self::get($key);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $val = $callback();
+        self::set($key, $val, $ttl);
+        return $val;
+    }
+
     public function initRedis(): Redis
     {
         $config = self::getRedisConfig();

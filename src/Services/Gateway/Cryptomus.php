@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Gateway;
 
 use App\Models\Config;
+use App\Models\Invoice;
 use App\Models\Paylist;
 use App\Services\Auth;
 use App\Services\Gateway\Cryptomus\Payment as CryptomusPayment;
@@ -14,7 +15,11 @@ use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
 use voku\helper\AntiXSS;
+use function is_array;
+use function is_numeric;
+use function is_string;
 use function json_decode;
+use function json_encode;
 use function trim;
 
 final class Cryptomus extends Base
@@ -61,11 +66,32 @@ final class Cryptomus extends Base
      */
     public function purchase(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $price = $this->antiXss->xss_clean($request->getParam('price'));
-        $invoiceId = $this->antiXss->xss_clean($request->getParam('invoice_id'));
+        $user = Auth::getUser();
+        if ($user === null) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => 'Please login first',
+            ]);
+        }
 
-        $type = $this->antiXss->xss_clean($request->getParam('type'));
-        $redir = $this->antiXss->xss_clean($request->getParam('redir'));
+        $invoiceId = $this->antiXss->xss_clean($request->getParam('invoice_id'));
+        $invoice = (new Invoice())->find($invoiceId);
+
+        if ($invoice === null || $invoice->user_id !== $user->id) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => 'Invoice not found',
+            ]);
+        }
+
+        if ($invoice->status !== 'unpaid' && $invoice->status !== 'partially_paid') {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => 'Invoice is not payable',
+            ]);
+        }
+
+        $price = $invoice->price;
 
         if ($price <= 0) {
             return $response->withJson([
@@ -74,29 +100,31 @@ final class Cryptomus extends Base
             ]);
         }
 
-        $user = Auth::getUser();
-        $pl = new Paylist();
+        $redir = $this->antiXss->xss_clean($request->getParam('redir'));
 
-        $tradeNumber = self::generateGuid();
+        $pl = (new Paylist())->where('invoice_id', $invoiceId)->first();
 
-        $pl->userid = $user->id;
-        $pl->total = $price;
-        $pl->invoice_id = $invoiceId;
-        $pl->tradeno = $tradeNumber;
+        if ($pl === null) {
+            $pl = new Paylist();
+            $pl->userid = $user->id;
+            $pl->total = $price;
+            $pl->invoice_id = $invoiceId;
+            $pl->tradeno = self::generateGuid();
+        }
+
         $pl->gateway = self::_readableName();
-
         $pl->save();
 
         $paymentData = [
-            'amount' => $price,
+            'amount' => (string) $price,
             'currency' => $this->cryptomus['cryptomus_currency'] ?? 'CNY',
-            'order_id' => 'sspanel_' . $invoiceId,
+            'order_id' => 'sspanel_' . $invoiceId . '_' . time(),
             'url_return' => $redir,
             'url_callback' => self::getCallbackUrl(),
             'lifetime' => $this->cryptomus['cryptomus_lifetime'] ?? '3600',
             'subtract' => $this->cryptomus['cryptomus_subtract'] ?? '0',
             'plugin_name' => 'sspanel:2024.1',
-            'additional_data' => json_encode(['tradeno' => $tradeNumber]),
+            'additional_data' => json_encode(['tradeno' => $pl->tradeno]),
         ];
 
         $paymentInstance = $this->getPayment();
@@ -125,18 +153,39 @@ final class Cryptomus extends Base
      */
     public function notify($request, $response, $args): ResponseInterface
     {
-        $payload = trim(file_get_contents('php://input'));
+        $payload = trim((string) $request->getBody());
         $data = json_decode($payload, true);
-        $additionalData = json_decode($data['additional_data'], true);
 
-        if (! $this->hashEqual($data)) {
+        if (! is_array($data) || ! $this->hashEqual($data)) {
             return $response->withJson(['state' => 'fail', 'msg' => 'Sign is not valid']);
         }
 
-        $success = isset($data['is_final']) && $data['is_final'] && ($data['status'] === 'paid' || $data['status'] === 'paid_over' || $data['status'] === 'wrong_amount');
-        if ($success) {
-//            $orderId = preg_replace('/^sspanel(?:_upd)?_/', '', $data['order_id'] ?? '');
-            $this->postPayment($additionalData['tradeno']);
+        $additionalData = isset($data['additional_data']) ? json_decode($data['additional_data'], true) : [];
+        $tradeno = $additionalData['tradeno'] ?? null;
+
+        if (! is_string($tradeno) || $tradeno === '') {
+            return $response->withJson(['state' => 'fail', 'msg' => 'Trade number not found']);
+        }
+
+        // Only accept paid or paid_over. DO NOT blindly accept wrong_amount (underpayment)!
+        $status = $data['status'] ?? '';
+        $isFinal = ! empty($data['is_final']);
+        $actualAmount = isset($data['merchant_amount']) && is_numeric($data['merchant_amount']) ? (float) $data['merchant_amount'] : null;
+
+        $pl = (new Paylist())->where('tradeno', $tradeno)->first();
+        if ($pl === null) {
+            return $response->withJson(['state' => 'fail', 'msg' => 'Paylist not found']);
+        }
+
+        $isValidPayment = false;
+        if ($isFinal && ($status === 'paid' || $status === 'paid_over')) {
+            $isValidPayment = true;
+        } elseif ($isFinal && $status === 'wrong_amount' && $actualAmount !== null && $actualAmount >= (float) $pl->total - 0.01) {
+            $isValidPayment = true;
+        }
+
+        if ($isValidPayment) {
+            $this->postPayment($tradeno, $actualAmount);
 
             return $response->withJson([
                 'ret' => 1,
@@ -144,7 +193,7 @@ final class Cryptomus extends Base
             ]);
         }
 
-        return $response->withJson(['state' => 'fail', 'msg' => 'Payment failed']);
+        return $response->withJson(['state' => 'fail', 'msg' => 'Payment failed or underpaid']);
     }
 
     /**
