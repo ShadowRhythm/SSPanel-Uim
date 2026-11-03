@@ -997,41 +997,45 @@ final class Cron
         $paidUsers = (new User())->where('class', '>', 0)->get();
 
         foreach ($paidUsers as $user) {
-            $user_traffic_left = $user->transfer_enable - $user->u - $user->d;
-            $under_limit = false;
-            $unit_text = '';
+            try {
+                $user_traffic_left = $user->transfer_enable - $user->u - $user->d;
+                $under_limit = false;
+                $unit_text = '';
 
-            if ($_ENV['notify_limit_mode'] === 'per' &&
-                $user->transfer_enable > 0 &&
-                $user_traffic_left / $user->transfer_enable * 100 < $_ENV['notify_limit_value']
-            ) {
-                $under_limit = true;
-                $unit_text = '%';
-            } elseif ($_ENV['notify_limit_mode'] === 'mb' &&
-                Tools::bToMB($user_traffic_left) < $_ENV['notify_limit_value']
-            ) {
-                $under_limit = true;
-                $unit_text = 'MB';
-            }
-
-            if ($under_limit && ! $user->traffic_notified) {
-                try {
-                    Notification::notifyUser(
-                        $user,
-                        $_ENV['appName'] . '-你的剩余流量过低',
-                        '你好，系统发现你剩余流量已经低于 ' . $_ENV['notify_limit_value'] . $unit_text . ' 。',
-                    );
-
-                    $user->traffic_notified = true;
-                } catch (GuzzleException|ClientExceptionInterface|TelegramSDKException $e) {
-                    $user->traffic_notified = false;
-                    echo $e->getMessage() . PHP_EOL;
+                if ($_ENV['notify_limit_mode'] === 'per' &&
+                    $user->transfer_enable > 0 &&
+                    $user_traffic_left / $user->transfer_enable * 100 < $_ENV['notify_limit_value']
+                ) {
+                    $under_limit = true;
+                    $unit_text = '%';
+                } elseif ($_ENV['notify_limit_mode'] === 'mb' &&
+                    Tools::bToMB($user_traffic_left) < $_ENV['notify_limit_value']
+                ) {
+                    $under_limit = true;
+                    $unit_text = 'MB';
                 }
 
-                $user->save();
-            } elseif (! $under_limit && $user->traffic_notified) {
-                $user->traffic_notified = false;
-                $user->save();
+                if ($under_limit && ! $user->traffic_notified) {
+                    try {
+                        Notification::notifyUser(
+                            $user,
+                            $_ENV['appName'] . '-你的剩余流量过低',
+                            '你好，系统发现你剩余流量已经低于 ' . $_ENV['notify_limit_value'] . $unit_text . ' 。',
+                        );
+
+                        $user->traffic_notified = true;
+                    } catch (GuzzleException|ClientExceptionInterface|TelegramSDKException $e) {
+                        $user->traffic_notified = false;
+                        echo $e->getMessage() . PHP_EOL;
+                    }
+
+                    $user->save();
+                } elseif (! $under_limit && $user->traffic_notified) {
+                    $user->traffic_notified = false;
+                    $user->save();
+                }
+            } catch (Throwable $e) {
+                echo 'Cron sendPaidUserUsageLimitNotification failed for user #' . $user->id . ': ' . $e->getMessage() . PHP_EOL;
             }
         }
 
@@ -1053,7 +1057,11 @@ final class Cron
         }
 
         foreach ($users as $user) {
-            $user->sendDailyNotification($ann_latest);
+            try {
+                $user->sendDailyNotification($ann_latest);
+            } catch (Throwable $e) {
+                echo 'Cron sendDailyTrafficReport failed for user #' . $user->id . ': ' . $e->getMessage() . PHP_EOL;
+            }
         }
 
         echo Tools::toDateTime(time()) . ' Successfully sent daily traffic report' . PHP_EOL;
@@ -1100,8 +1108,12 @@ final class Cron
         $nodes = (new Node())->where('type', 1)->get();
 
         foreach ($nodes as $node) {
-            $node->updateNodeIp();
-            $node->save();
+            try {
+                $node->updateNodeIp();
+                $node->save();
+            } catch (Throwable $e) {
+                echo 'Cron updateNodeIp failed for node #' . $node->id . ': ' . $e->getMessage() . PHP_EOL;
+            }
         }
 
         echo Tools::toDateTime(time()) . ' 更新节点 IP 完成' . PHP_EOL;
