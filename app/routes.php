@@ -124,13 +124,14 @@ return static function (Slim\App $app): void {
         $group->post('/notify/{type}', App\Services\Payment::class . ':notify');
     });
     // Auth
+    // /auth/logout is intentionally outside the Guest middleware group so logged-in users can reach it.
+    $app->get('/auth/logout', App\Controllers\AuthController::class . ':logout');
     $app->group('/auth', static function (RouteCollectorProxy $group): void {
         $group->get('/login', App\Controllers\AuthController::class . ':login');
         $group->post('/login', App\Controllers\AuthController::class . ':loginHandle');
         $group->get('/register', App\Controllers\AuthController::class . ':register');
         $group->post('/register', App\Controllers\AuthController::class . ':registerHandle');
         $group->post('/send', App\Controllers\AuthController::class . ':sendVerify');
-        $group->get('/logout', App\Controllers\AuthController::class . ':logout');
         $group->get('/webauthn', App\Controllers\AuthController::class . ':webauthnRequest');
         $group->post('/webauthn', App\Controllers\AuthController::class . ':webauthnHandle');
         $group->get('/mfa', App\Controllers\AuthController::class . ':mfaPage');

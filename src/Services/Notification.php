@@ -10,6 +10,7 @@ use App\Models\User;
 use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Client\ClientExceptionInterface;
 use Telegram\Bot\Exceptions\TelegramSDKException;
+use Throwable;
 
 final class Notification
 {
@@ -23,19 +24,23 @@ final class Notification
         $admins = (new User())->where('is_admin', 1)->get();
 
         foreach ($admins as $admin) {
-            if ($admin->contact_method === 1 || $admin->im_type === 0) {
-                (new EmailQueue())->add(
-                    $admin->email,
-                    $title,
-                    $template,
-                    [
-                        'user' => $admin,
-                        'title' => $title,
-                        'text' => $msg,
-                    ]
-                );
-            } else {
-                IM::send((int) $admin->im_value, $msg, $admin->im_type);
+            try {
+                if ($admin->contact_method === 1 || $admin->im_type === 0) {
+                    (new EmailQueue())->add(
+                        $admin->email,
+                        $title,
+                        $template,
+                        [
+                            'user' => $admin,
+                            'title' => $title,
+                            'text' => $msg,
+                        ]
+                    );
+                } else {
+                    IM::send((int) $admin->im_value, $msg, $admin->im_type);
+                }
+            } catch (Throwable) {
+                // Ignore failure for individual admin
             }
         }
     }
@@ -50,10 +55,14 @@ final class Notification
         $admins = (new User())->where('is_admin', 1)->get();
 
         foreach ($admins as $admin) {
-            $locale = I18n::getCurrentLocale($admin);
-            $title = I18n::trans($titleKey, $locale, $params);
-            $msg = I18n::trans($msgKey, $locale, $params);
-            self::notifyUser($admin, $title, $msg, $template);
+            try {
+                $locale = I18n::getCurrentLocale($admin);
+                $title = I18n::trans($titleKey, $locale, $params);
+                $msg = I18n::trans($msgKey, $locale, $params);
+                self::notifyUser($admin, $title, $msg, $template);
+            } catch (Throwable) {
+                // Ignore failure for individual admin
+            }
         }
     }
 

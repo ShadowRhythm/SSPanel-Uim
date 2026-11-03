@@ -31,7 +31,6 @@ use function max;
 use function min;
 use function property_exists;
 use function round;
-use function strtotime;
 use function time;
 
 final class OrderController extends BaseController

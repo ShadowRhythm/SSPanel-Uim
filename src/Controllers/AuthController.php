@@ -342,6 +342,12 @@ final class AuthController extends BaseController
             return ResponseHelper::error($response, I18n::trans('user.reg_closed', $locale));
         }
 
+        if (($_ENV['enable_rate_limit'] ?? false) &&
+            ! (new RateLimit())->checkRateLimit('register_ip', $request->getServerParam('REMOTE_ADDR') ?? '')
+        ) {
+            return ResponseHelper::error($response, I18n::trans('user.request_too_frequent', $locale));
+        }
+
         if (Config::obtain('enable_reg_captcha') && ! Captcha::verify($request->getParams())) {
             return ResponseHelper::error($response, I18n::trans('user.captcha_failed', $locale));
         }

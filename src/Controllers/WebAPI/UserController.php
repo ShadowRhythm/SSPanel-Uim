@@ -195,9 +195,8 @@ final class UserController extends BaseController
             $sum += $u + $d;
         }
 
-        $node->update([
-            'node_bandwidth' => $node->node_bandwidth + $sum,
-            'online_user' => count($data) - 1,
+        Node::where('id', $node->id)->increment('node_bandwidth', $sum, [
+            'online_user' => max(0, count($data) - 1),
         ]);
 
         return ResponseHelper::success($response, 'ok');

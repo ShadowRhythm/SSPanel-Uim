@@ -231,6 +231,9 @@ final class Cron
                 }
 
                 $user->class = 0;
+                $user->node_group = 0;
+                $user->node_speedlimit = (int) Config::obtain('reg_speed_limit');
+                $user->node_iplimit = (int) Config::obtain('reg_ip_limit');
                 $user->save();
                 $expiredUserIds[] = $user->id;
             } catch (Throwable $e) {
@@ -240,7 +243,7 @@ final class Cron
 
         if (! empty($expiredUserIds)) {
             Order::whereIn('user_id', $expiredUserIds)
-                ->where('product_type', 'time')
+                ->whereIn('product_type', ['time', 'tabp'])
                 ->where('status', 'activated')
                 ->update(['status' => 'expired', 'auto_renew' => 0, 'update_time' => time()]);
         }
@@ -881,8 +884,15 @@ final class Cron
 
     public static function resetFreeUserBandwidth(): void
     {
-        $freeUsers = (new User())->where('class', 0)
-            ->where('auto_reset_day', date('d'))->get();
+        $today = (int) date('d');
+        $lastDay = (int) date('t');
+
+        $query = (new User())->where('class', 0);
+        if ($today === $lastDay) {
+            $freeUsers = $query->where('auto_reset_day', '>=', $today)->get();
+        } else {
+            $freeUsers = $query->where('auto_reset_day', $today)->get();
+        }
 
         foreach ($freeUsers as $user) {
             try {

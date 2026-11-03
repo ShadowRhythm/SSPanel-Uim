@@ -35,6 +35,7 @@ final class RateLimit
             'email_request_ip' => $this->getEmailIpLimiter(),
             'email_request_address' => $this->getEmailAddressLimiter(),
             'login_ip' => $this->getLoginIpLimiter(),
+            'register_ip' => $this->getRegisterIpLimiter(),
             'ticket' => $this->getTicketLimiter(),
             default => null,
         };
@@ -175,6 +176,15 @@ final class RateLimit
             Rate::perMinute((int) ($_ENV['rate_limit_login_ip'] ?? 15)),
             $this->redis,
             'sspanel_login_ip:'
+        );
+    }
+
+    public function getRegisterIpLimiter(): RedisRateLimiter
+    {
+        return new RedisRateLimiter(
+            Rate::perHour((int) ($_ENV['rate_limit_register_ip'] ?? 10)),
+            $this->redis,
+            'sspanel_register_ip:'
         );
     }
 }

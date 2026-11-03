@@ -104,9 +104,7 @@ EOL;
             }
 
             if ($dailySucceeded) {
-                (new Config())->where('item', 'last_daily_job_time')->update([
-                    'value' => time(),
-                ]);
+                Config::set('last_daily_job_time', time());
             }
         }
 
