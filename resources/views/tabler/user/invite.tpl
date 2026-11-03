@@ -37,7 +37,7 @@
                                 <div class="card-body">
                                     <h3 class="card-title">{trans key='user.invitation_link'}</h3>
                                     {if $user->class >= 2}
-                                    <input class="form-control" id="invite-url" value="{$invite_url}" disabled>
+                                    <input class="form-control" id="invite-url" value="{$invite_url|escape}" disabled>
                                 </div>
                                 <div class="card-footer">
                                     <div class="d-flex">
@@ -45,7 +45,7 @@
                                                 hx-post="/user/invite/reset" hx-swap="none">
                                             {trans key='common.reset'}
                                         </button>
-                                        <button data-clipboard-text="{$invite_url}"
+                                        <button data-clipboard-text="{$invite_url|escape}"
                                            class="copy btn btn-primary ms-auto">{trans key='common.copy'}</button>
                                     </div>
                                 </div>
@@ -81,7 +81,7 @@
                                     <tr>
                                         <td>{$payback->id}</td>
                                         <td>{$payback->userid}</td>
-                                        <td>{$payback->user_name}</td>
+                                        <td>{$payback->user_name|escape}</td>
                                         <td>{$payback->ref_get} {trans key='user.cny'}</td>
                                         <td>{$payback->datetime}</td>
                                     </tr>

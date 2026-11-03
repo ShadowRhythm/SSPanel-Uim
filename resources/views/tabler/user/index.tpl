@@ -190,15 +190,15 @@
                                 <div class="input-group mb-2">
                                     <div class="form-control d-flex align-items-center text-nowrap universal-sub-container" id="universal-sub-link" style="user-select: all; cursor: text;">
                                         {if isset($subUrlPrefix) && $subUrlToken !== ''}
-                                            <span>{$subUrlPrefix}</span><span class="spoiler">{$subUrlToken}</span>
+                                            <span>{$subUrlPrefix|escape}</span><span class="spoiler">{$subUrlToken|escape}</span>
                                         {else}
-                                            <span>{$UniversalSub}</span>
+                                            <span>{$UniversalSub|escape}</span>
                                         {/if}
                                     </div>
-                                    <button class="btn btn-primary copy" data-clipboard-text="{$UniversalSub}">
+                                    <button class="btn btn-primary copy" data-clipboard-text="{$UniversalSub|escape}">
                                         <i class="ti ti-copy"></i> {trans key='common.copy'}
                                     </button>
-                                    <button class="btn btn-primary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}" data-title="{trans key='user.exclusive_sub_url'}" title="{trans key='user.scan_qrcode'}">
+                                    <button class="btn btn-primary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub|escape}" data-title="{trans key='user.exclusive_sub_url'}" title="{trans key='user.scan_qrcode'}">
                                         <i class="ti ti-qrcode"></i> <span class="d-none d-sm-inline">{trans key='common.qrcode'}</span>
                                     </button>
                                 </div>
@@ -234,55 +234,55 @@
                                     <div class="small text-muted mb-2">{trans key='user.advanced_sub_desc'}</div>
                                     <div class="d-flex flex-wrap gap-2">
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/json">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub|escape}/json">
                                                 {trans key='user.json_format'}
                                             </button>
-                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/json" data-title="{trans key='user.json_format'}" title="{trans key='user.scan_qrcode'}">
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub|escape}/json" data-title="{trans key='user.json_format'}" title="{trans key='user.scan_qrcode'}">
                                                 <i class="ti ti-qrcode"></i>
                                             </button>
                                         </div>
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/v2rayjson">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub|escape}/v2rayjson">
                                                 V2Ray JSON
                                             </button>
-                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/v2rayjson" data-title="V2Ray JSON" title="{trans key='user.scan_qrcode'}">
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub|escape}/v2rayjson" data-title="V2Ray JSON" title="{trans key='user.scan_qrcode'}">
                                                 <i class="ti ti-qrcode"></i>
                                             </button>
                                         </div>
                                         {if $public_setting['enable_ss_sub']}
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/sip008">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub|escape}/sip008">
                                                 SIP008
                                             </button>
-                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/sip008" data-title="SIP008" title="{trans key='user.scan_qrcode'}">
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub|escape}/sip008" data-title="SIP008" title="{trans key='user.scan_qrcode'}">
                                                 <i class="ti ti-qrcode"></i>
                                             </button>
                                         </div>
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/ss">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub|escape}/ss">
                                                 Shadowsocks
                                             </button>
-                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/ss" data-title="Shadowsocks" title="{trans key='user.scan_qrcode'}">
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub|escape}/ss" data-title="Shadowsocks" title="{trans key='user.scan_qrcode'}">
                                                 <i class="ti ti-qrcode"></i>
                                             </button>
                                         </div>
                                         {/if}
                                         {if $public_setting['enable_v2_sub']}
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/v2ray">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub|escape}/v2ray">
                                                 V2Ray
                                             </button>
-                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/v2ray" data-title="V2Ray" title="{trans key='user.scan_qrcode'}">
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub|escape}/v2ray" data-title="V2Ray" title="{trans key='user.scan_qrcode'}">
                                                 <i class="ti ti-qrcode"></i>
                                             </button>
                                         </div>
                                         {/if}
                                         {if $public_setting['enable_trojan_sub']}
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub}/trojan">
+                                            <button class="btn btn-outline-secondary copy" data-clipboard-text="{$UniversalSub|escape}/trojan">
                                                 Trojan
                                             </button>
-                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub}/trojan" data-title="Trojan" title="{trans key='user.scan_qrcode'}">
+                                            <button class="btn btn-outline-secondary btn-qrcode" type="button" data-bs-toggle="modal" data-bs-target="#sub-qrcode-modal" data-url="{$UniversalSub|escape}/trojan" data-title="Trojan" title="{trans key='user.scan_qrcode'}">
                                                 <i class="ti ti-qrcode"></i>
                                             </button>
                                         </div>
@@ -304,19 +304,19 @@
                                                     <tbody>
                                                     <tr>
                                                         <td class="text-muted" style="width: 100px;">{trans key='user.port'}</td>
-                                                        <td><code>{$user->port}</code></td>
+                                                        <td><code>{$user->port|escape}</code></td>
                                                     </tr>
                                                     <tr>
                                                         <td class="text-muted">{trans key='user.connection_password'}</td>
-                                                        <td><code class="spoiler">{$user->passwd}</code></td>
+                                                        <td><code class="spoiler">{$user->passwd|escape}</code></td>
                                                     </tr>
                                                     <tr>
                                                         <td class="text-muted">{trans key='user.uuid'}</td>
-                                                        <td><code class="spoiler" style="font-size: 0.8em;">{$user->uuid}</code></td>
+                                                        <td><code class="spoiler" style="font-size: 0.8em;">{$user->uuid|escape}</code></td>
                                                     </tr>
                                                     <tr>
                                                         <td class="text-muted">{trans key='user.encryption_method'}</td>
-                                                        <td><code>{$user->method}</code></td>
+                                                        <td><code>{$user->method|escape}</code></td>
                                                     </tr>
                                                     </tbody>
                                                 </table>
@@ -558,8 +558,8 @@
     <script>
     window.APP_CONFIG = {
         enableR2Download: {if $config['enable_r2_client_download']}true{else}false{/if},
-        universalSubUrl: "{$UniversalSub}",
-        appName: "{$config['appName']}",
+        universalSubUrl: "{$UniversalSub|escape:'javascript'}",
+        appName: "{$config['appName']|escape:'javascript'}",
         enableSsSub: {if $public_setting['enable_ss_sub']}true{else}false{/if},
         enableV2Sub: {if $public_setting['enable_v2_sub']}true{else}false{/if},
         enableTrojanSub: {if $public_setting['enable_trojan_sub']}true{else}false{/if}

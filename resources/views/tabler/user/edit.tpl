@@ -61,7 +61,7 @@
                                             <div class="card">
                                                 <div class="card-body">
                                                     <h3 class="card-title">{trans key='user.login_email'}</h3>
-                                                    <p>{trans key='user.current_email' email="<code id='email'>{$user->email}</code>"}</p>
+                                                    <p>{trans key='user.current_email' email="<code id='email'>{$user->email|escape}</code>"}</p>
                                                     <div class="mb-3">
                                                         <input id="new-email" type="email" class="form-control"
                                                                placeholder="{trans key='user.new_email'}"
@@ -109,7 +109,7 @@
                                             <div class="card">
                                                 <div class="card-body">
                                                     <h3 class="card-title">{trans key='user.username'}</h3>
-                                                    <p>{trans key='user.current_username' username="<code id='username'>{$user->user_name}</code>"}</p>
+                                                    <p>{trans key='user.current_username' username="<code id='username'>{$user->user_name|escape}</code>"}</p>
                                                     <div class="mb-3">
                                                         <input id="new-username" type="text" class="form-control"
                                                                placeholder="{trans key='user.new_username'}" autocomplete="off">
@@ -149,7 +149,7 @@
                                                     </div>
                                                     <div class="mb-3">
                                                         <input id="imvalue" type="text" class="form-control"
-                                                               value="{$user->im_value}" disabled>
+                                                               value="{$user->im_value|escape}" disabled>
                                                     </div>
                                                 </div>
                                                 <div class="card-footer">
@@ -167,7 +167,7 @@
                                                     <p>
                                                         {trans key='user.im_current_bound' service=$user->imType()}
                                                         <br>
-                                                        {trans key='user.im_account_id' id="<code>{$user->im_value}</code>"}
+                                                        {trans key='user.im_account_id' id="<code>{$user->im_value|escape}</code>"}
                                                     </p>
                                                     {/if}
                                                 </div>
@@ -269,7 +269,7 @@
                                                             <div class="col">
                                                                 <div class="card">
                                                                     <div class="card-body">
-                                                                        <h5 class="card-title">{$device->name|default:$unnamed_device}</h5>
+                                                                        <h5 class="card-title">{$device->name|default:$unnamed_device|escape}</h5>
                                                                         <p class="card-text">
                                                                             {trans key='user.added_at' time=$device->created_at}</p>
                                                                         <p class="card-text">
@@ -312,7 +312,7 @@
                                                                 <div class="col">
                                                                     <div class="card">
                                                                         <div class="card-body">
-                                                                            <h5 class="card-title">{$device->name|default:$unnamed_device}</h5>
+                                                                            <h5 class="card-title">{$device->name|default:$unnamed_device|escape}</h5>
                                                                             <p class="card-text">
                                                                                 {trans key='user.added_at' time=$device->created_at}</p>
                                                                             <p class="card-text">
@@ -392,8 +392,8 @@
                                                 <div class="card-body">
                                                     <h3 class="card-title">{trans key='user.reset_connection_password'}</h3>
                                                     <p>{trans key='user.reset_connection_password_desc'}</p>
-                                                    <p>{trans key='user.current_connection_password' passwd="<code id='passwd' class='spoiler'>{$user->passwd}</code>"}</p>
-                                                    <p>{trans key='user.current_uuid' uuid="<code id='uuid' class='spoiler'>{$user->uuid}</code>"}</p>
+                                                    <p>{trans key='user.current_connection_password' passwd="<code id='passwd' class='spoiler'>{$user->passwd|escape}</code>"}</p>
+                                                    <p>{trans key='user.current_uuid' uuid="<code id='uuid' class='spoiler'>{$user->uuid|escape}</code>"}</p>
                                                 </div>
                                                 <div class="card-footer">
                                                     <div class="d-flex">
