@@ -24,6 +24,7 @@ use Slim\Http\Response;
 use Slim\Http\ServerRequest;
 use function explode;
 use function in_array;
+use function is_numeric;
 use function json_decode;
 use function json_encode;
 use function max;
@@ -298,7 +299,7 @@ final class OrderController extends BaseController
             'topup' => $this->topup($request, $response, $args),
             default => $response->withJson([
                 'ret' => 0,
-                'msg' => '未知订单类型',
+                'msg' => I18n::trans('user.unknown_order_type', I18n::getCurrentLocale($this->user)),
             ]),
         };
     }
@@ -310,13 +311,14 @@ final class OrderController extends BaseController
         $auto_renew = $request->getParam('auto_renew');
         $auto_renew = ($auto_renew === 'true' || $auto_renew === '1' || $auto_renew === 1 || $auto_renew === true) ? 1 : 0;
         $is_upgrade = (int) ($request->getParam('is_upgrade') ?? 0) === 1;
+        $locale = I18n::getCurrentLocale($this->user);
 
         $product = (new Product())->find($product_id);
 
         if ($product === null || $product->stock === 0) {
             return $response->withJson([
                 'ret' => 0,
-                'msg' => '商品不存在或库存不足',
+                'msg' => I18n::trans('user.product_out_of_stock', $locale),
             ]);
         }
 
@@ -326,7 +328,7 @@ final class OrderController extends BaseController
         if ($user->is_shadow_banned) {
             return $response->withJson([
                 'ret' => 0,
-                'msg' => '商品不存在或库存不足',
+                'msg' => I18n::trans('user.product_out_of_stock', $locale),
             ]);
         }
 
@@ -339,14 +341,14 @@ final class OrderController extends BaseController
             if (! Config::obtain('enable_tabp_upgrade')) {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '当前未开启套餐升级功能',
+                    'msg' => I18n::trans('user.package_upgrade_disabled', $locale),
                 ]);
             }
 
             if ($product->type !== 'tabp') {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '非 TABP 套餐不可升级',
+                    'msg' => I18n::trans('user.non_tabp_package_cannot_upgrade', $locale),
                 ]);
             }
 
@@ -355,7 +357,7 @@ final class OrderController extends BaseController
             if ($activeTabpInfo === null) {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '没有可供升级的有效套餐',
+                    'msg' => I18n::trans('user.no_valid_package_to_upgrade', $locale),
                 ]);
             }
 
@@ -363,7 +365,7 @@ final class OrderController extends BaseController
             if ((float) $product->price <= (float) $activeTabpOrder->price || $product->id === $activeTabpOrder->product_id) {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '新套餐价格必须高于当前套餐',
+                    'msg' => I18n::trans('user.new_package_price_must_be_higher', $locale),
                 ]);
             }
 
@@ -374,7 +376,7 @@ final class OrderController extends BaseController
             if ($hasPendingUpgrade) {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '你已有一笔待支付的升级订单，请先完成支付或等待其取消',
+                    'msg' => I18n::trans('user.pending_upgrade_order_exists', $locale),
                 ]);
             }
 
@@ -390,7 +392,7 @@ final class OrderController extends BaseController
                 if ($coupon === null || ($coupon->expire_time !== 0 && $coupon->expire_time < time())) {
                     return $response->withJson([
                         'ret' => 0,
-                        'msg' => '优惠码不存在或已过期',
+                        'msg' => I18n::trans('user.coupon_not_exist_or_expired', $locale),
                     ]);
                 }
 
@@ -399,14 +401,14 @@ final class OrderController extends BaseController
                 if ($coupon_limit->disabled) {
                     return $response->withJson([
                         'ret' => 0,
-                        'msg' => '优惠码已被禁用',
+                        'msg' => I18n::trans('user.coupon_disabled', $locale),
                     ]);
                 }
 
                 if ($coupon_limit->product_id !== '' && ! in_array($product_id, explode(',', $coupon_limit->product_id))) {
                     return $response->withJson([
                         'ret' => 0,
-                        'msg' => '优惠码不适用于此商品',
+                        'msg' => I18n::trans('user.coupon_not_applicable', $locale),
                     ]);
                 }
 
@@ -417,7 +419,7 @@ final class OrderController extends BaseController
                     if ($user_use_count >= $coupon_use_limit) {
                         return $response->withJson([
                             'ret' => 0,
-                            'msg' => '优惠码使用次数已达上限',
+                            'msg' => I18n::trans('user.coupon_limit_reached', $locale),
                         ]);
                     }
                 }
@@ -431,7 +433,7 @@ final class OrderController extends BaseController
                 if ($coupon_total_use_limit > 0 && $coupon->use_count >= $coupon_total_use_limit) {
                     return $response->withJson([
                         'ret' => 0,
-                        'msg' => '优惠码使用次数已达上限',
+                        'msg' => I18n::trans('user.coupon_limit_reached', $locale),
                     ]);
                 }
 
@@ -452,7 +454,7 @@ final class OrderController extends BaseController
         if ($product_limit->class_required !== '' && $user->class < (int) $product_limit->class_required) {
             return $response->withJson([
                 'ret' => 0,
-                'msg' => '你的账户等级不足，无法购买此商品',
+                'msg' => I18n::trans('user.insufficient_account_class', $locale),
             ]);
         }
 
@@ -460,7 +462,7 @@ final class OrderController extends BaseController
             && $user->node_group !== (int) $product_limit->node_group_required) {
             return $response->withJson([
                 'ret' => 0,
-                'msg' => '你所在的用户组无法购买此商品',
+                'msg' => I18n::trans('user.user_group_cannot_buy', $locale),
             ]);
         }
 
@@ -469,7 +471,7 @@ final class OrderController extends BaseController
             if ($order_count > 0) {
                 return $response->withJson([
                     'ret' => 0,
-                    'msg' => '此商品仅限新用户购买',
+                    'msg' => I18n::trans('user.product_new_user_only', $locale),
                 ]);
             }
         }
@@ -485,33 +487,34 @@ final class OrderController extends BaseController
                 $auto_renew,
                 $is_upgrade,
                 $activeTabpOrder,
-                $credit
+                $credit,
+                $locale
             ): Invoice {
                 if ($product->stock > 0) {
                     $affected = Product::where('id', $product->id)->where('stock', '>', 0)->decrement('stock', 1);
                     if ($affected === 0) {
-                        throw new Exception('商品库存不足');
+                        throw new Exception(I18n::trans('user.product_out_of_stock', $locale));
                     }
                 }
 
                 if (! $is_upgrade && $coupon !== null) {
                     $lockedCoupon = UserCoupon::where('id', $coupon->id)->lockForUpdate()->first();
                     if ($lockedCoupon === null || $lockedCoupon->expire_time !== 0 && $lockedCoupon->expire_time < time()) {
-                        throw new Exception('优惠码不存在或已过期');
+                        throw new Exception(I18n::trans('user.coupon_not_exist_or_expired', $locale));
                     }
                     $lockedLimit = json_decode($lockedCoupon->limit);
                     if ($lockedLimit->disabled) {
-                        throw new Exception('优惠码已被禁用');
+                        throw new Exception(I18n::trans('user.coupon_disabled', $locale));
                     }
                     if ($lockedLimit->use_time > 0 &&
                         (new Order())->where('user_id', $user->id)->where('coupon', $lockedCoupon->code)->count() >= $lockedLimit->use_time
                     ) {
-                        throw new Exception('优惠码使用次数已达上限');
+                        throw new Exception(I18n::trans('user.coupon_limit_reached', $locale));
                     }
                     if (property_exists($lockedLimit, 'total_use_time') && $lockedLimit->total_use_time > 0 &&
                         $lockedCoupon->use_count >= $lockedLimit->total_use_time
                     ) {
-                        throw new Exception('优惠码使用次数已达上限');
+                        throw new Exception(I18n::trans('user.coupon_limit_reached', $locale));
                     }
                 }
 
@@ -550,7 +553,7 @@ final class OrderController extends BaseController
                         ],
                         [
                             'content_id' => 1,
-                            'name' => I18n::trans('user.upgrade_credit_item', null, ['id' => $activeTabpOrder->id]),
+                            'name' => I18n::trans('user.upgrade_credit_item', $locale, ['id' => $activeTabpOrder->id]),
                             'price' => '-' . $credit,
                         ],
                     ];
@@ -564,7 +567,7 @@ final class OrderController extends BaseController
                     if ($coupon_raw !== '') {
                         $invoice_content[] = [
                             'content_id' => 1,
-                            'name' => '优惠码 ' . $coupon_raw,
+                            'name' => I18n::trans('user.coupon', $locale) . ' ' . $coupon_raw,
                             'price' => '-' . $discount,
                         ];
                     }
@@ -604,13 +607,14 @@ final class OrderController extends BaseController
 
     public function topup(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
+        $locale = I18n::getCurrentLocale($this->user);
         $amount = $this->antiXss->xss_clean($request->getParam('amount'));
         $amount = is_numeric($amount) ? round((float) $amount, 2) : null;
 
         if ($amount === null || $amount <= 0) {
             return $response->withJson([
                 'ret' => 0,
-                'msg' => '充值金额无效',
+                'msg' => I18n::trans('user.invalid_topup_amount', $locale),
             ]);
         }
 
@@ -618,7 +622,7 @@ final class OrderController extends BaseController
         $order->user_id = $this->user->id;
         $order->product_id = 0;
         $order->product_type = 'topup';
-        $order->product_name = '余额充值';
+        $order->product_name = I18n::trans('user.topup', $locale);
         $order->product_content = json_encode(['amount' => $amount]);
         $order->coupon = '';
         $order->price = $amount;
@@ -630,7 +634,7 @@ final class OrderController extends BaseController
         $invoice_content = [];
         $invoice_content[] = [
             'content_id' => 0,
-            'name' => '余额充值',
+            'name' => I18n::trans('user.topup', $locale),
             'price' => $amount,
         ];
 
