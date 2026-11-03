@@ -212,6 +212,8 @@ final class Cron
             ->where('class_expire', '<', date('Y-m-d H:i:s'))
             ->get();
 
+        $expiredUserIds = [];
+
         foreach ($paidUsers as $user) {
             try {
                 $text = '你好，系统发现你的账号等级已经过期了。';
@@ -230,14 +232,17 @@ final class Cron
 
                 $user->class = 0;
                 $user->save();
-
-                Order::where('user_id', $user->id)
-                    ->where('product_type', 'time')
-                    ->where('status', 'activated')
-                    ->update(['status' => 'expired', 'auto_renew' => 0, 'update_time' => time()]);
+                $expiredUserIds[] = $user->id;
             } catch (Throwable $e) {
                 echo 'Cron expirePaidUserAccount failed for user #' . $user->id . ': ' . $e->getMessage() . PHP_EOL;
             }
+        }
+
+        if (! empty($expiredUserIds)) {
+            Order::whereIn('user_id', $expiredUserIds)
+                ->where('product_type', 'time')
+                ->where('status', 'activated')
+                ->update(['status' => 'expired', 'auto_renew' => 0, 'update_time' => time()]);
         }
 
         echo Tools::toDateTime(time()) . ' 付费用户过期检测完成' . PHP_EOL;
@@ -574,203 +579,207 @@ final class Cron
         $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
 
         foreach ($orders as $order) {
-            $expireTime = 0;
-            if ($order->product_type === 'tabp') {
-                $content = json_decode($order->product_content);
-                $expireTime = $order->update_time + ((int) ($content->time ?? 0)) * 86400;
-                $timeLeft = $expireTime - time();
-                if ($expireTime <= 0 || $timeLeft > 86400 || $timeLeft < 0 || $order->status === 'expired') {
-                    continue;
-                }
-            } elseif ($order->product_type === 'time') {
-                $user = $users->get($order->user_id);
-                if ($user === null) {
-                    continue;
-                }
-                $expireTime = strtotime($user->class_expire ?? '');
-                if ($expireTime === false || $expireTime <= 0) {
-                    continue;
-                }
-                $timeLeft = $expireTime - time();
-                if ($timeLeft > 86400 || $timeLeft < 0) {
-                    continue;
-                }
-            } else {
-                continue;
-            }
-
-            $hasPending = Order::where('user_id', $order->user_id)
-                ->where('product_type', $order->product_type)
-                ->whereIn('status', ['pending_payment', 'pending_activation'])
-                ->exists();
-            if ($hasPending) {
-                continue;
-            }
-
-            $product = $products->get($order->product_id);
-            if ($product === null || $product->status !== 1) {
-                if ($order->auto_renew === 1) {
-                    $order->auto_renew = 0;
-                    $order->save();
+            try {
+                $expireTime = 0;
+                if ($order->product_type === 'tabp') {
+                    $content = json_decode($order->product_content);
+                    $expireTime = $order->update_time + ((int) ($content->time ?? 0)) * 86400;
+                    $timeLeft = $expireTime - time();
+                    if ($expireTime <= 0 || $timeLeft > 86400 || $timeLeft < 0 || $order->status === 'expired') {
+                        continue;
+                    }
+                } elseif ($order->product_type === 'time') {
                     $user = $users->get($order->user_id);
-                    if ($user !== null) {
-                        try {
-                            Notification::notifyUser(
-                                $user,
-                                $_ENV['appName'] . ' - 订单自动续费已停用',
-                                "您的商品【{$order->product_name}】(订单 #{$order->id}) 因商品已下架或停售，系统已自动关闭该订单的自动续费。请及时前往商城选购其他套餐。"
-                            );
-                        } catch (Throwable $e) {
-                            echo $e->getMessage() . PHP_EOL;
-                        }
+                    if ($user === null) {
+                        continue;
                     }
-                }
-                continue;
-            }
-            $price = (float) $product->price;
-
-            DB::transaction(static function () use ($order, $product, $price): void {
-                $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
-                if ($lockedOrder === null || $lockedOrder->status !== 'activated' ||
-                    ! in_array($lockedOrder->auto_renew, [1, 2], true) ||
-                    $lockedOrder->product_type !== $product->type
-                ) {
-                    return;
-                }
-
-                $user = User::where('id', $lockedOrder->user_id)->lockForUpdate()->first();
-                if ($user === null) {
-                    return;
-                }
-
-                if ($lockedOrder->product_type === 'tabp') {
-                    $content = json_decode($lockedOrder->product_content);
-                    $expireTime = $lockedOrder->update_time + ((int) ($content->time ?? 0)) * 86400;
-                    if ($expireTime - time() < 0) {
-                        return;
-                    }
-                } elseif ($lockedOrder->product_type === 'time') {
                     $expireTime = strtotime($user->class_expire ?? '');
-                    if ($expireTime === false || $expireTime <= 0 || ($expireTime - time()) > 86400 || ($expireTime - time()) < 0) {
-                        return;
+                    if ($expireTime === false || $expireTime <= 0) {
+                        continue;
                     }
+                    $timeLeft = $expireTime - time();
+                    if ($timeLeft > 86400 || $timeLeft < 0) {
+                        continue;
+                    }
+                } else {
+                    continue;
                 }
 
-                if (Order::where('user_id', $user->id)
-                    ->where('product_type', $lockedOrder->product_type)
+                $hasPending = Order::where('user_id', $order->user_id)
+                    ->where('product_type', $order->product_type)
                     ->whereIn('status', ['pending_payment', 'pending_activation'])
-                    ->exists()
-                ) {
-                    return;
+                    ->exists();
+                if ($hasPending) {
+                    continue;
                 }
 
-                if ($user->money < $price) {
-                    if ($lockedOrder->auto_renew === 1) {
-                        $lockedOrder->auto_renew = 2;
-                        $lockedOrder->save();
-                        try {
-                            $tip = $lockedOrder->product_type === 'tabp'
-                                ? '请在订单到期前及时充值，系统会继续尝试续费；订单过期后将不再自动重试。'
-                                : '请及时充值，充值后系统将自动重试续费。';
-                            $prefix = $lockedOrder->product_type === 'tabp'
-                                ? "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 即将到期，自动续费扣款失败（需要 ¥{$price}，当前账户余额 ¥{$user->money}）。"
-                                : "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 自动续费扣款失败（需要 ¥{$price}，当前账户余额 ¥{$user->money}）。";
-                            Notification::notifyUser(
-                                $user,
-                                $_ENV['appName'] . ' - 订单自动续费扣款失败提醒',
-                                "{$prefix}{$tip}"
-                            );
-                        } catch (Throwable $e) {
-                            echo $e->getMessage() . PHP_EOL;
+                $product = $products->get($order->product_id);
+                if ($product === null || $product->status !== 1) {
+                    if ($order->auto_renew === 1) {
+                        $order->auto_renew = 0;
+                        $order->save();
+                        $user = $users->get($order->user_id);
+                        if ($user !== null) {
+                            try {
+                                Notification::notifyUser(
+                                    $user,
+                                    $_ENV['appName'] . ' - 订单自动续费已停用',
+                                    "您的商品【{$order->product_name}】(订单 #{$order->id}) 因商品已下架或停售，系统已自动关闭该订单的自动续费。请及时前往商城选购其他套餐。"
+                                );
+                            } catch (Throwable $e) {
+                                echo $e->getMessage() . PHP_EOL;
+                            }
                         }
                     }
-                    return;
+                    continue;
                 }
+                $price = (float) $product->price;
 
-                if ($product->stock === 0) {
-                    if ($lockedOrder->auto_renew === 1) {
-                        $lockedOrder->auto_renew = 2;
-                        $lockedOrder->save();
-                        try {
-                            Notification::notifyUser(
-                                $user,
-                                $_ENV['appName'] . ' - 订单自动续费库存不足提醒',
-                                "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 即将到期，因商品暂时售罄无法自动续费。请留意库存补充或前往商城选购其他套餐。"
-                            );
-                        } catch (Throwable $e) {
-                            echo $e->getMessage() . PHP_EOL;
-                        }
-                    }
-                    return;
-                }
-                if ($product->stock > 0) {
-                    $affected = Product::where('id', $product->id)->where('stock', '>', 0)->decrement('stock', 1);
-                    if ($affected === 0) {
+                DB::transaction(static function () use ($order, $product, $price): void {
+                    $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+                    if ($lockedOrder === null || $lockedOrder->status !== 'activated' ||
+                        ! in_array($lockedOrder->auto_renew, [1, 2], true) ||
+                        $lockedOrder->product_type !== $product->type
+                    ) {
                         return;
                     }
-                }
-                Product::where('id', $product->id)->increment('sale_count', 1);
 
-                $moneyBefore = (float) $user->money;
-                $user->money -= $price;
-                $user->save();
+                    $user = User::where('id', $lockedOrder->user_id)->lockForUpdate()->first();
+                    if ($user === null) {
+                        return;
+                    }
 
-                (new UserMoneyLog())->add(
-                    $user->id,
-                    $moneyBefore,
-                    (float) $user->money,
-                    -$price,
-                    "自动续费订单商品 {$product->name}"
-                );
+                    if ($lockedOrder->product_type === 'tabp') {
+                        $content = json_decode($lockedOrder->product_content);
+                        $expireTime = $lockedOrder->update_time + ((int) ($content->time ?? 0)) * 86400;
+                        if ($expireTime - time() < 0) {
+                            return;
+                        }
+                    } elseif ($lockedOrder->product_type === 'time') {
+                        $expireTime = strtotime($user->class_expire ?? '');
+                        if ($expireTime === false || $expireTime <= 0 || ($expireTime - time()) > 86400 || ($expireTime - time()) < 0) {
+                            return;
+                        }
+                    }
 
-                $newOrder = new Order();
-                $newOrder->user_id = $user->id;
-                $newOrder->product_id = $product->id;
-                $newOrder->product_type = $product->type;
-                $newOrder->product_name = $product->name;
-                $newOrder->product_content = $product->content;
-                $newOrder->coupon = '';
-                $newOrder->price = $price;
-                $newOrder->status = 'pending_activation';
-                $newOrder->auto_renew = 1;
-                $newOrder->create_time = time();
-                $newOrder->update_time = time();
-                $newOrder->save();
+                    if (Order::where('user_id', $user->id)
+                        ->where('product_type', $lockedOrder->product_type)
+                        ->whereIn('status', ['pending_payment', 'pending_activation'])
+                        ->exists()
+                    ) {
+                        return;
+                    }
 
-                $invoiceContent = [
-                    [
-                        'content_id' => 0,
-                        'name' => $product->name . ' (自动续费)',
-                        'price' => $price,
-                    ],
-                ];
-                $invoice = new Invoice();
-                $invoice->user_id = $user->id;
-                $invoice->order_id = $newOrder->id;
-                $invoice->content = json_encode($invoiceContent);
-                $invoice->price = $price;
-                $invoice->status = 'paid_balance';
-                $invoice->create_time = time();
-                $invoice->update_time = time();
-                $invoice->pay_time = time();
-                $invoice->type = 'product';
-                $invoice->save();
+                    if ($user->money < $price) {
+                        if ($lockedOrder->auto_renew === 1) {
+                            $lockedOrder->auto_renew = 2;
+                            $lockedOrder->save();
+                            try {
+                                $tip = $lockedOrder->product_type === 'tabp'
+                                    ? '请在订单到期前及时充值，系统会继续尝试续费；订单过期后将不再自动重试。'
+                                    : '请及时充值，充值后系统将自动重试续费。';
+                                $prefix = $lockedOrder->product_type === 'tabp'
+                                    ? "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 即将到期，自动续费扣款失败（需要 ¥{$price}，当前账户余额 ¥{$user->money}）。"
+                                    : "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 自动续费扣款失败（需要 ¥{$price}，当前账户余额 ¥{$user->money}）。";
+                                Notification::notifyUser(
+                                    $user,
+                                    $_ENV['appName'] . ' - 订单自动续费扣款失败提醒',
+                                    "{$prefix}{$tip}"
+                                );
+                            } catch (Throwable $e) {
+                                echo $e->getMessage() . PHP_EOL;
+                            }
+                        }
+                        return;
+                    }
 
-                $lockedOrder->auto_renew = 0;
-                $lockedOrder->save();
+                    if ($product->stock === 0) {
+                        if ($lockedOrder->auto_renew === 1) {
+                            $lockedOrder->auto_renew = 2;
+                            $lockedOrder->save();
+                            try {
+                                Notification::notifyUser(
+                                    $user,
+                                    $_ENV['appName'] . ' - 订单自动续费库存不足提醒',
+                                    "您的商品【{$product->name}】(订单 #{$lockedOrder->id}) 即将到期，因商品暂时售罄无法自动续费。请留意库存补充或前往商城选购其他套餐。"
+                                );
+                            } catch (Throwable $e) {
+                                echo $e->getMessage() . PHP_EOL;
+                            }
+                        }
+                        return;
+                    }
+                    if ($product->stock > 0) {
+                        $affected = Product::where('id', $product->id)->where('stock', '>', 0)->decrement('stock', 1);
+                        if ($affected === 0) {
+                            return;
+                        }
+                    }
+                    Product::where('id', $product->id)->increment('sale_count', 1);
 
-                echo "订单 #{$lockedOrder->id} 自动续费成功，创建新订单 #{$newOrder->id}。\n";
+                    $moneyBefore = (float) $user->money;
+                    $user->money -= $price;
+                    $user->save();
 
-                try {
-                    Notification::notifyUser(
-                        $user,
-                        $_ENV['appName'] . ' - 订单自动续费成功',
-                        "您的商品【{$product->name}】已成功自动续费，生成新订单 #{$newOrder->id}，扣除余额 ¥{$price}。"
+                    (new UserMoneyLog())->add(
+                        $user->id,
+                        $moneyBefore,
+                        (float) $user->money,
+                        -$price,
+                        "自动续费订单商品 {$product->name}"
                     );
-                } catch (Throwable $e) {
-                    echo $e->getMessage() . PHP_EOL;
-                }
-            });
+
+                    $newOrder = new Order();
+                    $newOrder->user_id = $user->id;
+                    $newOrder->product_id = $product->id;
+                    $newOrder->product_type = $product->type;
+                    $newOrder->product_name = $product->name;
+                    $newOrder->product_content = $product->content;
+                    $newOrder->coupon = '';
+                    $newOrder->price = $price;
+                    $newOrder->status = 'pending_activation';
+                    $newOrder->auto_renew = 1;
+                    $newOrder->create_time = time();
+                    $newOrder->update_time = time();
+                    $newOrder->save();
+
+                    $invoiceContent = [
+                        [
+                            'content_id' => 0,
+                            'name' => $product->name . ' (自动续费)',
+                            'price' => $price,
+                        ],
+                    ];
+                    $invoice = new Invoice();
+                    $invoice->user_id = $user->id;
+                    $invoice->order_id = $newOrder->id;
+                    $invoice->content = json_encode($invoiceContent);
+                    $invoice->price = $price;
+                    $invoice->status = 'paid_balance';
+                    $invoice->create_time = time();
+                    $invoice->update_time = time();
+                    $invoice->pay_time = time();
+                    $invoice->type = 'product';
+                    $invoice->save();
+
+                    $lockedOrder->auto_renew = 0;
+                    $lockedOrder->save();
+
+                    echo "订单 #{$lockedOrder->id} 自动续费成功，创建新订单 #{$newOrder->id}。\n";
+
+                    try {
+                        Notification::notifyUser(
+                            $user,
+                            $_ENV['appName'] . ' - 订单自动续费成功',
+                            "您的商品【{$product->name}】已成功自动续费，生成新订单 #{$newOrder->id}，扣除余额 ¥{$price}。"
+                        );
+                    } catch (Throwable $e) {
+                        echo $e->getMessage() . PHP_EOL;
+                    }
+                });
+            } catch (Throwable $e) {
+                echo 'Cron processAutoRenew failed for order #' . $order->id . ': ' . $e->getMessage() . PHP_EOL;
+            }
         }
 
         echo Tools::toDateTime(time()) . ' 自动续费检测处理完成' . PHP_EOL;
@@ -781,47 +790,51 @@ final class Cron
         $pending_payment_orders = (new Order())->where('status', 'pending_payment')->pluck('id');
 
         foreach ($pending_payment_orders as $orderId) {
-            DB::transaction(static function () use ($orderId): void {
-                $order = (new Order())->where('id', $orderId)->lockForUpdate()->first();
-                if ($order === null || $order->status !== 'pending_payment') {
-                    return;
-                }
-                $invoice = (new Invoice())->where('order_id', $order->id)->lockForUpdate()->first();
+            try {
+                DB::transaction(static function () use ($orderId): void {
+                    $order = (new Order())->where('id', $orderId)->lockForUpdate()->first();
+                    if ($order === null || $order->status !== 'pending_payment') {
+                        return;
+                    }
+                    $invoice = (new Invoice())->where('order_id', $order->id)->lockForUpdate()->first();
 
-                if ($invoice === null) {
-                    return;
-                }
-                if (in_array($invoice->status, ['paid_gateway', 'paid_balance', 'paid_admin'])) {
-                    $order->status = 'pending_activation';
-                    $order->update_time = time();
-                    $order->save();
-                    echo "已标记订单 #{$order->id} 为等待激活。\n";
-                    return;
-                }
-                if ($order->create_time + 86400 < time() && $invoice->status !== 'partially_paid') {
-                    $order->status = 'cancelled';
-                    $order->update_time = time();
-                    $order->save();
-                    $invoice->status = 'cancelled';
-                    $invoice->update_time = time();
-                    $invoice->save();
+                    if ($invoice === null) {
+                        return;
+                    }
+                    if (in_array($invoice->status, ['paid_gateway', 'paid_balance', 'paid_admin'])) {
+                        $order->status = 'pending_activation';
+                        $order->update_time = time();
+                        $order->save();
+                        echo "已标记订单 #{$order->id} 为等待激活。\n";
+                        return;
+                    }
+                    if ($order->create_time + 86400 < time() && $invoice->status !== 'partially_paid') {
+                        $order->status = 'cancelled';
+                        $order->update_time = time();
+                        $order->save();
+                        $invoice->status = 'cancelled';
+                        $invoice->update_time = time();
+                        $invoice->save();
 
-                    // Rollback stock and sale count
-                    $product = Product::find($order->product_id);
-                    if ($product !== null) {
-                        if ($product->stock >= 0) {
-                            Product::where('id', $product->id)->increment('stock', 1);
+                        // Rollback stock and sale count
+                        $product = Product::find($order->product_id);
+                        if ($product !== null) {
+                            if ($product->stock >= 0) {
+                                Product::where('id', $product->id)->increment('stock', 1);
+                            }
+                            Product::where('id', $product->id)->where('sale_count', '>', 0)->decrement('sale_count', 1);
                         }
-                        Product::where('id', $product->id)->where('sale_count', '>', 0)->decrement('sale_count', 1);
-                    }
-                    // Rollback coupon usage
-                    if ($order->coupon !== '') {
-                        UserCoupon::where('code', $order->coupon)->where('use_count', '>', 0)->decrement('use_count', 1);
-                    }
+                        // Rollback coupon usage
+                        if ($order->coupon !== '') {
+                            UserCoupon::where('code', $order->coupon)->where('use_count', '>', 0)->decrement('use_count', 1);
+                        }
 
-                    echo "已取消超时订单 #{$order->id} 和账单 #{$invoice->id}，并恢复库存及优惠码使用次数。\n";
-                }
-            });
+                        echo "已取消超时订单 #{$order->id} 和账单 #{$invoice->id}，并恢复库存及优惠码使用次数。\n";
+                    }
+                });
+            } catch (Throwable $e) {
+                echo 'Cron processPendingOrder failed for order #' . $orderId . ': ' . $e->getMessage() . PHP_EOL;
+            }
         }
 
         echo Tools::toDateTime(time()) . ' 等待中订单处理完成' . PHP_EOL;
@@ -860,19 +873,23 @@ final class Cron
 
         foreach ($freeUsers as $user) {
             try {
-                Notification::notifyUser(
-                    $user,
-                    $_ENV['appName'] . '-免费流量重置通知',
-                    '你好，你的免费流量已经被重置为' . $user->auto_reset_bandwidth . 'GB。'
-                );
-            } catch (GuzzleException|ClientExceptionInterface|TelegramSDKException $e) {
-                echo $e->getMessage() . PHP_EOL;
-            }
+                try {
+                    Notification::notifyUser(
+                        $user,
+                        $_ENV['appName'] . '-免费流量重置通知',
+                        '你好，你的免费流量已经被重置为' . $user->auto_reset_bandwidth . 'GB。'
+                    );
+                } catch (GuzzleException|ClientExceptionInterface|TelegramSDKException $e) {
+                    echo $e->getMessage() . PHP_EOL;
+                }
 
-            $user->u = 0;
-            $user->d = 0;
-            $user->transfer_enable = $user->auto_reset_bandwidth * 1024 * 1024 * 1024;
-            $user->save();
+                $user->u = 0;
+                $user->d = 0;
+                $user->transfer_enable = $user->auto_reset_bandwidth * 1024 * 1024 * 1024;
+                $user->save();
+            } catch (Throwable $e) {
+                echo 'Cron resetFreeUserBandwidth failed for user #' . $user->id . ': ' . $e->getMessage() . PHP_EOL;
+            }
         }
 
         echo Tools::toDateTime(time()) . ' 免费用户流量重置完成' . PHP_EOL;
