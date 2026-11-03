@@ -22,12 +22,7 @@ final class Link extends Model
 
     public function user(): ?User
     {
-        $uid = $this->userid ?? ($this->attributes['userid'] ?? null);
-        if ($uid === null) {
-            return null;
-        }
-
-        return $this->cachedUser ??= (new User())->find($uid);
+        return $this->cachedUser ??= (new User())->find($this->attributes['userid']);
     }
 
     public function isValid(): bool

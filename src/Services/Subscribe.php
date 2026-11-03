@@ -6,7 +6,6 @@ namespace App\Services;
 
 use App\Models\Link;
 use App\Models\Node;
-use App\Services\Cache;
 use App\Services\Subscribe\Clash;
 use App\Services\Subscribe\Json;
 use App\Services\Subscribe\QuantumultX;

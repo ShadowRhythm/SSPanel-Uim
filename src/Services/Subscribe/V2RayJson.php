@@ -8,135 +8,77 @@ use App\Services\Subscribe;
 use App\Utils\Tools;
 use function array_filter;
 use function array_merge;
-use function in_array;
-use function is_array;
-use function is_string;
 use function json_decode;
 use function json_encode;
-use function json_last_error;
-use function trim;
-use const JSON_ERROR_NONE;
 
 final class V2RayJson extends Base
 {
     public function getContent($user): string
     {
         $nodes = [];
-        $v2rayjson_config = is_array($_ENV['V2RayJson_Config'] ?? null) ? $_ENV['V2RayJson_Config'] : [];
+        $v2rayjson_config = $_ENV['V2RayJson_Config'];
         $nodes_raw = Subscribe::getUserNodes($user);
 
         foreach ($nodes_raw as $node_raw) {
-            $server = trim((string) ($node_raw->server ?? ''));
-            if ($server === '') {
-                continue;
-            }
-
-            $node_custom_config = [];
-            if (! empty($node_raw->custom_config)) {
-                $decoded = json_decode((string) $node_raw->custom_config, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $node_custom_config = $decoded;
-                }
-            }
+            $node_custom_config = json_decode($node_raw->custom_config, true);
 
             switch ((int) $node_raw->sort) {
                 case 0:
-                    $port = (int) ($node_custom_config['offset_port_user'] ??
-                        ($node_custom_config['offset_port_node'] ?? $user->port));
-                    $method = (string) ($user->method ?? '');
-                    $password = (string) ($user->passwd ?? '');
-
-                    if ($port <= 0 || $method === '' || $password === '') {
-                        $node = [];
-                        break;
-                    }
-
                     $node = [
                         'protocol' => 'shadowsocks',
                         'settings' => [
-                            'address' => $server,
-                            'port' => $port,
-                            'method' => $method,
-                            'password' => $password,
+                            'address' => $node_raw->server,
+                            'port' => (int) $user->port,
+                            'method' => $user->method,
+                            'password' => $user->passwd,
                         ],
-                        'tag' => (string) $node_raw->name,
+                        'tag' => $node_raw->name,
                     ];
 
                     break;
                 case 1:
-                    $ss_2022_port = (int) ($node_custom_config['offset_port_user'] ??
-                        ($node_custom_config['offset_port_node'] ?? 443));
-                    $method = (string) ($node_custom_config['method'] ?? '2022-blake3-aes-128-gcm');
-                    $passwd = (string) ($user->passwd ?? '');
-
-                    if ($ss_2022_port <= 0 || $passwd === '') {
-                        $node = [];
-                        break;
-                    }
-
-                    $user_pk = Tools::genSs2022UserPk($passwd, $method);
+                    $ss_2022_port = $node_custom_config['offset_port_user'] ?? ($node_custom_config['offset_port_node'] ?? 443);
+                    $method = $node_custom_config['method'] ?? '2022-blake3-aes-128-gcm';
+                    $user_pk = Tools::genSs2022UserPk($user->passwd, $method);
 
                     if (! $user_pk) {
                         $node = [];
                         break;
                     }
 
-                    $server_key = (string) ($node_custom_config['server_key'] ?? '');
+                    $server_key = $node_custom_config['server_key'] ?? '';
 
                     $node = [
                         'protocol' => 'shadowsocks2022',
                         'settings' => [
-                            'address' => $server,
-                            'port' => $ss_2022_port,
-                            'method' => $method,
-                            'psk' => $server_key === '' ? $user_pk : $server_key . ':' . $user_pk,
+                            'address' => $node_raw->server,
+                            'port' => (int) $ss_2022_port,
+                            'method' => $user->method,
+                            'psk' => $server_key === '' ? $user_pk : $server_key . ':' .$user_pk,
                         ],
-                        'tag' => (string) $node_raw->name,
+                        'tag' => $node_raw->name,
                     ];
 
                     break;
                 case 11:
-                    $v2_port = (int) ($node_custom_config['offset_port_user'] ??
-                        ($node_custom_config['offset_port_node'] ?? 443));
-                    $uuid = (string) ($user->uuid ?? '');
-
-                    if ($v2_port <= 0 || $uuid === '') {
-                        $node = [];
-                        break;
-                    }
-
-                    $security = (string) ($node_custom_config['security'] ?? 'none');
-                    $transport = (string) ($node_custom_config['network'] ?? 'tcp');
-
-                    $ws_opts = is_array($node_custom_config['ws-opts'] ?? null)
-                        ? $node_custom_config['ws-opts']
-                        : (is_array($node_custom_config['ws_opts'] ?? null) ? $node_custom_config['ws_opts'] : []);
-                    $ws_headers = is_array($ws_opts['headers'] ?? null) ? $ws_opts['headers'] : [];
-
-                    $request = is_array($node_custom_config['header']['request'] ?? null) ? $node_custom_config['header']['request'] : [];
-                    $request_headers = is_array($request['headers'] ?? null) ? $request['headers'] : [];
-                    $raw_host = $request_headers['Host'] ?? $request_headers['host'] ?? null;
-                    $header_host = is_array($raw_host) ? (string) ($raw_host[0] ?? '') : (is_string($raw_host) ? $raw_host : '');
-                    $host = $header_host !== '' ? $header_host :
-                        (string) ($ws_headers['Host'] ?? ($ws_headers['host'] ?? ($node_custom_config['host'] ?? $server)));
-
-                    $raw_path = $request['path'] ?? null;
-                    $header_path = is_array($raw_path) ? (string) ($raw_path[0] ?? '') : (is_string($raw_path) ? $raw_path : '');
-                    $path = $header_path !== '' ? $header_path :
-                        (string) ($ws_opts['path'] ?? ($node_custom_config['path'] ?? ''));
-
-                    $headers = $request_headers ?: $ws_headers;
-                    $service_name = (string) ($node_custom_config['servicename'] ?? '');
-                    $meek_url = (string) ($node_custom_config['meek_url'] ?? '');
+                    $v2_port = $node_custom_config['offset_port_user'] ?? ($node_custom_config['offset_port_node'] ?? 443);
+                    $security = $node_custom_config['security'] ?? 'none';
+                    $transport = $node_custom_config['network'] ?? 'tcp';
+                    $host = $node_custom_config['header']['request']['headers']['Host'][0] ??
+                        $node_custom_config['host'] ?? $node_raw->server;
+                    $path = $node_custom_config['header']['request']['path'][0] ?? $node_custom_config['path'] ?? '';
+                    $headers = $node_custom_config['header']['request']['headers'] ?? [];
+                    $service_name = $node_custom_config['servicename'] ?? '';
+                    $meek_url = $node_custom_config['meek_url'] ?? '';
 
                     $node = [
                         'protocol' => 'vmess',
                         'settings' => [
-                            'address' => $server,
-                            'port' => $v2_port,
-                            'uuid' => $uuid,
+                            'address' => $node_raw->server,
+                            'port' => (int) $v2_port,
+                            'uuid' => $user->uuid,
                         ],
-                        'tag' => (string) $node_raw->name,
+                        'tag' => $node_raw->name,
                         'streamSettings' => [
                             'transport' => $transport,
                             'transportSettings' => [
@@ -159,7 +101,7 @@ final class V2RayJson extends Base
                             'security' => $security,
                             'securitySettings' => [
                                 'tls' => [
-                                    'server_name' => in_array($security, ['tls', 'auto'], true) ? $host : '',
+                                    'server_name' => $security === ('tls' || 'auto') ? $host : '',
                                 ],
                             ],
                         ],
@@ -175,46 +117,22 @@ final class V2RayJson extends Base
 
                     break;
                 case 14:
-                    $trojan_port = (int) ($node_custom_config['offset_port_user'] ??
-                        ($node_custom_config['offset_port_node'] ?? 443));
-                    $uuid = (string) ($user->uuid ?? '');
-
-                    if ($trojan_port <= 0 || $uuid === '') {
-                        $node = [];
-                        break;
-                    }
-
-                    $ws_opts = is_array($node_custom_config['ws-opts'] ?? null)
-                        ? $node_custom_config['ws-opts']
-                        : (is_array($node_custom_config['ws_opts'] ?? null) ? $node_custom_config['ws_opts'] : []);
-                    $ws_headers = is_array($ws_opts['headers'] ?? null) ? $ws_opts['headers'] : [];
-
-                    $request = is_array($node_custom_config['header']['request'] ?? null) ? $node_custom_config['header']['request'] : [];
-                    $request_headers = is_array($request['headers'] ?? null) ? $request['headers'] : [];
-                    $raw_host = $request_headers['Host'] ?? $request_headers['host'] ?? null;
-                    $header_host = is_array($raw_host) ? (string) ($raw_host[0] ?? '') : (is_string($raw_host) ? $raw_host : '');
-                    $host = $header_host !== '' ? $header_host :
-                        (string) ($ws_headers['Host'] ?? ($ws_headers['host'] ?? ($node_custom_config['host'] ?? ($node_custom_config['sni'] ?? $server))));
-
+                    $trojan_port = $node_custom_config['offset_port_user'] ?? ($node_custom_config['offset_port_node'] ?? 443);
+                    $host = $node_custom_config['host'] ?? $node_raw->server;
                     $allow_insecure = $node_custom_config['allow_insecure'] ?? '0';
-                    $transport = (string) ($node_custom_config['network'] ?? '');
-
-                    $raw_path = $request['path'] ?? null;
-                    $header_path = is_array($raw_path) ? (string) ($raw_path[0] ?? '') : (is_string($raw_path) ? $raw_path : '');
-                    $path = $header_path !== '' ? $header_path :
-                        (string) ($ws_opts['path'] ?? ($node_custom_config['path'] ?? ''));
-
-                    $headers = $request_headers ?: $ws_headers;
-                    $service_name = (string) ($node_custom_config['servicename'] ?? '');
+                    $transport = $node_custom_config['network'] ?? '';
+                    $path = $node_custom_config['header']['request']['path'][0] ?? $node_custom_config['path'] ?? '';
+                    $headers = $node_custom_config['header']['request']['headers'] ?? [];
+                    $service_name = $node_custom_config['servicename'] ?? '';
 
                     $node = [
                         'protocol' => 'trojan',
                         'settings' => [
-                            'address' => $server,
-                            'port' => $trojan_port,
-                            'password' => $uuid,
+                            'address' => $node_raw->server,
+                            'port' => (int) $trojan_port,
+                            'password' => $user->uuid,
                         ],
-                        'tag' => (string) $node_raw->name,
+                        'tag' => $node_raw->name,
                         'streamSettings' => [
                             'transport' => $transport,
                             'transportSettings' => [
@@ -260,8 +178,8 @@ final class V2RayJson extends Base
             $nodes[] = $node;
         }
 
-        $v2rayjson_config['outbounds'] = array_merge($v2rayjson_config['outbounds'] ?? [], $nodes);
+        $v2rayjson_config['outbounds'] = array_merge($v2rayjson_config['outbounds'], $nodes);
 
-        return (string) json_encode($v2rayjson_config);
+        return json_encode($v2rayjson_config);
     }
 }

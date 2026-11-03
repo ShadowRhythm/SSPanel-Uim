@@ -7,7 +7,6 @@ namespace App\Controllers;
 use App\Models\Config;
 use App\Models\Link;
 use App\Models\SubscribeLog;
-use App\Services\I18n;
 use App\Services\RateLimit;
 use App\Services\Subscribe;
 use App\Utils\ResponseHelper;
@@ -16,12 +15,8 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use RedisException;
 use Telegram\Bot\Exceptions\TelegramSDKException;
-use Throwable;
 use function in_array;
-use function parse_url;
 use function strtotime;
-use const PHP_URL_HOST;
-use const PHP_URL_PORT;
 
 final class SubController extends BaseController
 {
@@ -33,39 +28,25 @@ final class SubController extends BaseController
      */
     public function index($request, $response, $args): ResponseInterface
     {
-        $err_msg = I18n::trans('user.invalid_sub_link');
-        $subtype = (string) ($args['subtype'] ?? '');
+        $err_msg = '订阅链接无效';
+        $subtype = $args['subtype'];
         $subtype_list = ['json', 'clash', 'sip008', 'singbox', 'v2rayjson', 'sip002', 'ss', 'v2ray', 'trojan', 'qx'];
 
-        $host = $request->getHeaderLine('Host');
-        $sub_url = (string) ($_ENV['subUrl'] ?? '');
-        $sub_host = (string) parse_url($sub_url, PHP_URL_HOST);
-        $sub_port = parse_url($sub_url, PHP_URL_PORT);
-        $expected_host = $sub_host . ($sub_port ? ':' . $sub_port : '');
-
-        if (! ($_ENV['Subscribe'] ?? false) ||
+        if (! $_ENV['Subscribe'] ||
             ! in_array($subtype, $subtype_list) ||
-            ($host !== $expected_host && 'https://' . $host !== $sub_url && 'http://' . $host !== $sub_url)
+            'https://' . $request->getHeaderLine('Host') !== $_ENV['subUrl']
         ) {
             return ResponseHelper::error($response, $err_msg);
         }
 
-        $token = $this->antiXss->xss_clean($args['token'] ?? '');
-        if ($token === '') {
-            return ResponseHelper::error($response, $err_msg);
-        }
+        $token = $this->antiXss->xss_clean($args['token']);
 
-        if ($_ENV['enable_rate_limit'] ?? false) {
-            try {
-                $rateLimit = new RateLimit();
-                $remote_addr = (string) ($request->getServerParam('REMOTE_ADDR') ?? '127.0.0.1');
-                if (! $rateLimit->checkRateLimit('sub_ip', $remote_addr) ||
-                    ! $rateLimit->checkRateLimit('sub_token', $token)
-                ) {
-                    return ResponseHelper::error($response, $err_msg);
-                }
-            } catch (Throwable $e) {
-                error_log('RateLimit check failed in SubController: ' . $e->getMessage());
+        if ($_ENV['enable_rate_limit']) {
+            $rateLimit = new RateLimit();
+            if (! $rateLimit->checkRateLimit('sub_ip', $request->getServerParam('REMOTE_ADDR')) ||
+                ! $rateLimit->checkRateLimit('sub_token', $token)
+            ) {
+                return ResponseHelper::error($response, $err_msg);
             }
         }
 
@@ -76,25 +57,7 @@ final class SubController extends BaseController
         }
 
         $user = $link->user();
-        if ($user === null) {
-            return ResponseHelper::error($response, $err_msg);
-        }
-        $err_msg = I18n::trans('user.invalid_sub_link', I18n::getCurrentLocale($user));
-
-        $cacheKey = 'sub_content_' . $user->id . '_' . $token . '_' . $subtype;
-        $sub_info = Cache::get($cacheKey);
-
-        if ($sub_info === null || ! is_string($sub_info)) {
-            try {
-                $sub_info = Subscribe::getContent($user, $subtype);
-                Cache::set($cacheKey, $sub_info, 60);
-            } catch (Throwable $e) {
-                error_log('Subscribe::getContent failed for user ' . $user->id . ' type ' . $subtype . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-                return ResponseHelper::error($response, $err_msg . ' (Error: ' . $e->getMessage() . ')');
-            }
-        }
-
-        $sub_info = (string) $sub_info;
+        $sub_info = Subscribe::getContent($user, $subtype);
 
         $content_type = match ($subtype) {
             'clash' => 'application/yaml',
@@ -102,27 +65,21 @@ final class SubController extends BaseController
             default => 'text/plain',
         };
 
-        $expire = ! empty($user->class_expire) ? (strtotime((string) $user->class_expire) ?: 0) : 0;
-        $sub_details = ' upload=' . (int) ($user->u ?? 0)
-            . '; download=' . (int) ($user->d ?? 0)
-            . '; total=' . (int) ($user->transfer_enable ?? 0)
-            . '; expire=' . $expire;
-
+        $sub_details = ' upload=' . $user->u
+        . '; download=' . $user->d
+        . '; total=' . $user->transfer_enable
+        . '; expire=' . strtotime($user->class_expire);
         // Clash specific
-        $sub_content_disposition = 'attachment; filename=' . ($_ENV['appName'] ?? 'SSPanel');
+        $sub_content_disposition = 'attachment; filename=' . $_ENV['appName'];
         $sub_profile_update_interval = 6;
-        $sub_profile_web_page_url = (string) ($_ENV['baseUrl'] ?? '');
+        $sub_profile_web_page_url = $_ENV['baseUrl'];
 
         if (Config::obtain('subscribe_log')) {
-            try {
-                (new SubscribeLog())->add(
-                    $user,
-                    $subtype,
-                    $this->antiXss->xss_clean($request->getHeaderLine('User-Agent'))
-                );
-            } catch (Throwable $e) {
-                error_log('SubscribeLog add failed: ' . $e->getMessage());
-            }
+            (new SubscribeLog())->add(
+                $user,
+                $subtype,
+                $this->antiXss->xss_clean($request->getHeaderLine('User-Agent'))
+            );
         }
 
         if ($subtype === 'clash') {
