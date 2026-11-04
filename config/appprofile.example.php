@@ -776,33 +776,41 @@ $_ENV['Clash_Config'] = [
     'external-controller' => '0.0.0.0:9091',
     'dns' => [
         'enable' => true,
-        'ipv6' => false,
-        'listen' => '0.0.0.0:1053',
+        'ipv6' => true,
         'enhanced-mode' => 'fake-ip',
         'fake-ip-range' => '198.18.0.1/16',
+        'fake-ip-range6' => 'fdfe:dcba:9876::1/64',
+        'respect-rules' => true,
         'fake-ip-filter' => [
             '*.lan',
             '*.local',
-            '*.msftconnecttest.com',
-            '*.msftncsi.com',
+            '*.arpa',
+            'time.*.com',
+            'ntp.*.com',
+            '+.pool.ntp.org',
+            '+.msftconnecttest.com',
+            '+.msftncsi.com',
             'msftconnecttest.com',
             'msftncsi.com',
             'localhost.ptlogin2.qq.com',
         ],
-        'nameserver' => [
+        'default-nameserver' => [
             '223.5.5.5',
             '119.29.29.29',
         ],
-        'fallback' => [
+        'nameserver' => [
             'https://1.1.1.1/dns-query',
             'https://8.8.8.8/dns-query',
         ],
-        'fallback-filter' => [
-            'geoip' => true,
-            'geoip-code' => 'CN',
-            'ipcidr' => [
-                '240.0.0.0/4',
+        'nameserver-policy' => [
+            'geosite:cn,private' => [
+                'https://223.5.5.5/dns-query',
+                'https://doh.pub/dns-query',
             ],
+        ],
+        'proxy-server-nameserver' => [
+            '223.5.5.5',
+            '119.29.29.29',
         ],
     ],
 ];
@@ -1379,13 +1387,19 @@ $_ENV['Clash_Group_Config'] = [
         // 🌐 核心国际基础服务
         // Google 全球生态 (搜索/Play商店/Drive/reCAPTCHA/Chrome等)
         'GEOSITE,google,🔰 Select',
+        'DOMAIN-KEYWORD,google,🔰 Select',
+        'DOMAIN-KEYWORD,1e100,🔰 Select',
         'DOMAIN-SUFFIX,google.com,🔰 Select',
+        'DOMAIN-SUFFIX,google.com.hk,🔰 Select',
+        'DOMAIN-SUFFIX,google.com.tw,🔰 Select',
+        'DOMAIN-SUFFIX,google.co.jp,🔰 Select',
         'DOMAIN-SUFFIX,googleapis.com,🔰 Select',
         'DOMAIN-SUFFIX,gstatic.com,🔰 Select',
         'DOMAIN-SUFFIX,googleusercontent.com,🔰 Select',
         'DOMAIN-SUFFIX,googletagmanager.com,🔰 Select',
         'DOMAIN-SUFFIX,android.com,🔰 Select',
         'DOMAIN-SUFFIX,gmail.com,🔰 Select',
+        'DOMAIN-SUFFIX,ggpht.com,🔰 Select',
         // Twitter / X 全球社交
         'GEOSITE,twitter,🔰 Select',
         'DOMAIN-SUFFIX,x.com,🔰 Select',
@@ -1420,6 +1434,16 @@ $_ENV['Clash_Group_Config'] = [
         // Cloudflare 国际网络服务
         'DOMAIN-SUFFIX,cloudflare.com,🔰 Select',
         'DOMAIN-SUFFIX,cloudflare.net,🔰 Select',
+        // 🎓 学术科研与文献检索
+        'DOMAIN-SUFFIX,arxiv.org,🔰 Select',
+        'DOMAIN-SUFFIX,ieee.org,🔰 Select',
+        'DOMAIN-SUFFIX,sciencedirect.com,🔰 Select',
+        'DOMAIN-SUFFIX,springer.com,🔰 Select',
+        'DOMAIN-SUFFIX,nature.com,🔰 Select',
+        'DOMAIN-SUFFIX,wiley.com,🔰 Select',
+        'DOMAIN-SUFFIX,researchgate.net,🔰 Select',
+        'DOMAIN-SUFFIX,semanticscholar.org,🔰 Select',
+        'DOMAIN-SUFFIX,jstor.org,🔰 Select',
         // 🎯 中国大陆直连
         'DOMAIN-SUFFIX,cn,🎯 Direct',
         'DOMAIN-SUFFIX,gov.cn,🎯 Direct',
@@ -1472,7 +1496,7 @@ $_ENV['Clash_Group_Config'] = [
         'DOMAIN-SUFFIX,bankcomm.com,🎯 Direct',
         // 大陆 GeoSite / GeoIP 兜底（置于特定规则之后，避免误吞流媒体/AI）
         'GEOSITE,cn,🎯 Direct',
-        'GEOIP,cn,🎯 Direct',
+        'GEOIP,cn,🎯 Direct,no-resolve',
         // 🐟 Final
         'MATCH,🐟 Final',
     ],
@@ -1560,10 +1584,19 @@ $_ENV['QuantumultX_Config'] = [
         'host-keyword, ntp, 🎯 Direct',
         'host-suffix, pool.ntp.org, 🎯 Direct',
         // 🌐 核心国际基础服务 (走 🔰 Select)
+        'host-keyword, google, 🔰 Select',
+        'host-keyword, 1e100, 🔰 Select',
         'host-suffix, google.com, 🔰 Select',
+        'host-suffix, google.com.hk, 🔰 Select',
+        'host-suffix, google.com.tw, 🔰 Select',
+        'host-suffix, google.co.jp, 🔰 Select',
         'host-suffix, googleapis.com, 🔰 Select',
         'host-suffix, gstatic.com, 🔰 Select',
         'host-suffix, googleusercontent.com, 🔰 Select',
+        'host-suffix, googletagmanager.com, 🔰 Select',
+        'host-suffix, android.com, 🔰 Select',
+        'host-suffix, gmail.com, 🔰 Select',
+        'host-suffix, ggpht.com, 🔰 Select',
         'host-suffix, x.com, 🔰 Select',
         'host-suffix, twitter.com, 🔰 Select',
         'host-suffix, twimg.com, 🔰 Select',
@@ -1578,6 +1611,16 @@ $_ENV['QuantumultX_Config'] = [
         'host-suffix, reddit.com, 🔰 Select',
         'host-suffix, wikipedia.org, 🔰 Select',
         'host-suffix, cloudflare.com, 🔰 Select',
+        // 🎓 学术科研与文献检索
+        'host-suffix, arxiv.org, 🔰 Select',
+        'host-suffix, ieee.org, 🔰 Select',
+        'host-suffix, sciencedirect.com, 🔰 Select',
+        'host-suffix, springer.com, 🔰 Select',
+        'host-suffix, nature.com, 🔰 Select',
+        'host-suffix, wiley.com, 🔰 Select',
+        'host-suffix, researchgate.net, 🔰 Select',
+        'host-suffix, semanticscholar.org, 🔰 Select',
+        'host-suffix, jstor.org, 🔰 Select',
         'geoip, cn, 🎯 Direct',
         'final, 🐟 Final',
     ],
