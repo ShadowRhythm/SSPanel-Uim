@@ -97,8 +97,6 @@
                     msgText += '<br><small class="text-secondary">' + decodeURIComponent(errFile) + '</small>';
                 }
                 document.getElementById("fail-message").innerHTML = msgText;
-            } else if (evt.detail.xhr && evt.detail.xhr.status >= 400) {
-                document.getElementById("fail-message").innerHTML = "HTTP Error " + evt.detail.xhr.status + " (" + (evt.detail.xhr.statusText || "Request Failed") + ")";
             } else {
                 document.getElementById("fail-message").innerHTML = "{trans key='common.unexpected_error' escape='js'}";
             }

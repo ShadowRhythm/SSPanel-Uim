@@ -318,7 +318,11 @@ final class AuthController extends BaseController
             $saved = $user->save();
         } catch (Throwable $e) {
             error_log('User registration database save error: ' . $e->getMessage());
-            return ResponseHelper::error($response, $e->getMessage());
+            $errorMsg = I18n::trans('user.unknown_error', $locale);
+            if (! empty($_ENV['debug'])) {
+                $errorMsg .= ': ' . $e->getMessage();
+            }
+            return ResponseHelper::error($response, $errorMsg);
         }
 
         if ($saved) {

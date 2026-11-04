@@ -65,12 +65,17 @@ final class ErrorHandler implements MiddlewareInterface
 
             if ($isAjax) {
                 $response = $response_factory->createResponse(500)
-                    ->withHeader('Content-Type', 'application/json; charset=utf-8')
-                    ->withHeader('X-Error-Message', rawurlencode($e->getMessage()))
-                    ->withHeader('X-Error-File', rawurlencode($e->getFile() . ':' . $e->getLine()));
-                $errorMsg = ($_ENV['debug'] ?? false)
-                    ? $e->getMessage() . ' (' . $e->getFile() . ':' . $e->getLine() . ')'
-                    : ($e->getMessage() !== '' ? $e->getMessage() : 'Internal Server Error');
+                    ->withHeader('Content-Type', 'application/json; charset=utf-8');
+
+                if (! empty($_ENV['debug'])) {
+                    $response = $response
+                        ->withHeader('X-Error-Message', rawurlencode($e->getMessage()))
+                        ->withHeader('X-Error-File', rawurlencode($e->getFile() . ':' . $e->getLine()));
+                    $errorMsg = $e->getMessage() . ' (' . $e->getFile() . ':' . $e->getLine() . ')';
+                } else {
+                    $errorMsg = 'An unexpected error occurred';
+                }
+
                 $response->getBody()->write(json_encode([
                     'ret' => 0,
                     'msg' => $errorMsg,
@@ -83,9 +88,7 @@ final class ErrorHandler implements MiddlewareInterface
                 $error_handler = new SlimErrorHandler($callable_resolver, $response_factory);
                 $response = $error_handler($request, $e, true, true, false);
             } else {
-                $response = $response_factory->createResponse(500)
-                    ->withHeader('X-Error-Message', rawurlencode($e->getMessage()))
-                    ->withHeader('X-Error-File', rawurlencode($e->getFile() . ':' . $e->getLine()));
+                $response = $response_factory->createResponse(500);
                 $smarty = View::getSmarty();
                 $response->getBody()->write($smarty->fetch('500.tpl'));
             }
