@@ -21,10 +21,10 @@ final class Cookie extends Base
             'uid' => (string) $uid,
             'email' => $user->email,
             'key' => Hash::cookieHash($user->pass, $expire_in),
-            'ip' => Hash::ipHash($_SERVER['REMOTE_ADDR'], $uid, $expire_in),
-            'device' => Hash::deviceHash($_SERVER['HTTP_USER_AGENT'], $uid, $expire_in),
+            'ip' => Hash::ipHash($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $uid, $expire_in),
+            'device' => Hash::deviceHash($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', $uid, $expire_in),
             'expire_in' => (string) $expire_in,
-        ], $expire_in, $_SERVER['HTTP_HOST']);
+        ], $expire_in, $_SERVER['HTTP_HOST'] ?? '');
     }
 
     public function getUser(): User
@@ -104,6 +104,6 @@ final class Cookie extends Base
             'ip' => '',
             'device' => '',
             'expire_in' => '',
-        ], 0, $_SERVER['HTTP_HOST']);
+        ], 0, $_SERVER['HTTP_HOST'] ?? '');
     }
 }

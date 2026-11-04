@@ -268,8 +268,8 @@ final class Tools
 
     public static function getSsPort(): int
     {
-        $max_port = Config::obtain('max_port');
-        $min_port = Config::obtain('min_port');
+        $max_port = (int) Config::obtain('max_port');
+        $min_port = (int) Config::obtain('min_port');
 
         if ($min_port >= 65535
             || $min_port <= 0
@@ -283,6 +283,9 @@ final class Tools
 
         $det = (new User())->pluck('port')->toArray();
         $port = array_diff(range($min_port, $max_port), $det);
+        if (empty($port)) {
+            return 0;
+        }
         shuffle($port);
 
         return $port[0];

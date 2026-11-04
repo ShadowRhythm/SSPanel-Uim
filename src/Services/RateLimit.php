@@ -9,6 +9,7 @@ use RateLimit\Exception\LimitExceeded;
 use RateLimit\Rate;
 use RateLimit\RedisRateLimiter;
 use Redis;
+use Throwable;
 
 final class RateLimit
 {
@@ -48,6 +49,8 @@ final class RateLimit
             $limiter->limit($value);
         } catch (LimitExceeded) {
             return false;
+        } catch (Throwable) {
+            return true;
         }
 
         return true;
@@ -172,8 +175,13 @@ final class RateLimit
 
     public function getLoginIpLimiter(): RedisRateLimiter
     {
+        $rate = (int) ($_ENV['rate_limit_login_ip'] ?? 15);
+        if ($rate <= 0) {
+            $rate = 15;
+        }
+
         return new RedisRateLimiter(
-            Rate::perMinute((int) ($_ENV['rate_limit_login_ip'] ?? 15)),
+            Rate::perMinute($rate),
             $this->redis,
             'sspanel_login_ip:'
         );
@@ -181,8 +189,13 @@ final class RateLimit
 
     public function getRegisterIpLimiter(): RedisRateLimiter
     {
+        $rate = (int) ($_ENV['rate_limit_register_ip'] ?? 10);
+        if ($rate <= 0) {
+            $rate = 10;
+        }
+
         return new RedisRateLimiter(
-            Rate::perHour((int) ($_ENV['rate_limit_register_ip'] ?? 10)),
+            Rate::perHour($rate),
             $this->redis,
             'sspanel_register_ip:'
         );

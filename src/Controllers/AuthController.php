@@ -30,6 +30,7 @@ use Ramsey\Uuid\Uuid;
 use RedisException;
 use Slim\Http\Response;
 use Slim\Http\ServerRequest;
+use Throwable;
 use function array_rand;
 use function date;
 use function explode;
@@ -299,7 +300,7 @@ final class AuthController extends BaseController
         $user->node_iplimit = $configs['reg_ip_limit'];
         $user->node_speedlimit = $configs['reg_speed_limit'];
         $user->reg_date = date('Y-m-d H:i:s');
-        $user->reg_ip = $_SERVER['REMOTE_ADDR'];
+        $user->reg_ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
         $user->theme = $_ENV['theme'];
         $user->locale = I18n::getCurrentLocale();
         $random_group = Config::obtain('random_group');
@@ -307,7 +308,7 @@ final class AuthController extends BaseController
         if ($random_group === '') {
             $user->node_group = 0;
         } else {
-            $groups = explode(',', $random_group);
+            $groups = explode(',', (string) $random_group);
             $user->node_group = (int) trim($groups[array_rand($groups)]);
         }
 
@@ -320,9 +321,12 @@ final class AuthController extends BaseController
 
             Auth::login($user->id, 3600);
             Cookie::set(['locale' => $user->locale], time() + 86400 * 365);
-            (new LoginIp())->collectLoginIP($_SERVER['REMOTE_ADDR'], 0, $user->id);
+            (new LoginIp())->collectLoginIP($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', 0, $user->id);
 
-            return $response->withHeader('HX-Redirect', $redir);
+            return $response->withHeader('HX-Redirect', $redir)->withJson([
+                'ret' => 1,
+                'msg' => 'ok',
+            ]);
         }
 
         $locale = I18n::getCurrentLocale();
@@ -342,10 +346,14 @@ final class AuthController extends BaseController
             return ResponseHelper::error($response, I18n::trans('user.reg_closed', $locale));
         }
 
-        if (($_ENV['enable_rate_limit'] ?? false) &&
-            ! (new RateLimit())->checkRateLimit('register_ip', $request->getServerParam('REMOTE_ADDR') ?? '')
-        ) {
-            return ResponseHelper::error($response, I18n::trans('user.request_too_frequent', $locale));
+        try {
+            if (($_ENV['enable_rate_limit'] ?? false) &&
+                ! (new RateLimit())->checkRateLimit('register_ip', $request->getServerParam('REMOTE_ADDR') ?? '')
+            ) {
+                return ResponseHelper::error($response, I18n::trans('user.request_too_frequent', $locale));
+            }
+        } catch (Throwable) {
+            // Fail open on rate limiter error
         }
 
         if (Config::obtain('enable_reg_captcha') && ! Captcha::verify($request->getParams())) {
@@ -363,7 +371,11 @@ final class AuthController extends BaseController
             return ResponseHelper::error($response, I18n::trans('user.tos_not_agreed', $locale));
         }
 
-        if ($name === '' || mb_strlen($name) > 32) {
+        if ($name === '') {
+            $name = explode('@', $email)[0];
+        }
+
+        if (mb_strlen($name) > 32) {
             return ResponseHelper::error($response, I18n::trans('user.invalid_input', $locale));
         }
 

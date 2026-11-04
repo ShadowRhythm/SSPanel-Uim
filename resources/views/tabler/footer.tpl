@@ -70,6 +70,10 @@
         }
 
         try {
+            if (!evt.detail.xhr.response || evt.detail.xhr.response.trim() === '') {
+                return;
+            }
+
             let res = JSON.parse(evt.detail.xhr.response);
 
             if (evt.detail.elt.id === 'send-verify-email') {

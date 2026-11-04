@@ -3,7 +3,13 @@
     <script>
         function refreshCaptcha() {
             if (window.turnstile) {
-                turnstile.render('#turnstile');
+                try {
+                    turnstile.reset('#cf-turnstile');
+                } catch (e) {
+                    try {
+                        turnstile.reset();
+                    } catch (e2) {}
+                }
             }
         }
     </script>
@@ -57,9 +63,18 @@
 {/if}
 <script>
     htmx.on("htmx:afterRequest", function (evt) {
-        let res = JSON.parse(evt.detail.xhr.response);
-        if (res.ret === 0) {
-            refreshCaptcha();
+        if (evt.detail.xhr.getResponseHeader('HX-Redirect')) {
+            return;
         }
+
+        try {
+            if (!evt.detail.xhr.response || evt.detail.xhr.response.trim() === '') {
+                return;
+            }
+            let res = JSON.parse(evt.detail.xhr.response);
+            if (res.ret === 0 && typeof refreshCaptcha === 'function') {
+                refreshCaptcha();
+            }
+        } catch (e) {}
     });
 </script>
