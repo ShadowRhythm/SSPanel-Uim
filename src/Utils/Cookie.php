@@ -31,17 +31,22 @@ final class Cookie
             || (($_SERVER['SERVER_PORT'] ?? '') == 443)
             || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 
-        $cleanDomain = explode(':', $domain)[0];
+        $cleanDomain = trim(explode(':', $domain)[0]);
+
+        $cookieOptions = [
+            'expires' => $time,
+            'path' => '/',
+            'secure' => $isHttps,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ];
+
+        if ($cleanDomain !== '' && ! filter_var($cleanDomain, FILTER_VALIDATE_IP) && $cleanDomain !== 'localhost') {
+            $cookieOptions['domain'] = $cleanDomain;
+        }
 
         foreach ($arg as $key => $value) {
-            setcookie((string) $key, (string) $value, [
-                'expires' => $time,
-                'path' => '/',
-                'domain' => $cleanDomain,
-                'secure' => $isHttps,
-                'httponly' => true,
-                'samesite' => 'Lax',
-            ]);
+            setcookie((string) $key, (string) $value, $cookieOptions);
         }
     }
 

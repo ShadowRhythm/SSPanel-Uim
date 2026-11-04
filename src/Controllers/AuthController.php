@@ -266,23 +266,23 @@ final class AuthController extends BaseController
         $user->remark = '';
         $user->pass = Hash::passwordHash($password);
         $user->passwd = Tools::genRandomChar(16);
-        $user->uuid = Uuid::uuid4();
+        $user->uuid = (string) Uuid::uuid4();
         $user->api_token = Tools::genRandomChar(32);
         $user->port = Tools::getSsPort();
         $user->u = 0;
         $user->d = 0;
-        $user->method = $configs['reg_method'];
-        $user->im_type = $imtype;
-        $user->im_value = $imvalue;
-        $user->transfer_enable = Tools::gbToB($configs['reg_traffic']);
-        $user->auto_reset_day = Config::obtain('free_user_reset_day');
-        $user->auto_reset_bandwidth = Config::obtain('free_user_reset_bandwidth');
-        $user->daily_mail_enable = $configs['reg_daily_report'];
+        $user->method = (string) ($configs['reg_method'] ?? 'aes-128-gcm');
+        $user->im_type = (int) $imtype;
+        $user->im_value = (string) $imvalue;
+        $user->transfer_enable = Tools::gbToB((int) ($configs['reg_traffic'] ?? 0));
+        $user->auto_reset_day = (int) (Config::obtain('free_user_reset_day') ?? 0);
+        $user->auto_reset_bandwidth = (float) (Config::obtain('free_user_reset_bandwidth') ?? 0);
+        $user->daily_mail_enable = (int) ($configs['reg_daily_report'] ?? 0);
 
         if ($money > 0) {
-            $user->money = $money;
+            $user->money = (float) $money;
         } else {
-            $user->money = 0;
+            $user->money = 0.0;
         }
 
         $user->ref_by = 0;
@@ -291,21 +291,21 @@ final class AuthController extends BaseController
             $invite = (new InviteCode())->where('code', $invite_code)->first();
 
             if ($invite !== null) {
-                $user->ref_by = $invite->user_id;
+                $user->ref_by = (int) $invite->user_id;
             }
         }
 
-        $user->class = $configs['reg_class'];
-        $user->class_expire = date('Y-m-d H:i:s', time() + (int) $configs['reg_class_time'] * 86400);
-        $user->node_iplimit = $configs['reg_ip_limit'];
-        $user->node_speedlimit = $configs['reg_speed_limit'];
+        $user->class = (int) ($configs['reg_class'] ?? 0);
+        $user->class_expire = date('Y-m-d H:i:s', time() + (int) ($configs['reg_class_time'] ?? 0) * 86400);
+        $user->node_iplimit = (int) ($configs['reg_ip_limit'] ?? 0);
+        $user->node_speedlimit = (int) ($configs['reg_speed_limit'] ?? 0);
         $user->reg_date = date('Y-m-d H:i:s');
-        $user->reg_ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-        $user->theme = $_ENV['theme'];
-        $user->locale = I18n::getCurrentLocale();
+        $user->reg_ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
+        $user->theme = (string) ($_ENV['theme'] ?? 'tabler');
+        $user->locale = (string) I18n::getCurrentLocale();
         $random_group = Config::obtain('random_group');
 
-        if ($random_group === '') {
+        if ($random_group === '' || $random_group === null) {
             $user->node_group = 0;
         } else {
             $groups = explode(',', (string) $random_group);
@@ -314,14 +314,33 @@ final class AuthController extends BaseController
 
         $user->last_login_time = time();
 
-        if ($user->save() && ! $is_admin_reg) {
-            if ($user->ref_by !== 0) {
-                Reward::issueRegReward($user->id, $user->ref_by);
+        try {
+            $saved = $user->save();
+        } catch (Throwable $e) {
+            error_log('User registration database save error: ' . $e->getMessage());
+            return ResponseHelper::error($response, $e->getMessage());
+        }
+
+        if ($saved) {
+            if ($is_admin_reg) {
+                return ResponseHelper::success($response, 'ok');
             }
 
-            Auth::login($user->id, 3600);
-            Cookie::set(['locale' => $user->locale], time() + 86400 * 365);
-            (new LoginIp())->collectLoginIP($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', 0, $user->id);
+            if ($user->ref_by !== 0) {
+                try {
+                    Reward::issueRegReward($user->id, $user->ref_by);
+                } catch (Throwable $e) {
+                    error_log('Issue reg reward error: ' . $e->getMessage());
+                }
+            }
+
+            try {
+                Auth::login($user->id, 3600);
+                Cookie::set(['locale' => $user->locale], time() + 86400 * 365);
+                (new LoginIp())->collectLoginIP($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', 0, $user->id);
+            } catch (Throwable $e) {
+                error_log('Post-reg login/cookie error: ' . $e->getMessage());
+            }
 
             return $response->withHeader('HX-Redirect', $redir)->withJson([
                 'ret' => 1,

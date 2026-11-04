@@ -59,6 +59,25 @@ final class ErrorHandler implements MiddlewareInterface
                 captureException($e);
             }
 
+            $isAjax = $request->hasHeader('HX-Request')
+                || str_contains($request->getHeaderLine('Accept'), 'application/json')
+                || str_contains($request->getHeaderLine('X-Requested-With'), 'XMLHttpRequest');
+
+            if ($isAjax) {
+                $response = $response_factory->createResponse(500)
+                    ->withHeader('Content-Type', 'application/json; charset=utf-8')
+                    ->withHeader('X-Error-Message', rawurlencode($e->getMessage()))
+                    ->withHeader('X-Error-File', rawurlencode($e->getFile() . ':' . $e->getLine()));
+                $errorMsg = ($_ENV['debug'] ?? false)
+                    ? $e->getMessage() . ' (' . $e->getFile() . ':' . $e->getLine() . ')'
+                    : ($e->getMessage() !== '' ? $e->getMessage() : 'Internal Server Error');
+                $response->getBody()->write(json_encode([
+                    'ret' => 0,
+                    'msg' => $errorMsg,
+                ], JSON_UNESCAPED_UNICODE));
+                return $response;
+            }
+
             if ($_ENV['debug']) {
                 $callable_resolver = new CallableResolver(null);
                 $error_handler = new SlimErrorHandler($callable_resolver, $response_factory);

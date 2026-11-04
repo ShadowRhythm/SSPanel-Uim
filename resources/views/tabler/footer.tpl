@@ -88,7 +88,20 @@
                 failDialog.show();
             }
         } catch (e) {
-            document.getElementById("fail-message").innerHTML = "{trans key='common.unexpected_error' escape='js'}";
+            console.error("HTMX request error:", e, evt.detail.xhr);
+            let errMsg = evt.detail.xhr ? evt.detail.xhr.getResponseHeader('X-Error-Message') : null;
+            let errFile = evt.detail.xhr ? evt.detail.xhr.getResponseHeader('X-Error-File') : null;
+            if (errMsg) {
+                let msgText = decodeURIComponent(errMsg);
+                if (errFile) {
+                    msgText += '<br><small class="text-secondary">' + decodeURIComponent(errFile) + '</small>';
+                }
+                document.getElementById("fail-message").innerHTML = msgText;
+            } else if (evt.detail.xhr && evt.detail.xhr.status >= 400) {
+                document.getElementById("fail-message").innerHTML = "HTTP Error " + evt.detail.xhr.status + " (" + (evt.detail.xhr.statusText || "Request Failed") + ")";
+            } else {
+                document.getElementById("fail-message").innerHTML = "{trans key='common.unexpected_error' escape='js'}";
+            }
             failDialog.show();
         }
     });
