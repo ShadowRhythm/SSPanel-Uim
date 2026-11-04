@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Auth;
 use App\Services\Cache;
 use App\Services\Captcha;
+use App\Services\DB;
 use App\Services\Filter;
 use App\Services\I18n;
 use App\Services\Mail;
@@ -317,8 +318,24 @@ final class AuthController extends BaseController
         try {
             $saved = $user->save();
         } catch (Throwable $e) {
-            error_log('User registration database save error: ' . $e->getMessage());
-            return ResponseHelper::error($response, $e->getMessage());
+            if (str_contains($e->getMessage(), 'ga_token')) {
+                try {
+                    // Drop obsolete unique key from legacy schema if migration 2025073100 was not run
+                    DB::getPdo()->exec('ALTER TABLE `user` DROP KEY `ga_token`');
+                } catch (Throwable) {
+                }
+                // Also set unique random token in case column still exists and unique constraint is active
+                $user->setAttribute('ga_token', Tools::genRandomChar(32));
+                try {
+                    $saved = $user->save();
+                } catch (Throwable $retryEx) {
+                    error_log('User registration database retry failed: ' . $retryEx->getMessage());
+                    return ResponseHelper::error($response, $retryEx->getMessage());
+                }
+            } else {
+                error_log('User registration database save error: ' . $e->getMessage());
+                return ResponseHelper::error($response, $e->getMessage());
+            }
         }
 
         if ($saved) {
