@@ -1113,22 +1113,6 @@ $_ENV['Clash_Group_Config'] = [
         'DOMAIN-SUFFIX,qdrant.tech,♾️ AI',
         'DOMAIN-SUFFIX,weaviate.io,♾️ AI',
         'DOMAIN-SUFFIX,voyageai.com,♾️ AI',
-        // Essential Auth, Anti-fraud & Billing for AI
-        'DOMAIN-SUFFIX,clerk.com,♾️ AI',
-        'DOMAIN-SUFFIX,clerk.dev,♾️ AI',
-        'DOMAIN-SUFFIX,workos.com,♾️ AI',
-        'DOMAIN-SUFFIX,client-api.arkoselabs.com,♾️ AI',
-        'DOMAIN-SUFFIX,stripe.com,♾️ AI',
-        'DOMAIN-SUFFIX,statsig.com,♾️ AI',
-        'DOMAIN-SUFFIX,statsigapi.net,♾️ AI',
-        'DOMAIN-SUFFIX,featuregates.org,♾️ AI',
-        'DOMAIN-SUFFIX,launchdarkly.com,♾️ AI',
-        'DOMAIN-SUFFIX,auth0.com,♾️ AI',
-        'DOMAIN-SUFFIX,identrust.com,♾️ AI',
-        'DOMAIN-SUFFIX,intercom.io,♾️ AI',
-        'DOMAIN-SUFFIX,intercomcdn.com,♾️ AI',
-        'DOMAIN-SUFFIX,sentry.io,♾️ AI',
-        'DOMAIN-SUFFIX,segment.io,♾️ AI',
         // Apple Intelligence & Siri PCC
         'DOMAIN-SUFFIX,smoot.apple.com,♾️ AI',
         'DOMAIN,guzzoni.apple.com,♾️ AI',
@@ -1433,6 +1417,9 @@ $_ENV['Clash_Group_Config'] = [
         // Cloudflare 国际网络服务
         'DOMAIN-SUFFIX,cloudflare.com,🔰 Select',
         'DOMAIN-SUFFIX,cloudflare.net,🔰 Select',
+        // Stripe 国际在线支付
+        'DOMAIN-SUFFIX,stripe.com,🔰 Select',
+        'DOMAIN-SUFFIX,stripe.network,🔰 Select',
         // 🎓 学术科研与文献检索
         'DOMAIN-SUFFIX,arxiv.org,🔰 Select',
         'DOMAIN-SUFFIX,ieee.org,🔰 Select',
@@ -1610,6 +1597,8 @@ $_ENV['QuantumultX_Config'] = [
         'host-suffix, reddit.com, 🔰 Select',
         'host-suffix, wikipedia.org, 🔰 Select',
         'host-suffix, cloudflare.com, 🔰 Select',
+        'host-suffix, stripe.com, 🔰 Select',
+        'host-suffix, stripe.network, 🔰 Select',
         // 🎓 学术科研与文献检索
         'host-suffix, arxiv.org, 🔰 Select',
         'host-suffix, ieee.org, 🔰 Select',
