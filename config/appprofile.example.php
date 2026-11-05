@@ -1117,7 +1117,6 @@ $_ENV['Clash_Group_Config'] = [
         'DOMAIN-SUFFIX,clerk.com,♾️ AI',
         'DOMAIN-SUFFIX,clerk.dev,♾️ AI',
         'DOMAIN-SUFFIX,workos.com,♾️ AI',
-        'DOMAIN-SUFFIX,challenges.cloudflare.com,♾️ AI',
         'DOMAIN-SUFFIX,client-api.arkoselabs.com,♾️ AI',
         'DOMAIN-SUFFIX,stripe.com,♾️ AI',
         'DOMAIN-SUFFIX,statsig.com,♾️ AI',
