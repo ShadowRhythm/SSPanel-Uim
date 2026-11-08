@@ -396,6 +396,10 @@ return [
     'alipay_mobile_scan_pay' => 'Scan with Alipay Mobile App to Pay',
     'generate_payment_qrcode' => 'Generate Payment QR Code',
     'payment_success_refresh_prompt' => 'Please refresh the page manually after payment is complete',
+    'bepusdt' => 'Cryptocurrency Payment (USDT / USDC)',
+    'bepusdt_desc' => 'Pay directly with cryptocurrencies such as USDT / USDC',
+    'bepusdt_pay' => 'Pay with Crypto',
+    'stripe_pay' => 'Pay with Stripe',
     // Datatables & Statuses
     'invoice_id' => 'Invoice ID',
     'order_status_pending_payment' => 'Pending Payment',

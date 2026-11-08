@@ -1656,6 +1656,51 @@
         "mark": "cryptomus_currency"
     },
     {
+        "item": "bepusdt_api_url",
+        "value": "",
+        "class": "billing",
+        "is_public": 0,
+        "type": "string",
+        "default": "",
+        "mark": "BEpusdt API URL"
+    },
+    {
+        "item": "bepusdt_api_token",
+        "value": "",
+        "class": "billing",
+        "is_public": 0,
+        "type": "string",
+        "default": "",
+        "mark": "BEpusdt Auth Token"
+    },
+    {
+        "item": "bepusdt_trade_type",
+        "value": "",
+        "class": "billing",
+        "is_public": 1,
+        "type": "string",
+        "default": "",
+        "mark": "BEpusdt Trade Type (empty = cashier self-select, or usdt.polygon, etc.)"
+    },
+    {
+        "item": "bepusdt_expire_time",
+        "value": "10",
+        "class": "billing",
+        "is_public": 1,
+        "type": "string",
+        "default": "10",
+        "mark": "BEpusdt Expire Time (minutes)"
+    },
+    {
+        "item": "bepusdt_fiat",
+        "value": "CNY",
+        "class": "billing",
+        "is_public": 0,
+        "type": "string",
+        "default": "CNY",
+        "mark": "BEpusdt Fiat Currency (CNY/USD/EUR/GBP/JPY)"
+    },
+    {
         "item": "llm_backend",
         "value": "",
         "class": "llm",

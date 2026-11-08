@@ -396,6 +396,10 @@ return [
     'alipay_mobile_scan_pay' => '手机支付宝扫描支付',
     'generate_payment_qrcode' => '生成付款QR Code',
     'payment_success_refresh_prompt' => '支付成功后请手动刷新页面',
+    'bepusdt' => '加密货币支付 (USDT / USDC)',
+    'bepusdt_desc' => '支持使用 USDT / USDC 等数字货币直接转账付款',
+    'bepusdt_pay' => '加密货币支付',
+    'stripe_pay' => 'Stripe 支付',
     // Datatables & Statuses
     'invoice_id' => '账单ID',
     'order_status_pending_payment' => '等待中',

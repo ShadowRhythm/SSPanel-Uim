@@ -396,6 +396,10 @@ return [
     'alipay_mobile_scan_pay' => 'Оплата через приложение Alipay',
     'generate_payment_qrcode' => 'Сгенерировать QR-код для оплаты',
     'payment_success_refresh_prompt' => 'Пожалуйста, обновите страницу вручную после завершения оплаты',
+    'bepusdt' => 'Оплата криптовалютой (USDT / USDC)',
+    'bepusdt_desc' => 'Прямая оплата криптовалютами, такими как USDT / USDC',
+    'bepusdt_pay' => 'Оплатить криптовалютой',
+    'stripe_pay' => 'Оплатить через Stripe',
     // Datatables & Statuses
     'invoice_id' => 'ID счета',
     'order_status_pending_payment' => 'В ожидании',

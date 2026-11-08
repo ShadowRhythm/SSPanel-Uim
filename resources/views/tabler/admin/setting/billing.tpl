@@ -54,6 +54,9 @@
                                 <li class="nav-item">
                                     <a href="#cryptomus" class="nav-link" data-bs-toggle="tab">Cryptomus</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a href="#bepusdt" class="nav-link" data-bs-toggle="tab">BEpusdt</a>
+                                </li>
                             </ul>
                         </div>
                         <div class="card-body">
@@ -403,6 +406,72 @@
                                             <div class="col">
                                                 <input id="cryptomus_currency" type="text" class="form-control"
                                                        value="{$settings['cryptomus_currency']}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane" id="bepusdt">
+                                    <div class="card-body">
+                                        <div class="form-group mb-3 row">
+                                            <label class="form-label col-3 col-form-label">API 地址</label>
+                                            <div class="col">
+                                                <input id="bepusdt_api_url" type="text" class="form-control"
+                                                       placeholder="https://your-bepusdt-host"
+                                                       value="{$settings['bepusdt_api_url']}">
+                                                <span class="form-hint">部署好的 BEpusdt 服务地址，不含末尾斜杠。</span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-3 row">
+                                            <label class="form-label col-3 col-form-label">Auth Token</label>
+                                            <div class="col">
+                                                <input id="bepusdt_api_token" type="password" class="form-control"
+                                                       value="{$settings['bepusdt_api_token']}">
+                                                <span class="form-hint">BEpusdt 后台配置的 <code>AUTH_TOKEN</code>，用于请求签名验证。</span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-3 row">
+                                            <label class="form-label col-3 col-form-label">交易类型</label>
+                                            <div class="col">
+                                                <select id="bepusdt_trade_type" class="col form-select">
+                                                    <option value="" {if !$settings['bepusdt_trade_type']}selected{/if}>收银台自选（推荐，用户跳转后可在 BEpusdt 页面自选/切换网络与币种）</option>
+                                                    <option value="usdt.polygon" {if $settings['bepusdt_trade_type'] === 'usdt.polygon'}selected{/if}>固定 USDT (Polygon)</option>
+                                                    <option value="usdt.bep20" {if $settings['bepusdt_trade_type'] === 'usdt.bep20' || $settings['bepusdt_trade_type'] === 'usdt.bsc'}selected{/if}>固定 USDT (BSC/BEP20)</option>
+                                                    <option value="usdt.trc20" {if $settings['bepusdt_trade_type'] === 'usdt.trc20'}selected{/if}>固定 USDT (TRC20)</option>
+                                                    <option value="usdt.erc20" {if $settings['bepusdt_trade_type'] === 'usdt.erc20'}selected{/if}>固定 USDT (ERC20)</option>
+                                                    <option value="trx" {if $settings['bepusdt_trade_type'] === 'trx' || $settings['bepusdt_trade_type'] === 'tron.trx'}selected{/if}>固定 TRX</option>
+                                                </select>
+                                                <span class="form-hint">设为“收银台自选”时，用户跳转后可在 BEpusdt 页面下拉自由切换网络和币种；如需强制锁定某条网络，可在此选择。</span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-3 row">
+                                            <label class="form-label col-3 col-form-label">法币类型</label>
+                                            <div class="col">
+                                                <select id="bepusdt_fiat" class="col form-select">
+                                                    <option value="CNY" {if $settings['bepusdt_fiat'] === 'CNY' || !$settings['bepusdt_fiat']}selected{/if}>CNY（人民币）</option>
+                                                    <option value="USD" {if $settings['bepusdt_fiat'] === 'USD'}selected{/if}>USD（美元）</option>
+                                                    <option value="EUR" {if $settings['bepusdt_fiat'] === 'EUR'}selected{/if}>EUR（欧元）</option>
+                                                    <option value="GBP" {if $settings['bepusdt_fiat'] === 'GBP'}selected{/if}>GBP（英镑）</option>
+                                                    <option value="JPY" {if $settings['bepusdt_fiat'] === 'JPY'}selected{/if}>JPY（日元）</option>
+                                                </select>
+                                                <span class="form-hint">账单金额所使用的法币类型，BEpusdt 将按此货币进行换算，默认 CNY。</span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-3 row">
+                                            <label class="form-label col-3 col-form-label">订单有效期（分钟）</label>
+                                            <div class="col">
+                                                <input id="bepusdt_expire_time" type="number" class="form-control"
+                                                       min="1" max="1440"
+                                                       value="{$settings['bepusdt_expire_time']|default:10}">
+                                                <span class="form-hint">支付二维码/地址的有效时长，单位：分钟，默认 10 分钟。</span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-3 row">
+                                            <label class="form-label col-3 col-form-label">回调地址</label>
+                                            <div class="col">
+                                                <input type="text" class="form-control" readonly
+                                                       value="{$smarty.const._ENV['baseUrl']}/payment/notify/bepusdt"
+                                                       onclick="this.select()">
+                                                <span class="form-hint">将此地址填写到 BEpusdt 的 <code>NOTIFY_URL</code> 配置项（或在创建订单时动态传入）。</span>
                                             </div>
                                         </div>
                                     </div>

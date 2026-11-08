@@ -396,6 +396,10 @@ return [
     'alipay_mobile_scan_pay' => 'Alipayアプリでスキャンして支払う',
     'generate_payment_qrcode' => '支払いQRコードを生成',
     'payment_success_refresh_prompt' => 'お支払い完了後、ページを手動で再読み込みしてください',
+    'bepusdt' => '暗号資産決済 (USDT / USDC)',
+    'bepusdt_desc' => 'USDT / USDC などの暗号資産で直接送金決済が可能です',
+    'bepusdt_pay' => '暗号資産で支払う',
+    'stripe_pay' => 'Stripe で支払う',
     // Datatables & Statuses
     'invoice_id' => '請求書ID',
     'order_status_pending_payment' => '保留中',
