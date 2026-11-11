@@ -99,6 +99,8 @@ final class UserController extends BaseController
                 continue;
             }
 
+            // sort=1: SS2022 — passwd only (derived key), sort=4: Hysteria2, sort=5: AnyTLS — passwd only
+            // sort=2: TUIC — uuid + passwd, sort=11: VMess, sort=14: Trojan — uuid only
             if ($node->sort === 1) {
                 $custom_config = is_string($node->custom_config)
                     ? json_decode($node->custom_config)
@@ -113,12 +115,15 @@ final class UserController extends BaseController
                 $user_raw->passwd = $user_pk;
             }
 
-            $users[] = [
-                'id' => $user_raw->id,
-                'passwd' => $user_raw->passwd,
-                'uuid' => $user_raw->uuid,
-                'node_speedlimit' => $user_raw->node_speedlimit,
-            ];
+            $user_entry = ['id' => $user_raw->id, 'node_speedlimit' => $user_raw->node_speedlimit];
+
+            $user_entry = match ($node->sort) {
+                1, 4, 5 => $user_entry + ['passwd' => $user_raw->passwd],
+                2       => $user_entry + ['uuid' => $user_raw->uuid, 'passwd' => $user_raw->passwd],
+                default => $user_entry + ['uuid' => $user_raw->uuid],  // VMess(11), Trojan(14)
+            };
+
+            $users[] = $user_entry;
         }
 
         return ResponseHelper::successWithDataEtag($request, $response, $users);

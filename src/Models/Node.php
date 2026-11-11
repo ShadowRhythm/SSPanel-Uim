@@ -85,6 +85,8 @@ final class Node extends Model
             1 => 'Shadowsocks2022',
             2 => 'TUIC',
             3 => 'WireGuard',
+            4 => 'Hysteria2',
+            5 => 'AnyTLS',
             11 => 'Vmess',
             14 => 'Trojan',
             default => '未知',
