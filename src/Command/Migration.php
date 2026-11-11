@@ -27,12 +27,18 @@ END;
 
     public function boot(): void
     {
+        if (! isset($this->argv[2])) {
+            echo $this->description . PHP_EOL;
+
+            return;
+        }
+
         $reverse = false;
         $current = 0;
         $latest = 0;
         $min_version = 0;
         $max_version = 0;
-        $target = $this->argv[2] ?? 0;
+        $target = $this->argv[2];
 
         if ($target !== 'new') {
             $current = Config::obtain('db_version');
