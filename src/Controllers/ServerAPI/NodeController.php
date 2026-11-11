@@ -73,10 +73,17 @@ final class NodeController extends BaseController
             $update['backend_version'] = (string) $body['version'];
         }
 
+        $shouldUpgrade = $node->upgrade_pending === 1;
+
         $node->update($update);
 
-        return $response->withJson([
-            'data' => 'ok',
-        ]);
+        if ($shouldUpgrade) {
+            Node::where('id', $node->id)->update(['upgrade_pending' => 0]);
+        }
+
+        return $response->withJson(array_filter([
+            'data'    => 'ok',
+            'upgrade' => $shouldUpgrade ?: null,
+        ], static fn($v) => $v !== null));
     }
 }

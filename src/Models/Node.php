@@ -37,6 +37,7 @@ use const DNS_AAAA;
  * @property int    $gfw_block               是否被GFW封锁
  * @property string $password                后端连接密码
  * @property string $backend_version         后端版本号
+ * @property int    $upgrade_pending         待升级标志
  *
  * @mixin Builder
  */

@@ -231,6 +231,22 @@
                                     {/if}
                                 </div>
                             </div>
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-3 col-form-label">一键更新</label>
+                                <div class="col">
+                                    <button id="trigger-upgrade" class="btn btn-warning">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                             viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                             stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/>
+                                            <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>
+                                        </svg>
+                                        触发更新
+                                    </button>
+                                    <small class="text-muted ms-2">后端将在下次心跳（约 60s）时自动下载最新版并重启</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -270,9 +286,30 @@
         })
     });
 
+    $("#trigger-upgrade").click(function () {
+        $.ajax({
+            url: '/admin/node/{$node->id}/trigger_upgrade',
+            type: 'POST',
+            dataType: "json",
+            success: function (data) {
+                if (data.ret === 1) {
+                    $('#success-message').text(data.msg);
+                    successDialog.show();
+                } else {
+                    $('#fail-message').text(data.msg);
+                    failDialog.show();
+                }
+            }
+        });
+    });
+
     $("#reset-password").click(function () {
         $.ajax({
             url: '/admin/node/{$node->id}/reset_password',
+            type: 'POST',
+            dataType: "json",
+            success: function (data) {
+                if (data.ret === 1) {
             type: 'POST',
             dataType: "json",
             success: function (data) {
