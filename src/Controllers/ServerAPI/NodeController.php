@@ -64,10 +64,16 @@ final class NodeController extends BaseController
         $body = json_decode($request->getBody()->__toString(), true);
         $online_user = isset($body['online_user']) ? (int) $body['online_user'] : 0;
 
-        $node->update([
-            'online_user' => max(0, $online_user),
+        $update = [
+            'online_user'    => max(0, $online_user),
             'node_heartbeat' => time(),
-        ]);
+        ];
+
+        if (isset($body['version']) && $body['version'] !== '') {
+            $update['backend_version'] = (string) $body['version'];
+        }
+
+        $node->update($update);
 
         return $response->withJson([
             'data' => 'ok',

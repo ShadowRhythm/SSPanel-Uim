@@ -221,6 +221,16 @@
                                     通讯密钥用于 NodeAPI 鉴权，如需更改请点击重置
                                 </label>
                             </div>
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-3 col-form-label">后端版本</label>
+                                <div class="col">
+                                    {if $node->backend_version !== ''}
+                                        <span class="badge bg-green-lt fs-5">{$node->backend_version}</span>
+                                    {else}
+                                        <span class="text-muted">暂未上报（需后端支持）</span>
+                                    {/if}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
