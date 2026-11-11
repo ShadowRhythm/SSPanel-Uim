@@ -343,4 +343,14 @@ return static function (Slim\App $app): void {
         $group->get('/func/detect_rules', App\Controllers\WebAPI\FuncController::class . ':getDetectRules');
         $group->get('/func/ping', App\Controllers\WebAPI\FuncController::class . ':ping');
     })->add(new NodeToken());
+    // Server API V1 (NeXT-Server v1 / sing-box)
+    $app->group('/api/server/v1', static function (RouteCollectorProxy $group): void {
+        $group->get('/info', App\Controllers\ServerAPI\NodeController::class . ':getInfo');
+        $group->put('/heartbeat', App\Controllers\ServerAPI\NodeController::class . ':heartbeat');
+        $group->get('/users', App\Controllers\ServerAPI\UserController::class . ':index');
+        $group->post('/users/traffic', App\Controllers\ServerAPI\UserController::class . ':addTraffic');
+        $group->post('/users/online', App\Controllers\ServerAPI\UserController::class . ':addOnline');
+        $group->post('/users/detect_logs', App\Controllers\ServerAPI\UserController::class . ':addDetectLogs');
+        $group->get('/detect_rules', App\Controllers\ServerAPI\FuncController::class . ':getDetectRules');
+    })->add(new App\Middleware\NodeBearerToken());
 };
