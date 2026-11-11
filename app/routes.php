@@ -168,6 +168,10 @@ return static function (Slim\App $app): void {
             '/node/{id:[0-9]+}/trigger_upgrade',
             App\Controllers\Admin\NodeController::class . ':triggerUpgrade'
         );
+        $group->post(
+            '/node/{id:[0-9]+}/trigger_restart',
+            App\Controllers\Admin\NodeController::class . ':triggerRestart'
+        );
         $group->post('/node/{id:[0-9]+}/copy', App\Controllers\Admin\NodeController::class . ':copy');
         $group->put('/node/{id:[0-9]+}', App\Controllers\Admin\NodeController::class . ':update');
         $group->delete('/node/{id:[0-9]+}', App\Controllers\Admin\NodeController::class . ':delete');

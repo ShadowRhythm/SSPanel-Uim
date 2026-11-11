@@ -74,16 +74,21 @@ final class NodeController extends BaseController
         }
 
         $shouldUpgrade = $node->upgrade_pending === 1;
+        $shouldRestart = $node->restart_pending === 1;
 
         $node->update($update);
 
         if ($shouldUpgrade) {
             Node::where('id', $node->id)->update(['upgrade_pending' => 0]);
         }
+        if ($shouldRestart) {
+            Node::where('id', $node->id)->update(['restart_pending' => 0]);
+        }
 
         return $response->withJson(array_filter([
             'data'    => 'ok',
             'upgrade' => $shouldUpgrade ?: null,
+            'restart' => $shouldRestart ?: null,
         ], static fn($v) => $v !== null));
     }
 }

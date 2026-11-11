@@ -289,6 +289,26 @@ final class NodeController extends BaseController
         ]);
     }
 
+    public function triggerRestart(ServerRequest $request, Response $response, array $args): ResponseInterface
+    {
+        $node = (new Node())->find($args['id']);
+
+        if ($node === null) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '节点不存在',
+            ]);
+        }
+
+        $node->restart_pending = 1;
+        $node->save();
+
+        return $response->withJson([
+            'ret' => 1,
+            'msg' => '已下发重启指令，后端将在下次心跳时自动重启',
+        ]);
+    }
+
     /**
      * 后台删除指定节点
      */
