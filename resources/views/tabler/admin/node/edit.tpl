@@ -222,39 +222,36 @@
                                 </label>
                             </div>
                             <div class="form-group mb-3 row">
-                                <label class="form-label col-12 col-md-3 col-form-label">后端版本</label>
-                                <div class="col-12 col-md-9 col-form-label">
-                                    <div class="d-flex flex-wrap align-items-center">
-                                        <div class="me-3">
+                                <label class="form-label col-3 col-form-label">后端版本</label>
+                                <div class="col col-form-label">
+                                    <div class="d-flex align-items-center flex-wrap gap-2">
+                                        <span class="me-1">
                                             {if $node->backend_version !== ''}
                                                 <span class="badge bg-green-lt fs-4">{$node->backend_version}</span>
                                             {else}
                                                 <span class="text-muted">暂未上报（需后端支持）</span>
                                             {/if}
-                                        </div>
-                                        <div class="d-flex gap-2 flex-grow-1 flex-md-grow-0 w-100 w-md-auto mt-2 mt-md-0">
-                                            <button id="trigger-upgrade" class="btn btn-warning flex-fill flex-md-grow-0 text-nowrap">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                                     viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                                     stroke-linecap="round" stroke-linejoin="round">
-                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                    <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/>
-                                                    <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>
-                                                </svg>
-                                                一键更新
-                                            </button>
-                                            <button id="trigger-restart" class="btn btn-danger flex-fill flex-md-grow-0 text-nowrap">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                                     viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                                     stroke-linecap="round" stroke-linejoin="round">
-                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                    <path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5"/>
-                                                </svg>
-                                                重启后端
-                                            </button>
-                                        </div>
+                                        </span>
+                                        <button id="trigger-upgrade" class="btn btn-sm btn-warning text-nowrap">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20"
+                                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                                 stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/>
+                                                <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>
+                                            </svg>
+                                            一键更新
+                                        </button>
+                                        <button id="trigger-restart" class="btn btn-sm btn-red text-nowrap">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20"
+                                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                                 stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5"/>
+                                            </svg>
+                                            重启后端
+                                        </button>
                                     </div>
-                                    <small class="form-hint mt-2">后端将在下次心跳（约 60s 内）接收指令并执行更新或重启</small>
                                 </div>
                             </div>
                         </div>
