@@ -92,6 +92,43 @@ final class Clash extends Base
                     ];
 
                     break;
+                case 4:
+                    $hy2_port = $node_custom_config['offset_port_user'] ??
+                        ($node_custom_config['offset_port_node'] ?? 443);
+                    $host = $node_custom_config['host'] ?? ($node_custom_config['sni'] ?? '');
+                    $allow_insecure = $node_custom_config['allow_insecure'] ?? false;
+                    $up_mbps = $node_custom_config['up_mbps'] ?? ($node_custom_config['up'] ?? 0);
+                    $down_mbps = $node_custom_config['down_mbps'] ?? ($node_custom_config['down'] ?? 0);
+                    $obfs_type = $node_custom_config['obfs'] ?? ($node_custom_config['obfs_type'] ?? '');
+                    $obfs_password = $node_custom_config['obfs_password'] ?? ($node_custom_config['obfs-password'] ?? '');
+                    $ports = $node_custom_config['ports'] ?? ($node_custom_config['server_ports'] ?? '');
+
+                    $node = [
+                        'name' => $node_raw->name,
+                        'type' => 'hysteria2',
+                        'server' => $node_raw->server,
+                        'port' => (int) $hy2_port,
+                        'password' => $user->passwd,
+                        'sni' => $host,
+                        'skip-cert-verify' => (bool) $allow_insecure,
+                        'alpn' => ['h3'],
+                    ];
+
+                    if ($ports !== '') {
+                        $node['ports'] = (string) $ports;
+                    }
+                    if ($up_mbps > 0) {
+                        $node['up'] = is_numeric($up_mbps) ? $up_mbps . ' Mbps' : (string) $up_mbps;
+                    }
+                    if ($down_mbps > 0) {
+                        $node['down'] = is_numeric($down_mbps) ? $down_mbps . ' Mbps' : (string) $down_mbps;
+                    }
+                    if ($obfs_type !== '' && $obfs_password !== '') {
+                        $node['obfs'] = $obfs_type;
+                        $node['obfs-password'] = $obfs_password;
+                    }
+
+                    break;
                 case 11:
                     $v2_port = $node_custom_config['offset_port_user'] ??
                         ($node_custom_config['offset_port_node'] ?? 443);

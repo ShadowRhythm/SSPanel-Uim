@@ -88,6 +88,71 @@ final class SingBox extends Base
                     $node['tls'] = array_filter($node['tls']);
 
                     break;
+                case 4:
+                    $hy2_port = $node_custom_config['offset_port_user'] ??
+                        ($node_custom_config['offset_port_node'] ?? 443);
+                    $host = $node_custom_config['host'] ?? ($node_custom_config['sni'] ?? '');
+                    $allow_insecure = $node_custom_config['allow_insecure'] ?? false;
+                    $up_mbps = (int) ($node_custom_config['up_mbps'] ?? ($node_custom_config['up'] ?? 0));
+                    $down_mbps = (int) ($node_custom_config['down_mbps'] ?? ($node_custom_config['down'] ?? 0));
+                    $obfs_type = $node_custom_config['obfs'] ?? ($node_custom_config['obfs_type'] ?? '');
+                    $obfs_password = $node_custom_config['obfs_password'] ?? ($node_custom_config['obfs-password'] ?? '');
+                    $server_ports = $node_custom_config['server_ports'] ?? ($node_custom_config['ports'] ?? '');
+
+                    $node = [
+                        'type' => 'hysteria2',
+                        'tag' => $node_raw->name,
+                        'server' => $node_raw->server,
+                        'server_port' => (int) $hy2_port,
+                        'password' => $user->passwd,
+                        'tls' => [
+                            'enabled' => true,
+                            'server_name' => $host,
+                            'insecure' => (bool) $allow_insecure,
+                        ],
+                    ];
+
+                    if ($server_ports !== '') {
+                        $node['server_ports'] = (string) $server_ports;
+                    }
+                    if ($up_mbps > 0) {
+                        $node['up_mbps'] = $up_mbps;
+                    }
+                    if ($down_mbps > 0) {
+                        $node['down_mbps'] = $down_mbps;
+                    }
+                    if ($obfs_type !== '' && $obfs_password !== '') {
+                        $node['obfs'] = [
+                            'type' => $obfs_type,
+                            'password' => $obfs_password,
+                        ];
+                    }
+
+                    $node['tls'] = array_filter($node['tls']);
+
+                    break;
+                case 5:
+                    $anytls_port = $node_custom_config['offset_port_user'] ??
+                        ($node_custom_config['offset_port_node'] ?? 443);
+                    $host = $node_custom_config['host'] ?? ($node_custom_config['sni'] ?? '');
+                    $allow_insecure = $node_custom_config['allow_insecure'] ?? false;
+
+                    $node = [
+                        'type' => 'anytls',
+                        'tag' => $node_raw->name,
+                        'server' => $node_raw->server,
+                        'server_port' => (int) $anytls_port,
+                        'password' => $user->passwd,
+                        'tls' => [
+                            'enabled' => true,
+                            'server_name' => $host,
+                            'insecure' => (bool) $allow_insecure,
+                        ],
+                    ];
+
+                    $node['tls'] = array_filter($node['tls']);
+
+                    break;
                 case 11:
                     $v2_port = $node_custom_config['offset_port_user'] ??
                         ($node_custom_config['offset_port_node'] ?? 443);
