@@ -30,8 +30,11 @@ final class NodeController extends BaseController
             'op' => '操作',
             'id' => '节点ID',
             'name' => '名称',
+            'online_status' => '在线状态',
+            'online_user' => '在线人数',
+            'node_heartbeat' => '最后心跳',
+            'type' => '显示状态',
             'server' => '地址',
-            'type' => '状态',
             'sort' => '类型',
             'traffic_rate' => '倍率',
             'is_dynamic_rate' => '动态倍率',
@@ -386,6 +389,22 @@ final class NodeController extends BaseController
             <button class="btn btn-orange" id="copy-node-' . $node->id . '" 
             onclick="copyNode(' . $node->id . ')">复制</button>
             <a class="btn btn-primary" href="/admin/node/' . $node->id . '/edit">编辑</a>';
+
+            $online_status = $node->getNodeOnlineStatus();
+            $node->online_status = match ($online_status) {
+                1 => '<span class="badge bg-green text-green-fg">在线</span>',
+                0 => '<span class="badge bg-orange text-orange-fg">未连接</span>',
+                default => '<span class="badge bg-danger text-danger-fg">离线</span>',
+            };
+
+            $node->online_user = $online_status === 1
+                ? '<span class="badge bg-blue-lt">' . (int) $node->online_user . '</span>'
+                : '<span class="text-secondary">0</span>';
+
+            $node->node_heartbeat = $node->node_heartbeat === 0
+                ? '<span class="text-secondary">从未连接</span>'
+                : Tools::toDateTime((int) $node->node_heartbeat);
+
             $node->type = $node->type();
             $node->sort = $node->sort();
             $node->is_dynamic_rate = $node->isDynamicRate();
