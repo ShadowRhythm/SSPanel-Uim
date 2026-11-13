@@ -401,7 +401,7 @@ final class NodeController extends BaseController
                 ? '<span class="badge bg-blue-lt">' . (int) $node->online_user . '</span>'
                 : '<span class="text-secondary">0</span>';
 
-            $node->node_heartbeat = $node->node_heartbeat === 0
+            $node->node_heartbeat = (int) $node->node_heartbeat === 0
                 ? '<span class="text-secondary">从未连接</span>'
                 : Tools::toDateTime((int) $node->node_heartbeat);
 

@@ -49,7 +49,6 @@ final class Node extends Model
 
     protected $casts = [
         'traffic_rate' => 'float',
-        'node_heartbeat' => 'int',
     ];
 
     /**
@@ -117,7 +116,7 @@ final class Node extends Model
      */
     public function getNodeOnlineStatus(): int
     {
-        return $this->node_heartbeat === 0 ? 0 : ($this->node_heartbeat + 600 > time() ? 1 : -1);
+        return (int) $this->node_heartbeat === 0 ? 0 : ((int) $this->node_heartbeat + 600 > time() ? 1 : -1);
     }
 
     /**
