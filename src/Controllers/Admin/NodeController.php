@@ -400,12 +400,12 @@ final class NodeController extends BaseController
             }
 
             $upgrade_btn = $node->upgrade_pending === 1
-                ? '<button class="btn btn-sm btn-warning" disabled><i class="icon ti ti-loader me-1"></i>升级中</button>'
-                : '<button class="btn btn-sm btn-warning" id="upgrade-node-' . $node->id . '" onclick="upgradeNode(' . $node->id . ')"><i class="icon ti ti-refresh me-1"></i>更新</button>';
+                ? '<button class="btn btn-warning" disabled><i class="icon ti ti-loader me-1"></i>升级中</button>'
+                : '<button class="btn btn-warning" id="upgrade-node-' . $node->id . '" onclick="upgradeNode(' . $node->id . ')"><i class="icon ti ti-refresh me-1"></i>更新</button>';
 
             $restart_btn = $node->restart_pending === 1
-                ? '<button class="btn btn-sm btn-red" disabled><i class="icon ti ti-loader me-1"></i>重启中</button>'
-                : '<button class="btn btn-sm btn-red" id="restart-node-' . $node->id . '" onclick="restartNode(' . $node->id . ')"><i class="icon ti ti-rotate-clockwise me-1"></i>重启</button>';
+                ? '<button class="btn btn-red" disabled><i class="icon ti ti-loader me-1"></i>重启中</button>'
+                : '<button class="btn btn-red" id="restart-node-' . $node->id . '" onclick="restartNode(' . $node->id . ')"><i class="icon ti ti-rotate-clockwise me-1"></i>重启</button>';
 
             $node->backend_action = '<div class="btn-list flex-nowrap">' . $upgrade_btn . $restart_btn . '</div>';
         }

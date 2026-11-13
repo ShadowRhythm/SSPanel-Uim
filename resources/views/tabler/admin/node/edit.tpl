@@ -232,7 +232,7 @@
                                                 <span class="text-muted">暂未上报（需后端支持）</span>
                                             {/if}
                                         </span>
-                                        <button id="trigger-upgrade" class="btn btn-sm btn-warning text-nowrap">
+                                        <button id="trigger-upgrade" class="btn btn-warning text-nowrap">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20"
                                                  viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                                  stroke-linecap="round" stroke-linejoin="round">
@@ -242,7 +242,7 @@
                                             </svg>
                                             一键更新
                                         </button>
-                                        <button id="trigger-restart" class="btn btn-sm btn-red text-nowrap">
+                                        <button id="trigger-restart" class="btn btn-red text-nowrap">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20"
                                                  viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
                                                  stroke-linecap="round" stroke-linejoin="round">
