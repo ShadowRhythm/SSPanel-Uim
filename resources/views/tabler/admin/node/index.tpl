@@ -60,7 +60,7 @@
         ];
         tableConfig.columnDefs = [
             {
-                targets: [0],
+                targets: [0, -1],
                 orderable: false
             },
         ];
@@ -99,6 +99,50 @@
             $('#notice-confirm').off('click').on('click', function () {
                 $.ajax({
                     url: "/admin/node/" + node_id + "/copy",
+                    type: 'POST',
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.ret === 1) {
+                            $('#success-message').text(data.msg);
+                            successDialog.show();
+                            reloadTableAjax();
+                        } else {
+                            $('#fail-message').text(data.msg);
+                            failDialog.show();
+                        }
+                    }
+                })
+            });
+        }
+
+        function upgradeNode(node_id) {
+            $('#notice-message').text('确定触发此节点后端更新？后端将在下次心跳（约 60s 内）自动下载最新版并重启。');
+            noticeDialog.show();
+            $('#notice-confirm').off('click').on('click', function () {
+                $.ajax({
+                    url: "/admin/node/" + node_id + "/trigger_upgrade",
+                    type: 'POST',
+                    dataType: "json",
+                    success: function (data) {
+                        if (data.ret === 1) {
+                            $('#success-message').text(data.msg);
+                            successDialog.show();
+                            reloadTableAjax();
+                        } else {
+                            $('#fail-message').text(data.msg);
+                            failDialog.show();
+                        }
+                    }
+                })
+            });
+        }
+
+        function restartNode(node_id) {
+            $('#notice-message').text('确定重启此节点后端？后端将在下次心跳（约 60s 内）自动重启。');
+            noticeDialog.show();
+            $('#notice-confirm').off('click').on('click', function () {
+                $.ajax({
+                    url: "/admin/node/" + node_id + "/trigger_restart",
                     type: 'POST',
                     dataType: "json",
                     success: function (data) {

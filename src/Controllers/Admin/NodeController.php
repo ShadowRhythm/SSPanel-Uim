@@ -16,6 +16,7 @@ use Slim\Http\Response;
 use Slim\Http\ServerRequest;
 use Smarty\Exception as SmartyException;
 use Telegram\Bot\Exceptions\TelegramSDKException;
+use function htmlspecialchars;
 use function json_decode;
 use function json_encode;
 use function round;
@@ -31,12 +32,15 @@ final class NodeController extends BaseController
             'name' => '名称',
             'server' => '地址',
             'type' => '状态',
+            'sort' => '类型',
             'traffic_rate' => '倍率',
             'is_dynamic_rate' => '动态倍率',
             'node_class' => '等级',
             'node_bandwidth_limit' => '流量限制/GB',
             'node_bandwidth' => '已用流量/GB',
             'bandwidthlimit_resetday' => '重置日',
+            'backend_version' => '后端版本',
+            'backend_action' => '后端操作',
         ],
     ];
 
@@ -388,6 +392,22 @@ final class NodeController extends BaseController
             $node->dynamic_rate_type = $node->dynamicRateType();
             $node->node_bandwidth = round(Tools::bToGB($node->node_bandwidth), 2);
             $node->node_bandwidth_limit = Tools::bToGB($node->node_bandwidth_limit);
+
+            if ($node->backend_version !== '') {
+                $node->backend_version = '<span class="badge bg-blue-lt">' . htmlspecialchars((string) $node->backend_version) . '</span>';
+            } else {
+                $node->backend_version = '<span class="text-secondary">暂未上报</span>';
+            }
+
+            $upgrade_btn = $node->upgrade_pending === 1
+                ? '<button class="btn btn-sm btn-warning" disabled><i class="icon ti ti-loader me-1"></i>升级中</button>'
+                : '<button class="btn btn-sm btn-warning" id="upgrade-node-' . $node->id . '" onclick="upgradeNode(' . $node->id . ')"><i class="icon ti ti-refresh me-1"></i>更新</button>';
+
+            $restart_btn = $node->restart_pending === 1
+                ? '<button class="btn btn-sm btn-red" disabled><i class="icon ti ti-loader me-1"></i>重启中</button>'
+                : '<button class="btn btn-sm btn-red" id="restart-node-' . $node->id . '" onclick="restartNode(' . $node->id . ')"><i class="icon ti ti-rotate-clockwise me-1"></i>重启</button>';
+
+            $node->backend_action = '<div class="btn-list flex-nowrap">' . $upgrade_btn . $restart_btn . '</div>';
         }
 
         return $response->withJson([
