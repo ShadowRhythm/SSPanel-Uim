@@ -36,6 +36,9 @@ use const DNS_AAAA;
  * @property int    $online                  在线状态
  * @property int    $gfw_block               是否被GFW封锁
  * @property string $password                后端连接密码
+ * @property string $backend_version         后端版本号
+ * @property int    $upgrade_pending         待升级标志
+ * @property int    $restart_pending         待重启标志
  *
  * @mixin Builder
  */
@@ -46,7 +49,6 @@ final class Node extends Model
 
     protected $casts = [
         'traffic_rate' => 'float',
-        'node_heartbeat' => 'int',
     ];
 
     /**
@@ -85,6 +87,8 @@ final class Node extends Model
             1 => 'Shadowsocks2022',
             2 => 'TUIC',
             3 => 'WireGuard',
+            4 => 'Hysteria2',
+            5 => 'AnyTLS',
             11 => 'Vmess',
             14 => 'Trojan',
             default => '未知',
@@ -112,7 +116,7 @@ final class Node extends Model
      */
     public function getNodeOnlineStatus(): int
     {
-        return $this->node_heartbeat === 0 ? 0 : ($this->node_heartbeat + 1800 > time() ? 1 : -1);
+        return (int) $this->node_heartbeat === 0 ? 0 : ((int) $this->node_heartbeat + 600 > time() ? 1 : -1);
     }
 
     /**

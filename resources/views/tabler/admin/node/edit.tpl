@@ -73,6 +73,8 @@
                                         <option value="14" {if $node->sort === 14}selected{/if}>Trojan</option>
                                         <option value="11" {if $node->sort === 11}selected{/if}>Vmess</option>
                                         <option value="2" {if $node->sort === 2}selected{/if}>TUIC</option>
+                                        <option value="4" {if $node->sort === 4}selected{/if}>Hysteria2</option>
+                                        <option value="5" {if $node->sort === 5}selected{/if}>AnyTLS</option>
                                         <option value="1" {if $node->sort === 1}selected{/if}>Shadowsocks2022</option>
                                         <option value="0" {if $node->sort === 0}selected{/if}>Shadowsocks</option>
                                     </select>
@@ -219,6 +221,39 @@
                                     通讯密钥用于 NodeAPI 鉴权，如需更改请点击重置
                                 </label>
                             </div>
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-3 col-form-label">后端版本</label>
+                                <div class="col col-form-label">
+                                    <div class="d-flex align-items-center flex-wrap gap-2">
+                                        <span class="me-1">
+                                            {if $node->backend_version !== ''}
+                                                <span class="badge bg-green-lt fs-4">{$node->backend_version}</span>
+                                            {else}
+                                                <span class="text-muted">暂未上报（需后端支持）</span>
+                                            {/if}
+                                        </span>
+                                        <button id="trigger-upgrade" class="btn btn-warning text-nowrap">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20"
+                                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                                 stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/>
+                                                <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>
+                                            </svg>
+                                            一键更新
+                                        </button>
+                                        <button id="trigger-restart" class="btn btn-red text-nowrap">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20"
+                                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                                 stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5"/>
+                                            </svg>
+                                            重启后端
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -256,6 +291,40 @@
                 }
             }
         })
+    });
+
+    $("#trigger-upgrade").click(function () {
+        $.ajax({
+            url: '/admin/node/{$node->id}/trigger_upgrade',
+            type: 'POST',
+            dataType: "json",
+            success: function (data) {
+                if (data.ret === 1) {
+                    $('#success-message').text(data.msg);
+                    successDialog.show();
+                } else {
+                    $('#fail-message').text(data.msg);
+                    failDialog.show();
+                }
+            }
+        });
+    });
+
+    $("#trigger-restart").click(function () {
+        $.ajax({
+            url: '/admin/node/{$node->id}/trigger_restart',
+            type: 'POST',
+            dataType: "json",
+            success: function (data) {
+                if (data.ret === 1) {
+                    $('#success-message').text(data.msg);
+                    successDialog.show();
+                } else {
+                    $('#fail-message').text(data.msg);
+                    failDialog.show();
+                }
+            }
+        });
     });
 
     $("#reset-password").click(function () {

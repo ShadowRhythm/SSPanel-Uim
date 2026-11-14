@@ -16,6 +16,7 @@ use Slim\Http\Response;
 use Slim\Http\ServerRequest;
 use Smarty\Exception as SmartyException;
 use Telegram\Bot\Exceptions\TelegramSDKException;
+use function htmlspecialchars;
 use function json_decode;
 use function json_encode;
 use function round;
@@ -29,14 +30,20 @@ final class NodeController extends BaseController
             'op' => '操作',
             'id' => '节点ID',
             'name' => '名称',
+            'online_status' => '在线状态',
+            'online_user' => '在线人数',
+            'node_heartbeat' => '最后心跳',
+            'type' => '显示状态',
             'server' => '地址',
-            'type' => '状态',
+            'sort' => '类型',
             'traffic_rate' => '倍率',
             'is_dynamic_rate' => '动态倍率',
             'node_class' => '等级',
             'node_bandwidth_limit' => '流量限制/GB',
             'node_bandwidth' => '已用流量/GB',
             'bandwidthlimit_resetday' => '重置日',
+            'backend_version' => '后端版本',
+            'backend_action' => '后端操作',
         ],
     ];
 
@@ -161,16 +168,21 @@ final class NodeController extends BaseController
      */
     public function edit(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $node = (new Node())->find($args['id']);
+        $id = (int) $args['id'];
+        $node = (new Node())->find($id);
 
-        $dynamic_rate_config = json_decode($node->dynamic_rate_config);
+        if ($node === null) {
+            return $response->withStatus(302)->withHeader('Location', '/admin/node');
+        }
+
+        $dynamic_rate_config = json_decode((string) $node->dynamic_rate_config);
         $node->max_rate = $dynamic_rate_config?->max_rate ?? 1;
         $node->max_rate_time = $dynamic_rate_config?->max_rate_time ?? 22;
         $node->min_rate = $dynamic_rate_config?->min_rate ?? 1;
         $node->min_rate_time = $dynamic_rate_config?->min_rate_time ?? 3;
 
-        $node->node_bandwidth = Tools::autoBytes($node->node_bandwidth);
-        $node->node_bandwidth_limit = Tools::bToGB($node->node_bandwidth_limit);
+        $node->node_bandwidth = Tools::autoBytes((int) $node->node_bandwidth);
+        $node->node_bandwidth_limit = Tools::bToGB((int) $node->node_bandwidth_limit);
 
         return $response->write(
             $this->view()
@@ -269,6 +281,46 @@ final class NodeController extends BaseController
         ]);
     }
 
+    public function triggerUpgrade(ServerRequest $request, Response $response, array $args): ResponseInterface
+    {
+        $node = (new Node())->find($args['id']);
+
+        if ($node === null) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '节点不存在',
+            ]);
+        }
+
+        $node->upgrade_pending = 1;
+        $node->save();
+
+        return $response->withJson([
+            'ret' => 1,
+            'msg' => '已标记升级，后端将在下次心跳时自动下载最新版并重启',
+        ]);
+    }
+
+    public function triggerRestart(ServerRequest $request, Response $response, array $args): ResponseInterface
+    {
+        $node = (new Node())->find($args['id']);
+
+        if ($node === null) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '节点不存在',
+            ]);
+        }
+
+        $node->restart_pending = 1;
+        $node->save();
+
+        return $response->withJson([
+            'ret' => 1,
+            'msg' => '已下发重启指令，后端将在下次心跳时自动重启',
+        ]);
+    }
+
     /**
      * 后台删除指定节点
      */
@@ -342,12 +394,44 @@ final class NodeController extends BaseController
             <button class="btn btn-orange" id="copy-node-' . $node->id . '" 
             onclick="copyNode(' . $node->id . ')">复制</button>
             <a class="btn btn-primary" href="/admin/node/' . $node->id . '/edit">编辑</a>';
+
+            $online_status = $node->getNodeOnlineStatus();
+            $node->online_status = match ($online_status) {
+                1 => '<span class="badge bg-green text-green-fg">在线</span>',
+                0 => '<span class="badge bg-orange text-orange-fg">未连接</span>',
+                default => '<span class="badge bg-danger text-danger-fg">离线</span>',
+            };
+
+            $node->online_user = $online_status === 1
+                ? '<span class="badge bg-blue-lt">' . (int) $node->online_user . '</span>'
+                : '<span class="text-secondary">0</span>';
+
+            $node->node_heartbeat = (int) $node->node_heartbeat === 0
+                ? '<span class="text-secondary">从未连接</span>'
+                : Tools::toDateTime((int) $node->node_heartbeat);
+
             $node->type = $node->type();
             $node->sort = $node->sort();
             $node->is_dynamic_rate = $node->isDynamicRate();
             $node->dynamic_rate_type = $node->dynamicRateType();
             $node->node_bandwidth = round(Tools::bToGB($node->node_bandwidth), 2);
             $node->node_bandwidth_limit = Tools::bToGB($node->node_bandwidth_limit);
+
+            if ($node->backend_version !== '') {
+                $node->backend_version = '<span class="badge bg-blue-lt">' . htmlspecialchars((string) $node->backend_version) . '</span>';
+            } else {
+                $node->backend_version = '<span class="text-secondary">暂未上报</span>';
+            }
+
+            $upgrade_btn = $node->upgrade_pending === 1
+                ? '<button class="btn btn-warning" disabled><i class="icon ti ti-loader me-1"></i>升级中</button>'
+                : '<button class="btn btn-warning" id="upgrade-node-' . $node->id . '" onclick="upgradeNode(' . $node->id . ')"><i class="icon ti ti-refresh me-1"></i>更新</button>';
+
+            $restart_btn = $node->restart_pending === 1
+                ? '<button class="btn btn-red" disabled><i class="icon ti ti-loader me-1"></i>重启中</button>'
+                : '<button class="btn btn-red" id="restart-node-' . $node->id . '" onclick="restartNode(' . $node->id . ')"><i class="icon ti ti-rotate-clockwise me-1"></i>重启</button>';
+
+            $node->backend_action = '<div class="btn-list flex-nowrap">' . $upgrade_btn . $restart_btn . '</div>';
         }
 
         return $response->withJson([
