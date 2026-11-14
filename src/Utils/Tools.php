@@ -9,13 +9,11 @@ use App\Models\User;
 use App\Services\GeoIP2;
 use App\Services\QQWry;
 use GeoIp2\Exception\AddressNotFoundException;
+use Illuminate\Support\Str;
 use MaxMind\Db\Reader\InvalidDatabaseException;
-use Random\RandomException;
 use function array_diff;
 use function array_flip;
 use function base64_encode;
-use function bin2hex;
-use function ceil;
 use function closedir;
 use function count;
 use function date;
@@ -228,19 +226,9 @@ final class Tools
         return self::genRandomChar(max($_ENV['sub_token_len'], 8));
     }
 
-    public static function genRandomChar(int $length = 8): string|false
+    public static function genRandomChar(int $length = 8): string
     {
-        if ($length <= 2) {
-            $length = 2;
-        }
-
-        try {
-            $randomString = bin2hex(random_bytes((int) ceil($length / 2)));
-        } catch (RandomException) {
-            return false;
-        }
-
-        return substr($randomString, 0, $length);
+        return Str::random(max($length, 2));
     }
 
     public static function genSs2022UserPk(string $passwd, string $method): string|false
