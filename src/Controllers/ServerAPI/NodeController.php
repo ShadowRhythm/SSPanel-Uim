@@ -13,7 +13,6 @@ use Slim\Http\ServerRequest;
 use function json_decode;
 use function max;
 use function time;
-use const JSON_UNESCAPED_SLASHES;
 
 final class NodeController extends BaseController
 {
@@ -38,7 +37,7 @@ final class NodeController extends BaseController
             'node_speedlimit' => $node->node_speedlimit,
             'sort' => $node->sort,
             'server' => $node->server,
-            'custom_config' => json_decode((string) $node->custom_config, true, 512, JSON_UNESCAPED_SLASHES),
+            'custom_config' => json_decode((string) $node->custom_config, true),
         ];
 
         return ResponseHelper::successWithDataEtag($request, $response, $data);
