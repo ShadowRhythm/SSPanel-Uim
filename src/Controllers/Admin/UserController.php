@@ -164,12 +164,6 @@ final class UserController extends BaseController
         $user->last_check_in_time = Tools::toDateTime($user->last_check_in_time);
         $user->last_login_time = Tools::toDateTime($user->last_login_time);
 
-        $userLocale = str_replace('-', '_', (string) $user->locale);
-        if (! I18n::isValidLocale($userLocale)) {
-            $userLocale = $_ENV['locale'] ?? 'zh_CN';
-        }
-        $user->locale = $userLocale;
-
         return $response->write(
             $this->view()
                 ->assign('update_field', self::$update_field)
