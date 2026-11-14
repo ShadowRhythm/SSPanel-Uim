@@ -258,7 +258,7 @@ EOL;
         $users = ModelsUser::all();
 
         foreach ($users as $user) {
-            $user->uuid = Uuid::uuid4();
+            $user->uuid = (string) Uuid::uuid4();
             $user->save();
         }
 
@@ -348,7 +348,7 @@ EOL;
             $user->remark = '';
             $user->pass = Hash::passwordHash($passwd);
             $user->passwd = Tools::genPasswd(16);
-            $user->uuid = Uuid::uuid4();
+            $user->uuid = (string) Uuid::uuid4();
             $user->api_token = Tools::genRandomChar(32);
             $user->port = Tools::getSsPort();
             $user->u = 0;
