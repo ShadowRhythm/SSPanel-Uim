@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\Controllers\AuthController;
 use App\Controllers\BaseController;
 use App\Models\Config;
+use App\Models\MFADevice;
 use App\Models\User;
 use App\Services\DataTable;
 use App\Models\UserMoneyLog;
@@ -164,10 +165,13 @@ final class UserController extends BaseController
         $user->last_check_in_time = Tools::toDateTime($user->last_check_in_time);
         $user->last_login_time = Tools::toDateTime($user->last_login_time);
 
+        $hasMfa = (new MFADevice())->where('userid', $user->id)->exists();
+
         return $response->write(
             $this->view()
                 ->assign('update_field', self::$update_field)
                 ->assign('edit_user', $user)
+                ->assign('has_mfa', $hasMfa)
                 ->assign('ss_methods', Tools::getSsMethod())
                 ->assign('locales', I18n::getLocaleList())
                 ->fetch('admin/user/edit.tpl')
@@ -233,7 +237,10 @@ final class UserController extends BaseController
         $user->node_iplimit = (int) ($request->getParam('node_iplimit') ?? 0);
         $user->locale = (string) ($request->getParam('locale') ?? 'zh_CN');
         $user->is_admin = $request->getParam('is_admin') === 'true' ? 1 : 0;
-        $user->ga_enable = $request->getParam('ga_enable') === 'true' ? 1 : 0;
+        $ga_enable = $request->getParam('ga_enable') === 'true';
+        if (! $ga_enable) {
+            (new MFADevice())->where('userid', $user->id)->delete();
+        }
         $user->is_shadow_banned = $request->getParam('is_shadow_banned') === 'true' ? 1 : 0;
         $user->is_banned = $request->getParam('is_banned') === 'true' ? 1 : 0;
         $user->banned_reason = (string) ($request->getParam('banned_reason') ?? '');
