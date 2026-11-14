@@ -9,6 +9,11 @@ return new class() implements MigrationInterface {
     public function up(): int
     {
         DB::getPdo()->exec("
+            UPDATE `config` SET `mark` = '' WHERE `mark` IS NULL;
+            UPDATE `config` SET `value` = '' WHERE `value` IS NULL;
+            UPDATE `config` SET `class` = '' WHERE `class` IS NULL;
+            UPDATE `config` SET `type` = '' WHERE `type` IS NULL;
+            UPDATE `config` SET `default` = '' WHERE `default` IS NULL;
             ALTER TABLE announcement MODIFY COLUMN `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '公告ID';
             ALTER TABLE announcement MODIFY COLUMN `content` longtext NOT NULL DEFAULT '' COMMENT '公告内容';
             ALTER TABLE config MODIFY COLUMN `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '配置ID';
@@ -18,7 +23,7 @@ return new class() implements MigrationInterface {
             ALTER TABLE config MODIFY COLUMN `is_public` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '是否为公共参数';
             ALTER TABLE config MODIFY COLUMN `type` varchar(16) NOT NULL DEFAULT '' COMMENT '配置值类型';
             ALTER TABLE config MODIFY COLUMN `default` varchar(2048) NOT NULL DEFAULT '' COMMENT '默认值';
-            ALTER TABLE config MODIFY COLUMN `mark` varchar(255) NOT NULL DEFAULT '' COMMENT '备注';
+            ALTER TABLE config MODIFY COLUMN `mark` varchar(2048) NOT NULL DEFAULT '' COMMENT '备注';
             ALTER TABLE detect_ban_log MODIFY COLUMN `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '封禁记录ID';
             ALTER TABLE invoice MODIFY COLUMN `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '账单ID';
             ALTER TABLE link MODIFY COLUMN `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '记录ID';
