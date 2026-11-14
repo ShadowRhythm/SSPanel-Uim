@@ -185,7 +185,7 @@ final class InfoController extends BaseController
     {
         $locale = I18n::getCurrentLocale($this->user);
         $user = $this->user;
-        $user->passwd = Tools::genRandomChar(16);
+        $user->passwd = Tools::genPasswd(16);
         $user->uuid = Uuid::uuid4();
 
         if (! $user->save()) {

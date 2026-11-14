@@ -233,7 +233,7 @@ EOL;
         $users = ModelsUser::all();
 
         foreach ($users as $user) {
-            $user->passwd = Tools::genRandomChar(16);
+            $user->passwd = Tools::genPasswd(16);
             $user->save();
         }
 
@@ -347,7 +347,7 @@ EOL;
             $user->email = $email;
             $user->remark = '';
             $user->pass = Hash::passwordHash($passwd);
-            $user->passwd = Tools::genRandomChar(16);
+            $user->passwd = Tools::genPasswd(16);
             $user->uuid = Uuid::uuid4();
             $user->api_token = Tools::genRandomChar(32);
             $user->port = Tools::getSsPort();

@@ -576,7 +576,7 @@ final class Callback
                 break;
             case 'update_passwd':
                 // 重置链接密码
-                $this->user->passwd = Tools::genRandomChar();
+                $this->user->passwd = Tools::genPasswd(16);
 
                 if ($this->user->save()) {
                     $answerCallbackQuery = '连接密码更新成功，请在下方重新更新订阅。';
