@@ -180,6 +180,52 @@ describe('Tools::genRandomChar', function () {
             ->toBeString()
             ->and(strlen($randomString))->toBe(2);
     });
+
+    it('generates lowercase alphanumeric string', function () {
+        $randomString = Tools::genRandomChar(32);
+        
+        expect($randomString)
+            ->toBeString()
+            ->and(ctype_lower(preg_replace('/[0-9]/', '', $randomString)))->toBeTrue();
+    });
+});
+
+describe('Tools::genPasswd', function () {
+    it('generates random password with default length 16', function () {
+        $passwd = Tools::genPasswd();
+        
+        expect($passwd)
+            ->toBeString()
+            ->and(strlen($passwd))->toBe(16);
+    });
+
+    it('generates random password with specified length', function () {
+        $passwd = Tools::genPasswd(24);
+        
+        expect($passwd)
+            ->toBeString()
+            ->and(strlen($passwd))->toBe(24);
+    });
+});
+
+describe('Tools::genRandomNum', function () {
+    it('generates pure numeric code with default length 6', function () {
+        $code = Tools::genRandomNum();
+        
+        expect($code)
+            ->toBeString()
+            ->and(strlen($code))->toBe(6)
+            ->and(ctype_digit($code))->toBeTrue();
+    });
+
+    it('generates pure numeric code with specified length', function () {
+        $code = Tools::genRandomNum(8);
+        
+        expect($code)
+            ->toBeString()
+            ->and(strlen($code))->toBe(8)
+            ->and(ctype_digit($code))->toBeTrue();
+    });
 });
 
 describe('Tools::genSs2022UserPk', function () {

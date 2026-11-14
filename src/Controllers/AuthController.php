@@ -213,7 +213,7 @@ final class AuthController extends BaseController
                 return ResponseHelper::error($response, I18n::trans('user.email_already_registered', $locale));
             }
 
-            $email_code = Tools::genRandomChar(6);
+            $email_code = Tools::genRandomNum(6);
             $redis = (new Cache())->initRedis();
             $redis->setex('email_verify:' . $email_code, Config::obtain('email_verify_code_ttl'), $email);
 
@@ -265,7 +265,7 @@ final class AuthController extends BaseController
         $user->email = $email;
         $user->remark = '';
         $user->pass = Hash::passwordHash($password);
-        $user->passwd = Tools::genRandomChar(16);
+        $user->passwd = Tools::genPasswd(16);
         $user->uuid = (string) Uuid::uuid4();
         $user->api_token = Tools::genRandomChar(32);
         $user->port = Tools::getSsPort();

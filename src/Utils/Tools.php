@@ -9,13 +9,11 @@ use App\Models\User;
 use App\Services\GeoIP2;
 use App\Services\QQWry;
 use GeoIp2\Exception\AddressNotFoundException;
+use Illuminate\Support\Str;
 use MaxMind\Db\Reader\InvalidDatabaseException;
-use Random\RandomException;
 use function array_diff;
 use function array_flip;
 use function base64_encode;
-use function bin2hex;
-use function ceil;
 use function closedir;
 use function count;
 use function date;
@@ -30,13 +28,14 @@ use function max;
 use function mb_strcut;
 use function opendir;
 use function pow;
-use function random_bytes;
+use function random_int;
 use function range;
 use function readdir;
 use function round;
 use function shuffle;
 use function strlen;
 use function strpos;
+use function strtolower;
 use function substr;
 use const FILTER_FLAG_IPV4;
 use const FILTER_FLAG_IPV6;
@@ -223,24 +222,31 @@ final class Tools
         return round($traffic / 1073741824, 2);
     }
 
+    public static function genPasswd(int $length = 16): string
+    {
+        return Str::random(max($length, 2));
+    }
+
+    public static function genRandomNum(int $length = 6): string
+    {
+        $length = max($length, 1);
+        $result = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $result .= (string) random_int(0, 9);
+        }
+
+        return $result;
+    }
+
     public static function genSubToken(): string
     {
         return self::genRandomChar(max($_ENV['sub_token_len'], 8));
     }
 
-    public static function genRandomChar(int $length = 8): string|false
+    public static function genRandomChar(int $length = 8): string
     {
-        if ($length <= 2) {
-            $length = 2;
-        }
-
-        try {
-            $randomString = bin2hex(random_bytes((int) ceil($length / 2)));
-        } catch (RandomException) {
-            return false;
-        }
-
-        return substr($randomString, 0, $length);
+        return strtolower(Str::random(max($length, 2)));
     }
 
     public static function genSs2022UserPk(string $passwd, string $method): string|false
