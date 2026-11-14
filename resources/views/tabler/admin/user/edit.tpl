@@ -235,7 +235,7 @@
                                 <span class="col-auto">
                                     <label class="form-check form-check-single form-switch">
                                         <input id="ga_enable" class="form-check-input" type="checkbox"
-                                               {if $edit_user->ga_enable}checked="" {/if}>
+                                               {if $has_mfa}checked="" {/if}>
                                     </label>
                                 </span>
                             </div>
