@@ -203,7 +203,10 @@ final class UserController extends BaseController
         $user->ref_by = $request->getParam('ref_by');
         $user->port = $request->getParam('port');
         $user->method = $request->getParam('method');
-        $user->transfer_enable = Tools::autoBytesR($request->getParam('transfer_enable'));
+        $transfer_enable = Tools::autoBytesR($request->getParam('transfer_enable'));
+        if ($transfer_enable >= 0) {
+            $user->transfer_enable = $transfer_enable;
+        }
         $user->node_group = $request->getParam('node_group');
         $user->class = $request->getParam('class');
         $user->class_expire = $request->getParam('class_expire');

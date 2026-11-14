@@ -140,6 +140,12 @@ final class Tools
      */
     public static function autoBytesR(string $size): int
     {
+        // Handle the special case where autoBytes(0) returns '0B',
+        // which cannot be parsed by the double-char suffix logic below.
+        if ($size === '0B') {
+            return 0;
+        }
+
         $suffix_single = substr($size, -1);
 
         if (is_numeric(substr($size, 0, -1)) && $suffix_single === 'B') {
