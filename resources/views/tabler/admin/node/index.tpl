@@ -115,6 +115,11 @@
             });
         }
 
+        function getCsrfToken() {
+            var match = document.cookie.match(/(?:^|;\s*)_csrf=([^;]+)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
         function upgradeNode(node_id) {
             $('#notice-message').text('确定触发此节点后端更新？后端将在下次心跳（约 60s 内）自动下载最新版并重启。');
             noticeDialog.show();
@@ -123,6 +128,7 @@
                     url: "/admin/node/" + node_id + "/trigger_upgrade",
                     type: 'POST',
                     dataType: "json",
+                    headers: {"X-CSRF-Token": getCsrfToken()},
                     success: function (data) {
                         if (data.ret === 1) {
                             $('#success-message').text(data.msg);
@@ -145,6 +151,7 @@
                     url: "/admin/node/" + node_id + "/trigger_restart",
                     type: 'POST',
                     dataType: "json",
+                    headers: {"X-CSRF-Token": getCsrfToken()},
                     success: function (data) {
                         if (data.ret === 1) {
                             $('#success-message').text(data.msg);

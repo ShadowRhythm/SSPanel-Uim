@@ -293,11 +293,17 @@
         })
     });
 
+    function getCsrfToken() {
+        var match = document.cookie.match(/(?:^|;\s*)_csrf=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : '';
+    }
+
     $("#trigger-upgrade").click(function () {
         $.ajax({
             url: '/admin/node/{$node->id}/trigger_upgrade',
             type: 'POST',
             dataType: "json",
+            headers: {'X-CSRF-Token': getCsrfToken()},
             success: function (data) {
                 if (data.ret === 1) {
                     $('#success-message').text(data.msg);
@@ -315,6 +321,7 @@
             url: '/admin/node/{$node->id}/trigger_restart',
             type: 'POST',
             dataType: "json",
+            headers: {'X-CSRF-Token': getCsrfToken()},
             success: function (data) {
                 if (data.ret === 1) {
                     $('#success-message').text(data.msg);

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Middleware\Admin;
+use App\Middleware\Csrf;
 use App\Middleware\Guest;
 use App\Middleware\NodeToken;
 use App\Middleware\User;
@@ -221,6 +222,7 @@ return static function (Slim\App $app): void {
         $group->post('/user/create', App\Controllers\Admin\UserController::class . ':create');
         $group->delete('/user/{id}', App\Controllers\Admin\UserController::class . ':delete');
         $group->post('/user/ajax', App\Controllers\Admin\UserController::class . ':ajax');
+        $group->post('/user/{id:[0-9]+}/revoke_mfa', App\Controllers\Admin\UserController::class . ':revokeMfa');
         // Coupon
         $group->get('/coupon', App\Controllers\Admin\CouponController::class . ':index');
         $group->post('/coupon', App\Controllers\Admin\CouponController::class . ':add');
@@ -335,7 +337,7 @@ return static function (Slim\App $app): void {
         $group->get('/invoice/{id:[0-9]+}/view', App\Controllers\Admin\InvoiceController::class . ':detail');
         $group->post('/invoice/{id:[0-9]+}/mark_paid', App\Controllers\Admin\InvoiceController::class . ':markPaid');
         $group->post('/invoice/ajax', App\Controllers\Admin\InvoiceController::class . ':ajax');
-    })->add(new Admin());
+    })->add(new Csrf())->add(new Admin());
     // WebAPI
     $app->group('/mod_mu', static function (RouteCollectorProxy $group): void {
         // 流媒体检测

@@ -237,10 +237,6 @@ final class UserController extends BaseController
         $user->node_iplimit = (int) ($request->getParam('node_iplimit') ?? 0);
         $user->locale = (string) ($request->getParam('locale') ?? 'zh_CN');
         $user->is_admin = $request->getParam('is_admin') === 'true' ? 1 : 0;
-        $ga_enable = $request->getParam('ga_enable') === 'true';
-        if (! $ga_enable) {
-            (new MFADevice())->where('userid', $user->id)->delete();
-        }
         $user->is_shadow_banned = $request->getParam('is_shadow_banned') === 'true' ? 1 : 0;
         $user->is_banned = $request->getParam('is_banned') === 'true' ? 1 : 0;
         $user->banned_reason = (string) ($request->getParam('banned_reason') ?? '');
@@ -327,5 +323,28 @@ final class UserController extends BaseController
         $users['users'] = $users['data'];
         unset($users['data']);
         return $response->withJson($users);
+    }
+
+    /**
+     * 撤销用户的所有 MFA 设备
+     */
+    public function revokeMfa(ServerRequest $request, Response $response, array $args): ResponseInterface
+    {
+        $id = $args['id'];
+        $user = (new User())->find($id);
+
+        if ($user === null) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '用户不存在',
+            ]);
+        }
+
+        (new MFADevice())->where('userid', $user->id)->delete();
+
+        return $response->withJson([
+            'ret' => 1,
+            'msg' => '已撤销该用户所有 MFA 设备',
+        ]);
     }
 }
