@@ -232,11 +232,13 @@
                             </div>
                             <div class="form-group mb-3 row">
                                 <span class="col">两步认证</span>
-                                <span class="col-auto">
-                                    <label class="form-check form-check-single form-switch">
-                                        <input id="ga_enable" class="form-check-input" type="checkbox"
-                                               {if $has_mfa}checked="" {/if}>
-                                    </label>
+                                <span class="col-auto d-flex align-items-center gap-2">
+                                    {if $has_mfa}
+                                        <span class="badge bg-green text-green-fg text-white">已启用</span>
+                                        <button type="button" class="btn btn-sm btn-danger" id="revoke-mfa">撤销所有 MFA</button>
+                                    {else}
+                                        <span class="badge bg-secondary text-secondary-fg text-white">未启用</span>
+                                    {/if}
                                 </span>
                             </div>
                             <div class="form-group mb-3 row">
@@ -293,7 +295,6 @@
                 {$key}: $('#{$key}').val(),
                 {/foreach}
                 is_admin: $("#is_admin").is(":checked"),
-                ga_enable: $("#ga_enable").is(":checked"),
                 is_shadow_banned: $("#is_shadow_banned").is(":checked"),
                 is_banned: $("#is_banned").is(":checked"),
             },
@@ -331,6 +332,23 @@
                     failDialog.show();
                 } else {
                     alert(msg);
+                }
+            }
+        });
+    });
+
+    $('#revoke-mfa').click(function () {
+        if (!confirm('确定撤销该用户的所有 MFA 设备？')) return;
+        $.ajax({
+            url: '/admin/user/{$edit_user->id}/revoke_mfa',
+            type: 'POST',
+            dataType: 'json',
+            success: function (data) {
+                if (data.ret === 1) {
+                    alert(data.msg);
+                    location.reload();
+                } else {
+                    alert(data.msg);
                 }
             }
         });
