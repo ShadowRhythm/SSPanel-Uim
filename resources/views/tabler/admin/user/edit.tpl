@@ -204,10 +204,18 @@
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-3 col-form-label">显示语言</label>
                                 <div class="col">
-                                    <select id="locale" class="col form-select" value="{$edit_user->locale|escape}">
+                                    <select id="locale" class="col form-select">
                                         {foreach $locales as $locale}
-                                        <option value="{$locale|escape}" {if $edit_user->locale === $locale}selected{/if}>
-                                            {$locale|escape}
+                                        <option value="{$locale|escape}" {if $edit_user->locale === $locale || str_replace('-', '_', $edit_user->locale) === $locale}selected{/if}>
+                                            {if $locale === 'zh_CN'}简体中文 (zh_CN)
+                                            {elseif $locale === 'zh_TW'}繁體中文 (zh_TW)
+                                            {elseif $locale === 'en_US'}English (en_US)
+                                            {elseif $locale === 'ja_JP'}日本語 (ja_JP)
+                                            {elseif $locale === 'ru_RU'}Русский (ru_RU)
+                                            {elseif $locale === 'fr_FR'}Français (fr_FR)
+                                            {elseif $locale === 'pt_BR'}Português (pt_BR)
+                                            {else}{$locale|escape}
+                                            {/if}
                                         </option>
                                         {/foreach}
                                     </select>
@@ -270,7 +278,12 @@
 </div>
 
 <script>
-    $("#save_changes").click(function () {
+    $("#save_changes").click(function (e) {
+        e.preventDefault();
+        let $btn = $(this);
+        if ($btn.hasClass('disabled') || $btn.prop('disabled')) return;
+        $btn.addClass('disabled');
+
         $.ajax({
             url: '/admin/user/{$edit_user->id}',
             type: 'PUT',
@@ -285,16 +298,42 @@
                 is_banned: $("#is_banned").is(":checked"),
             },
             success: function (data) {
+                $btn.removeClass('disabled');
                 if (data.ret === 1) {
                     $('#success-message').text(data.msg);
-                    successDialog.show();
-                    window.setTimeout("location.href=top.document.referrer", {$config['jump_delay']});
+                    if (typeof successDialog !== 'undefined' && successDialog) {
+                        successDialog.show();
+                    } else {
+                        alert(data.msg);
+                    }
+                    window.setTimeout(function () {
+                        location.href = document.referrer || '/admin/user';
+                    }, {$config['jump_delay']});
                 } else {
                     $('#fail-message').text(data.msg);
+                    if (typeof failDialog !== 'undefined' && failDialog) {
+                        failDialog.show();
+                    } else {
+                        alert(data.msg);
+                    }
+                }
+            },
+            error: function (jqXHR) {
+                $btn.removeClass('disabled');
+                let msg = '保存失败，发生网络或服务器错误';
+                if (jqXHR.responseJSON && jqXHR.responseJSON.msg) {
+                    msg = jqXHR.responseJSON.msg;
+                } else if (jqXHR.status) {
+                    msg += ' (HTTP ' + jqXHR.status + ' ' + (jqXHR.statusText || '') + ')';
+                }
+                $('#fail-message').text(msg);
+                if (typeof failDialog !== 'undefined' && failDialog) {
                     failDialog.show();
+                } else {
+                    alert(msg);
                 }
             }
-        })
+        });
     });
 </script>
 

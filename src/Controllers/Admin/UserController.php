@@ -164,6 +164,12 @@ final class UserController extends BaseController
         $user->last_check_in_time = Tools::toDateTime($user->last_check_in_time);
         $user->last_login_time = Tools::toDateTime($user->last_login_time);
 
+        $userLocale = str_replace('-', '_', (string) $user->locale);
+        if (! I18n::isValidLocale($userLocale)) {
+            $userLocale = $_ENV['locale'] ?? 'zh_CN';
+        }
+        $user->locale = $userLocale;
+
         return $response->write(
             $this->view()
                 ->assign('update_field', self::$update_field)
@@ -178,6 +184,13 @@ final class UserController extends BaseController
     {
         $id = (int) $args['id'];
         $user = (new User())->find($id);
+
+        if ($user === null) {
+            return $response->withJson([
+                'ret' => 0,
+                'msg' => '用户不存在',
+            ]);
+        }
 
         if ($request->getParam('pass') !== '' && $request->getParam('pass') !== null) {
             $user->pass = Hash::passwordHash($request->getParam('pass'));
@@ -198,34 +211,51 @@ final class UserController extends BaseController
             $user->money = $money;
         }
 
-        $user->email = $request->getParam('email');
-        $user->user_name = $request->getParam('user_name');
-        $user->ref_by = $request->getParam('ref_by');
-        $user->port = $request->getParam('port');
-        $user->method = $request->getParam('method');
-        $transfer_enable = Tools::autoBytesR($request->getParam('transfer_enable'));
-        if ($transfer_enable >= 0) {
-            $user->transfer_enable = $transfer_enable;
+        $user->email = trim((string) $request->getParam('email'));
+        $user->user_name = trim((string) $request->getParam('user_name'));
+        $user->ref_by = (int) ($request->getParam('ref_by') ?? 0);
+        $user->port = (int) ($request->getParam('port') ?? 0);
+        $user->method = (string) ($request->getParam('method') ?? 'aes-128-gcm');
+
+        $transfer_raw = $request->getParam('transfer_enable');
+        if ($transfer_raw !== null && $transfer_raw !== '') {
+            $transfer_enable = Tools::autoBytesR((string) $transfer_raw);
+            if ($transfer_enable >= 0) {
+                $user->transfer_enable = $transfer_enable;
+            }
         }
-        $user->node_group = $request->getParam('node_group');
-        $user->class = $request->getParam('class');
-        $user->class_expire = $request->getParam('class_expire');
-        $user->auto_reset_day = $request->getParam('auto_reset_day');
-        $user->auto_reset_bandwidth = $request->getParam('auto_reset_bandwidth');
-        $user->node_speedlimit = $request->getParam('node_speedlimit');
-        $user->node_iplimit = $request->getParam('node_iplimit');
-        $user->locale = $request->getParam('locale');
+
+        $user->node_group = (int) ($request->getParam('node_group') ?? 0);
+        $user->class = (int) ($request->getParam('class') ?? 0);
+
+        $class_expire = trim((string) ($request->getParam('class_expire') ?? ''));
+        if ($class_expire !== '') {
+            $user->class_expire = $class_expire;
+        }
+
+        $user->auto_reset_day = (int) ($request->getParam('auto_reset_day') ?? 0);
+        $user->auto_reset_bandwidth = (float) ($request->getParam('auto_reset_bandwidth') ?? 0);
+        $user->node_speedlimit = (int) ($request->getParam('node_speedlimit') ?? 0);
+        $user->node_iplimit = (int) ($request->getParam('node_iplimit') ?? 0);
+        $user->locale = (string) ($request->getParam('locale') ?? 'zh_CN');
         $user->is_admin = $request->getParam('is_admin') === 'true' ? 1 : 0;
         $user->ga_enable = $request->getParam('ga_enable') === 'true' ? 1 : 0;
         $user->is_shadow_banned = $request->getParam('is_shadow_banned') === 'true' ? 1 : 0;
         $user->is_banned = $request->getParam('is_banned') === 'true' ? 1 : 0;
-        $user->banned_reason = $request->getParam('banned_reason');
-        $user->remark = $request->getParam('remark');
+        $user->banned_reason = (string) ($request->getParam('banned_reason') ?? '');
+        $user->remark = (string) ($request->getParam('remark') ?? '');
 
-        if (! $user->save()) {
+        try {
+            if (! $user->save()) {
+                return $response->withJson([
+                    'ret' => 0,
+                    'msg' => '修改失败',
+                ]);
+            }
+        } catch (\Throwable $e) {
             return $response->withJson([
                 'ret' => 0,
-                'msg' => '修改失败',
+                'msg' => '保存失败: ' . $e->getMessage(),
             ]);
         }
 
