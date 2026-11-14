@@ -30,7 +30,7 @@ final class SingBox extends Base
                     $node = [
                         'type' => 'shadowsocks',
                         'tag' => $node_raw->name,
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'server_port' => (int) $user->port,
                         'method' => $user->method,
                         'password' => $user->passwd,
@@ -54,7 +54,7 @@ final class SingBox extends Base
                     $node = [
                         'type' => 'shadowsocks',
                         'tag' => $node_raw->name,
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'server_port' => (int) $ss_2022_port,
                         'method' => $method,
                         'password' => $server_key === '' ? $user_pk : $server_key . ':' .$user_pk,
@@ -72,7 +72,7 @@ final class SingBox extends Base
                     $node = [
                         'type' => 'tuic',
                         'tag' => $node_raw->name,
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'server_port' => (int) $tuic_port,
                         'uuid' => $user->uuid,
                         'password' => $user->passwd,
@@ -102,7 +102,7 @@ final class SingBox extends Base
                     $node = [
                         'type' => 'hysteria2',
                         'tag' => $node_raw->name,
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'server_port' => (int) $hy2_port,
                         'password' => $user->passwd,
                         'tls' => [
@@ -140,7 +140,7 @@ final class SingBox extends Base
                     $node = [
                         'type' => 'anytls',
                         'tag' => $node_raw->name,
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'server_port' => (int) $anytls_port,
                         'password' => $user->passwd,
                         'tls' => [
@@ -201,7 +201,7 @@ final class SingBox extends Base
                     $node = [
                         'type' => 'vmess',
                         'tag' => $node_raw->name,
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'server_port' => (int) $v2_port,
                         'uuid' => $user->uuid,
                         'security' => 'auto',
@@ -281,7 +281,7 @@ final class SingBox extends Base
                     $node = [
                         'type' => 'trojan',
                         'tag' => $node_raw->name,
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'server_port' => (int) $trojan_port,
                         'password' => $user->uuid,
                         'tls' => [

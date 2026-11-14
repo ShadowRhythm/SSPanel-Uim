@@ -34,7 +34,7 @@ final class Clash extends Base
                     $node = [
                         'name' => $node_raw->name,
                         'type' => 'ss',
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'port' => (int) $user->port,
                         'password' => $user->passwd,
                         'cipher' => $user->method,
@@ -63,7 +63,7 @@ final class Clash extends Base
                     $node = [
                         'name' => $node_raw->name,
                         'type' => 'ss',
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'port' => (int) $ss_2022_port,
                         'password' => $server_key === '' ? $user_pk : $server_key . ':' .$user_pk,
                         'cipher' => $method,
@@ -82,7 +82,7 @@ final class Clash extends Base
                     $node = [
                         'name' => $node_raw->name,
                         'type' => 'tuic',
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'port' => (int) $tuic_port,
                         'password' => $user->passwd,
                         'uuid' => $user->uuid,
@@ -106,7 +106,7 @@ final class Clash extends Base
                     $node = [
                         'name' => $node_raw->name,
                         'type' => 'hysteria2',
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'port' => (int) $hy2_port,
                         'password' => $user->passwd,
                         'sni' => $host,
@@ -153,7 +153,7 @@ final class Clash extends Base
                     $node = [
                         'name' => $node_raw->name,
                         'type' => 'vmess',
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'port' => (int) $v2_port,
                         'uuid' => $user->uuid,
                         'alterId' => 0,
@@ -188,7 +188,7 @@ final class Clash extends Base
                     $node = [
                         'name' => $node_raw->name,
                         'type' => 'trojan',
-                        'server' => $node_raw->server,
+                        'server' => trim((string) $node_raw->server, '[]'),
                         'sni' => $host,
                         'port' => (int) $trojan_port,
                         'password' => $user->uuid,
