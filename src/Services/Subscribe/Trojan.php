@@ -6,7 +6,11 @@ namespace App\Services\Subscribe;
 
 use App\Models\Config;
 use App\Services\Subscribe;
+use function filter_var;
 use function json_decode;
+use function trim;
+use const FILTER_FLAG_IPV6;
+use const FILTER_VALIDATE_IP;
 use const PHP_EOL;
 
 final class Trojan extends Base
@@ -22,7 +26,7 @@ final class Trojan extends Base
         $nodes_raw = Subscribe::getUserNodes($user);
 
         foreach ($nodes_raw as $node_raw) {
-            $node_custom_config = json_decode($node_raw->custom_config, true);
+            $node_custom_config = json_decode((string) $node_raw->custom_config, true) ?? [];
 
             if ((int) $node_raw->sort === 14) {
                 $trojan_port = $node_custom_config['offset_port_user'] ?? ($node_custom_config['offset_port_node'] ?? 443);
@@ -36,7 +40,13 @@ final class Trojan extends Base
                 $servicename = $node_custom_config['servicename'] ?? '';
                 $path = $node_custom_config['path'] ?? '';
 
-                $links .= 'trojan://' . $user->uuid . '@' . $node_raw->server . ':' . $trojan_port . '?peer=' . $host . '&sni='
+                $raw_server = trim((string) $node_raw->server);
+                $unbracketed = trim($raw_server, '[]');
+                $server_host = filter_var($unbracketed, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)
+                    ? '[' . $unbracketed . ']'
+                    : $raw_server;
+
+                $links .= 'trojan://' . $user->uuid . '@' . $server_host . ':' . $trojan_port . '?peer=' . $host . '&sni='
                     . $host . '&obfs=' . $transport_plugin . '&path=' . $path . '&mux=' . $mux . '&allowInsecure='
                     . $allow_insecure . '&obfsParam=' . $transport_method . '&type=' . $network . '&security='
                     . $security . '&serviceName=' . $servicename . '#' . $node_raw->name . PHP_EOL;
