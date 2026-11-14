@@ -15,26 +15,7 @@
     <script src="//{$config['jsdelivr_url']}/npm/clipboard@latest/dist/clipboard.min.js"></script>
     <script src="//{$config['jsdelivr_url']}/npm/jquery/dist/jquery.min.js"></script>
     <script src="//{$config['jsdelivr_url']}/npm/htmx.org@latest/dist/htmx.min.js"></script>
-    <script>
-        function getAdminCsrfToken() {
-            let match = document.cookie.match(/(?:^|;\s*)_csrf=([^;]+)/);
-            return match ? decodeURIComponent(match[1]) : '';
-        }
-
-        $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
-            const token = getAdminCsrfToken();
-            if (token) {
-                jqXHR.setRequestHeader('X-CSRF-Token', token);
-            }
-        });
-
-        htmx.on('htmx:configRequest', function (evt) {
-            const token = getAdminCsrfToken();
-            if (token) {
-                evt.detail.headers['X-CSRF-Token'] = token;
-            }
-        });
-    </script>
+    <script src="/assets/js/admin-csrf.js"></script>
     <style>
         .home-subtitle {
             font-size: 14px;
