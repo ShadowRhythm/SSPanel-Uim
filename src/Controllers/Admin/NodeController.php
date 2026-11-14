@@ -168,16 +168,21 @@ final class NodeController extends BaseController
      */
     public function edit(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $node = (new Node())->find($args['id']);
+        $id = (int) $args['id'];
+        $node = (new Node())->find($id);
 
-        $dynamic_rate_config = json_decode($node->dynamic_rate_config);
+        if ($node === null) {
+            return $response->withStatus(302)->withHeader('Location', '/admin/node');
+        }
+
+        $dynamic_rate_config = json_decode((string) $node->dynamic_rate_config);
         $node->max_rate = $dynamic_rate_config?->max_rate ?? 1;
         $node->max_rate_time = $dynamic_rate_config?->max_rate_time ?? 22;
         $node->min_rate = $dynamic_rate_config?->min_rate ?? 1;
         $node->min_rate_time = $dynamic_rate_config?->min_rate_time ?? 3;
 
-        $node->node_bandwidth = Tools::autoBytes($node->node_bandwidth);
-        $node->node_bandwidth_limit = Tools::bToGB($node->node_bandwidth_limit);
+        $node->node_bandwidth = Tools::autoBytes((int) $node->node_bandwidth);
+        $node->node_bandwidth_limit = Tools::bToGB((int) $node->node_bandwidth_limit);
 
         return $response->write(
             $this->view()

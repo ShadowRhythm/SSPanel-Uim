@@ -160,10 +160,16 @@ final class UserController extends BaseController
      */
     public function edit(ServerRequest $request, Response $response, array $args): ResponseInterface
     {
-        $user = (new User())->find($args['id']);
-        $user->last_use_time = Tools::toDateTime($user->last_use_time);
-        $user->last_check_in_time = Tools::toDateTime($user->last_check_in_time);
-        $user->last_login_time = Tools::toDateTime($user->last_login_time);
+        $id = (int) $args['id'];
+        $user = (new User())->find($id);
+
+        if ($user === null) {
+            return $response->withStatus(302)->withHeader('Location', '/admin/user');
+        }
+
+        $user->last_use_time = Tools::toDateTime((int) $user->last_use_time);
+        $user->last_check_in_time = Tools::toDateTime((int) $user->last_check_in_time);
+        $user->last_login_time = Tools::toDateTime((int) $user->last_login_time);
 
         $hasMfa = (new MFADevice())->where('userid', $user->id)->exists();
 

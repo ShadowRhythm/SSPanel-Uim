@@ -290,7 +290,6 @@
             url: '/admin/user/{$edit_user->id}',
             type: 'PUT',
             dataType: "json",
-            headers: {'X-CSRF-Token': getCsrfToken()},
             data: {
                 {foreach $update_field as $key}
                 {$key}: $('#{$key}').val(),
@@ -338,18 +337,12 @@
         });
     });
 
-    function getCsrfToken() {
-        var match = document.cookie.match(/(?:^|;\s*)_csrf=([^;]+)/);
-        return match ? decodeURIComponent(match[1]) : '';
-    }
-
     $('#revoke-mfa').click(function () {
         if (!confirm('确定撤销该用户的所有 MFA 设备？')) return;
         $.ajax({
             url: '/admin/user/{$edit_user->id}/revoke_mfa',
             type: 'POST',
             dataType: 'json',
-            headers: {'X-CSRF-Token': getCsrfToken()},
             success: function (data) {
                 if (data.ret === 1) {
                     alert(data.msg);
