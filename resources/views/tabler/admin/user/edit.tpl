@@ -234,10 +234,10 @@
                                 <span class="col">两步认证</span>
                                 <span class="col-auto d-flex align-items-center gap-2">
                                     {if $has_mfa}
-                                        <span class="badge bg-green">已启用</span>
+                                        <span class="badge bg-green text-green-fg text-white">已启用</span>
                                         <button type="button" class="btn btn-sm btn-danger" id="revoke-mfa">撤销所有 MFA</button>
                                     {else}
-                                        <span class="badge bg-secondary">未启用</span>
+                                        <span class="badge bg-secondary text-secondary-fg text-white">未启用</span>
                                     {/if}
                                 </span>
                             </div>
